@@ -1,0 +1,6 @@
+[
+  // Minimal subset to keep the file small; add more as needed or import full set.
+  {"question": "Digital Signature (التوقيع الرقمي)", "answer": "A mathematical technique used to validate the authenticity of a message, verifying it was sent by a particular sender. (إثبات مرسل وصحة رسالة.)"},
+  {"question": "AES (Advanced Encryption Standard) (معيار التشفير المتقدم)", "answer": "The current symmetric block cipher standard, using 128-bit blocks and key sizes of 128, 192, or 256 bits, based on a substitution-permutation network (not Feistel). (معيار تشفير حديث وقوي.)"},
+  {"question": "SSL/TLS (Secure Sockets Layer / Transport Layer Security) (طبقة المقابس الآمنة / أمن طبقة النقل)", "answer": "Standard technology for keeping an internet connection secure and data confidential between two systems (e.g., browser-server), using encryption and MACs. TLS is the successor to SSL. (تأمين اتصال الإنترنت.)"}
+]
