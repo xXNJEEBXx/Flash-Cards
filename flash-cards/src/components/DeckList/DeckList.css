@@ -1,0 +1,121 @@
+.deck-list {
+  margin: 20px;
+}
+
+.decks-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.deck-card {
+  width: 300px;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.deck-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.deck-card-content {
+  padding: 20px;
+}
+
+.deck-card-content h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #343a40;
+}
+
+.deck-card-content p {
+  color: #6c757d;
+  margin-bottom: 10px;
+}
+
+.card-count {
+  font-weight: bold;
+  color: #495057 !important;
+}
+
+.deck-progress {
+  height: 10px;
+  background-color: #e9ecef;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 5px;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #28a745;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+.deck-card-actions {
+  display: flex;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+}
+
+.btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  margin: 0 5px;
+  transition: background-color 0.2s;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #0069d9;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #5a6268;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: #c82333;
+}
+
+.no-decks {
+  text-align: center;
+  margin: 50px;
+  padding: 30px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #dee2e6;
+}
