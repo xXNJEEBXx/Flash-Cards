@@ -61,3 +61,113 @@
 }
 
 /* Buttons are already styled in DeckList.css */
+
+/* أنماط النظام الذكي للبطاقات الصعبة */
+.session-stats {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 15px 0;
+}
+
+.stats-row {
+  display: flex;
+  justify-content: space-around;
+  gap: 20px;
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+.stats-row span {
+  padding: 5px 10px;
+  background-color: white;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+}
+
+.difficult-count {
+  background-color: #fff3cd !important;
+  border-color: #ffeaa7 !important;
+  color: #856404 !important;
+  font-weight: bold;
+}
+
+.review-mode-indicator {
+  background-color: #d1ecf1;
+  border: 1px solid #bee5eb;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 15px 0;
+  text-align: center;
+}
+
+.review-badge {
+  background-color: #17a2b8;
+  color: white;
+  padding: 5px 15px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.review-mode-indicator small {
+  display: block;
+  margin-top: 8px;
+  color: #0c5460;
+  font-style: italic;
+}
+
+.help-message {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 20px 0;
+}
+
+.help-message p {
+  margin: 0;
+  color: #155724;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.btn-success {
+  background-color: #28a745;
+  color: white;
+  border: 1px solid #28a745;
+}
+
+.btn-success:hover {
+  background-color: #218838;
+  border-color: #1e7e34;
+}
+
+/* تحسين عرض أزرار التحكم */
+.study-controls {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
+.study-controls button {
+  min-width: 120px;
+}
+
+/* تحسين الاستجابة للهواتف */
+@media (max-width: 768px) {
+  .stats-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .study-controls {
+    flex-direction: column;
+  }
+  
+  .study-controls button {
+    min-width: 100%;
+  }
+}
