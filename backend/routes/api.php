@@ -1,4 +1,5 @@
 <?php
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DeckController;
 use App\Http\Controllers\CardController;
@@ -25,4 +26,3 @@ Route::post('/settings', [UserSettingsController::class, 'update']);
 Route::post('/settings/reset', [UserSettingsController::class, 'reset']);
 Route::post('/settings/unmastered/add', [UserSettingsController::class, 'addUnmasteredCard']);
 Route::post('/settings/unmastered/remove', [UserSettingsController::class, 'removeUnmasteredCard']);
-?>

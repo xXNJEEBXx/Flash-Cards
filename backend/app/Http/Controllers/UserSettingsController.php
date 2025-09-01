@@ -85,7 +85,7 @@ class UserSettingsController extends Controller
                 'message' => 'Missing session token or user id'
             ], 400);
         }
-        
+
         $validated = $request->validate([
             'smart_mode_enabled' => 'boolean',
             'hide_mastered_cards' => 'boolean',
@@ -116,7 +116,7 @@ class UserSettingsController extends Controller
                 'message' => 'Missing session token or user id'
             ], 400);
         }
-        
+
         $validated = $request->validate([
             'card_id' => 'required|exists:cards,id'
         ]);
@@ -131,7 +131,7 @@ class UserSettingsController extends Controller
         }
 
         $unmasteredCards = $settings->unmastered_cards ?? [];
-        
+
         if (!in_array($validated['card_id'], $unmasteredCards)) {
             $unmasteredCards[] = $validated['card_id'];
             $settings->update(['unmastered_cards' => $unmasteredCards]);
@@ -156,7 +156,7 @@ class UserSettingsController extends Controller
                 'message' => 'Missing session token or user id'
             ], 400);
         }
-        
+
         $validated = $request->validate([
             'card_id' => 'required|exists:cards,id'
         ]);
@@ -172,7 +172,7 @@ class UserSettingsController extends Controller
 
         $unmasteredCards = $settings->unmastered_cards ?? [];
         $unmasteredCards = array_values(array_filter($unmasteredCards, fn($id) => $id != $validated['card_id']));
-        
+
         $settings->update(['unmastered_cards' => $unmasteredCards]);
 
         return response()->json([

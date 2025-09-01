@@ -1,0 +1,19 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "push-remote-main",
+			"type": "shell",
+			"command": "git status; git add -A; git commit -m \"chore: sync local edits (optimize navigation + API tweaks)\"; git push origin main",
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "git-add-all",
+			"type": "shell",
+			"command": "git add -A",
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

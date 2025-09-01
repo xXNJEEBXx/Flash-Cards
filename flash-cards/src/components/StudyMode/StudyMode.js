@@ -131,7 +131,7 @@ const StudyMode = ({ deckId, onBack }) => {
             if (smartModeEnabled && reviewMode) {
                 // في النظام الذكي ووضع المراجعة، اعرض البطاقات غير المتقنة فقط
                 // تحويل IDs إلى objects
-                cardsToDisplay = currentDeck.cards.filter(card => 
+                cardsToDisplay = currentDeck.cards.filter(card =>
                     unmastered.includes(card.id)
                 );
             } else {
@@ -180,57 +180,45 @@ const StudyMode = ({ deckId, onBack }) => {
     };
 
     // إضافة بطاقة لقائمة غير المتقنة
-    const addToUnmastered = async (card) => {
+    const addToUnmastered = (card) => {
         try {
-            // إضافة محلياً أولاً
+            // إضافة محلياً أولاً (فوري)
             setUnmastered(prev => {
-                // تجنب التكرار
-                if (prev.includes(card.id)) {
-                    return prev;
-                }
-                
+                if (prev.includes(card.id)) return prev; // تجنب التكرار
+
                 const newList = [...prev, card.id];
-                
-                // إذا كان النظام الذكي مُفعل ووصلنا للحد الأقصى، ابدأ وضع المراجعة
                 if (smartModeEnabled && newList.length >= UNMASTERED_LIMIT) {
                     setReviewMode(true);
                 }
-                
                 return newList;
             });
 
-            // حفظ في قاعدة البيانات
-            await settingsAPI.addUnmasteredCard(card.id);
-            
-            // تسجيل البطاقة كصعبة
-            await cardsAPI.markCardAsDifficult(currentDeck.id, card.id);
-            
+            // مزامنة في الخلفية بدون تعطيل الواجهة
+            Promise.allSettled([
+                settingsAPI.addUnmasteredCard(card.id),
+                cardsAPI.markCardAsDifficult(currentDeck.id, card.id)
+            ]).catch(() => {});
         } catch (error) {
             console.error('Failed to add unmastered card:', error);
         }
     };
 
     // إزالة بطاقة من قائمة غير المتقنة
-    const removeFromUnmastered = async (cardId) => {
+    const removeFromUnmastered = (cardId) => {
         try {
-            // إزالة محلياً أولاً
+            // إزالة محلياً أولاً (فوري)
             setUnmastered(prev => {
                 const newList = prev.filter(id => id !== cardId);
 
-                // إذا كان النظام الذكي مُفعل
                 if (smartModeEnabled) {
-                    // إذا فهم جميع البطاقات، اخرج من وضع المراجعة
                     if (newList.length === 0 && reviewMode) {
                         setReviewMode(false);
                     } else if (reviewMode && newList.length < UNMASTERED_LIMIT) {
-                        // إذا كان في وضع المراجعة وقل العدد عن الحد الأقصى
-                        // أضف بطاقة جديدة من المجموعة إذا كان هناك بطاقات متبقية
                         const remainingCards = currentDeck.cards.filter(card =>
                             !newList.includes(card.id) && !card.known
                         );
 
                         if (remainingCards.length > 0) {
-                            // أضف بطاقة عشوائية من المتبقي
                             const randomCard = remainingCards[Math.floor(Math.random() * remainingCards.length)];
                             return [...newList, randomCard.id];
                         }
@@ -240,33 +228,28 @@ const StudyMode = ({ deckId, onBack }) => {
                 return newList;
             });
 
-            // حفظ في قاعدة البيانات
-            await settingsAPI.removeUnmasteredCard(cardId);
-            
+            // مزامنة في الخلفية بدون تعطيل الواجهة
+            settingsAPI.removeUnmasteredCard(cardId).catch(() => {});
         } catch (error) {
             console.error('Failed to remove unmastered card:', error);
         }
     };
 
     // زر Next: لم أفهم البطاقة
-    const handleNextButtonClick = async () => {
+    const handleNextButtonClick = () => {
         try {
-            // تسجيل عرض البطاقة
-            await cardsAPI.markCardAsSeen(currentDeck.id, currentCard.id);
-            
-            // أضف البطاقة لقائمة غير المتقنة (سواء النظام مُفعل أم لا)
-            await addToUnmastered(currentCard);
+            // سجّل في الخلفية
+            cardsAPI.markCardAsSeen(currentDeck.id, currentCard.id)?.catch(() => {});
+            addToUnmastered(currentCard);
 
-            // إذا كان النظام الذكي مُفعل ووصل للحد الأقصى، لا تضيف بطاقات جديدة
+            // انتقال فوري
             if (smartModeEnabled && unmastered.length >= UNMASTERED_LIMIT - 1) {
-                // ابق في وضع المراجعة
                 if (currentCardIndex < totalCards - 1) {
                     setCurrentCardIndex(prev => prev + 1);
                 } else {
-                    setCurrentCardIndex(0); // ارجع للبداية
+                    setCurrentCardIndex(0);
                 }
             } else {
-                // في الوضع العادي أو النظام غير مُفعل، انتقل للبطاقة التالية
                 if (currentCardIndex < totalCards - 1) {
                     setCurrentCardIndex(prev => prev + 1);
                 }
@@ -277,20 +260,18 @@ const StudyMode = ({ deckId, onBack }) => {
     };
 
     // زر Mark as Known: فهمت البطاقة
-    const handleMarkAsKnown = async () => {
+    const handleMarkAsKnown = () => {
         try {
-            // تسجيل عرض البطاقة
-            await cardsAPI.markCardAsSeen(currentDeck.id, currentCard.id);
-            
-            // اجعل البطاقة معروفة (سيتم تحديث قاعدة البيانات تلقائياً)
+            // تسجيل عرض البطاقة (خلفية)
+            cardsAPI.markCardAsSeen(currentDeck.id, currentCard.id)?.catch(() => {});
+
+            // اجعل البطاقة معروفة محلياً
             toggleCardKnown(currentDeck.id, currentCard.id);
 
-            // أزل من قائمة غير المتقنة إذا كانت موجودة
-            await removeFromUnmastered(currentCard.id);
+            // إزالة من غير المتقنة (خلفية)
+            removeFromUnmastered(currentCard.id);
 
-            // إذا كانت البطاقات المتقنة مخفية، تحقق من وجود بطاقات متبقية
             if (hideMasteredCards && !smartModeEnabled) {
-                // إذا لم تعد هناك بطاقات غير متقنة، أظهر رسالة
                 const remainingCards = currentDeck.cards.filter(card => !card.known);
                 if (remainingCards.length === 0) {
                     alert("تهانينا! لقد أتقنت جميع البطاقات في هذه المجموعة!");
@@ -298,16 +279,12 @@ const StudyMode = ({ deckId, onBack }) => {
                 }
             }
 
-            // إذا كان النظام الذكي مُفعل وفي وضع المراجعة
             if (smartModeEnabled && reviewMode) {
-                // إذا لم تعد هناك بطاقات في وضع المراجعة، اخرج منه
                 if (unmastered.length <= 1) {
                     setReviewMode(false);
                     setCurrentCardIndex(0);
                 }
-                // وإلا ابق في نفس الفهرس
             } else {
-                // في الوضع العادي، انتقل للبطاقة التالية إذا أمكن
                 if (currentCardIndex < totalCards - 1) {
                     setCurrentCardIndex(prev => prev + 1);
                 } else if (currentCardIndex > 0) {
@@ -319,12 +296,11 @@ const StudyMode = ({ deckId, onBack }) => {
         }
     };
 
-    const handleToggleKnown = async (cardId) => {
+    const handleToggleKnown = (cardId) => {
         try {
-            // تسجيل عرض البطاقة
-            await cardsAPI.markCardAsSeen(currentDeck.id, cardId);
-            
-            // تبديل حالة البطاقة
+            // تسجيل عرض البطاقة (خلفية)
+            cardsAPI.markCardAsSeen(currentDeck.id, cardId)?.catch(() => {});
+            // تبديل حالة البطاقة فوراً
             toggleCardKnown(currentDeck.id, cardId);
         } catch (error) {
             console.error('Failed to toggle card known status:', error);
@@ -346,34 +322,23 @@ const StudyMode = ({ deckId, onBack }) => {
         }
     };
 
-    const handleToggleShuffle = async () => {
+    const handleToggleShuffle = () => {
         try {
             const newValue = !shuffleMode;
-            console.log('Toggling shuffle mode from', shuffleMode, 'to', newValue);
             setShuffleMode(newValue);
-            
-            // حفظ الإعداد في قاعدة البيانات
-            console.log('Saving shuffle mode setting to database...');
-            await settingsAPI.updateSettings({ shuffle_mode: newValue });
-            console.log('Shuffle mode setting saved successfully');
+            // احفظ في الخلفية (السيف التلقائي سيغطي أيضاً)
+            settingsAPI.updateSettings({ shuffle_mode: newValue }).catch(() => {});
         } catch (error) {
             console.error('Failed to toggle shuffle mode:', error);
         }
     };
 
-    const toggleSmartMode = async () => {
+    const toggleSmartMode = () => {
         try {
             const newValue = !smartModeEnabled;
-            console.log('Toggling smart mode from', smartModeEnabled, 'to', newValue);
             setSmartModeEnabled(newValue);
-            
-            // حفظ الإعداد في قاعدة البيانات
-            console.log('Saving smart mode setting to database...');
-            await settingsAPI.updateSettings({ smart_mode_enabled: newValue });
-            console.log('Smart mode setting saved successfully');
-            
+            settingsAPI.updateSettings({ smart_mode_enabled: newValue }).catch(() => {});
             if (!newValue) {
-                // إيقاف النظام الذكي
                 setReviewMode(false);
             }
         } catch (error) {
@@ -381,16 +346,11 @@ const StudyMode = ({ deckId, onBack }) => {
         }
     };
 
-    const toggleHideMasteredCards = async () => {
+    const toggleHideMasteredCards = () => {
         try {
             const newValue = !hideMasteredCards;
-            console.log('Toggling hide mastered cards from', hideMasteredCards, 'to', newValue);
             setHideMasteredCards(newValue);
-            
-            // حفظ الإعداد في قاعدة البيانات
-            console.log('Saving hide mastered cards setting to database...');
-            await settingsAPI.updateSettings({ hide_mastered_cards: newValue });
-            console.log('Hide mastered cards setting saved successfully');
+            settingsAPI.updateSettings({ hide_mastered_cards: newValue }).catch(() => {});
         } catch (error) {
             console.error('Failed to toggle hide mastered cards:', error);
         }

@@ -25,7 +25,7 @@ return new class extends Migration
         Schema::table('cards', function (Blueprint $table) {
             $table->dropColumn([
                 'times_seen',
-                'times_known', 
+                'times_known',
                 'last_seen_at',
                 'last_known_at',
                 'is_difficult'

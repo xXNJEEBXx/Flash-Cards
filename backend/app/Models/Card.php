@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -8,11 +9,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Card extends Model
 {
     use HasFactory;
-    
+
     protected $fillable = [
-        'question', 
-        'answer', 
-        'known', 
+        'question',
+        'answer',
+        'known',
         'deck_id',
         'times_seen',
         'times_known',
@@ -20,7 +21,7 @@ class Card extends Model
         'last_known_at',
         'is_difficult'
     ];
-    
+
     protected $casts = [
         'known' => 'boolean',
         'is_difficult' => 'boolean',
@@ -29,10 +30,10 @@ class Card extends Model
         'last_seen_at' => 'datetime',
         'last_known_at' => 'datetime'
     ];
-    
-    public function deck(): BelongsTo 
-    { 
-        return $this->belongsTo(Deck::class); 
+
+    public function deck(): BelongsTo
+    {
+        return $this->belongsTo(Deck::class);
     }
 
     // حساب نسبة النجاح
@@ -66,4 +67,3 @@ class Card extends Model
         $this->update(['is_difficult' => true, 'known' => false]);
     }
 }
-?>

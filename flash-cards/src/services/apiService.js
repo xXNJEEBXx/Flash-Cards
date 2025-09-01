@@ -27,9 +27,9 @@ export const settingsAPI = {
             const response = await fetch(`${API_BASE_URL}/settings`, {
                 headers: getHeaders()
             });
-            
+
             if (!response.ok) throw new Error('Failed to fetch settings');
-            
+
             const result = await response.json();
             console.log('Settings fetched successfully:', result);
             return result.data;
@@ -56,9 +56,9 @@ export const settingsAPI = {
                 headers: getHeaders(),
                 body: JSON.stringify(settings)
             });
-            
+
             if (!response.ok) throw new Error('Failed to update settings');
-            
+
             const result = await response.json();
             console.log('Settings updated successfully:', result);
             return result.data;
@@ -76,9 +76,9 @@ export const settingsAPI = {
                 headers: getHeaders(),
                 body: JSON.stringify({ card_id: cardId })
             });
-            
+
             if (!response.ok) throw new Error('Failed to add unmastered card');
-            
+
             const result = await response.json();
             return result;
         } catch (error) {
@@ -95,9 +95,9 @@ export const settingsAPI = {
                 headers: getHeaders(),
                 body: JSON.stringify({ card_id: cardId })
             });
-            
+
             if (!response.ok) throw new Error('Failed to remove unmastered card');
-            
+
             const result = await response.json();
             return result;
         } catch (error) {
@@ -113,9 +113,9 @@ export const settingsAPI = {
                 method: 'POST',
                 headers: getHeaders()
             });
-            
+
             if (!response.ok) throw new Error('Failed to reset settings');
-            
+
             const result = await response.json();
             return result;
         } catch (error) {
@@ -133,9 +133,9 @@ export const cardsAPI = {
                 method: 'POST',
                 headers: getHeaders()
             });
-            
+
             if (!response.ok) throw new Error('Failed to mark card as seen');
-            
+
             const result = await response.json();
             return result.data;
         } catch (error) {
@@ -150,9 +150,9 @@ export const cardsAPI = {
                 method: 'POST',
                 headers: getHeaders()
             });
-            
+
             if (!response.ok) throw new Error('Failed to mark card as difficult');
-            
+
             const result = await response.json();
             return result.data;
         } catch (error) {
@@ -166,9 +166,9 @@ export const cardsAPI = {
             const response = await fetch(`${API_BASE_URL}/decks/${deckId}/cards/${cardId}/stats`, {
                 headers: getHeaders()
             });
-            
+
             if (!response.ok) throw new Error('Failed to fetch card stats');
-            
+
             const result = await response.json();
             return result.data;
         } catch (error) {
@@ -184,9 +184,9 @@ export const cardsAPI = {
                 method: 'POST',
                 headers: getHeaders()
             });
-            
+
             if (!response.ok) throw new Error('Failed to toggle card known status');
-            
+
             const result = await response.json();
             return result.data;
         } catch (error) {

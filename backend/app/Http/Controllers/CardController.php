@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Card;
@@ -7,7 +8,8 @@ use Illuminate\Http\Request;
 
 class CardController extends Controller
 {
-    public function store(Request $request, Deck $deck) {
+    public function store(Request $request, Deck $deck)
+    {
         $data = $request->validate([
             'question' => 'required|string',
             'answer' => 'required|string',
@@ -15,8 +17,9 @@ class CardController extends Controller
         $card = $deck->cards()->create($data);
         return response()->json($card, 201);
     }
-    
-    public function update(Request $request, Deck $deck, Card $card) {
+
+    public function update(Request $request, Deck $deck, Card $card)
+    {
         $this->assertCardInDeck($deck, $card);
         $data = $request->validate([
             'question' => 'sometimes|required|string',
@@ -26,16 +29,18 @@ class CardController extends Controller
         $card->update($data);
         return $card;
     }
-    
-    public function destroy(Deck $deck, Card $card) {
+
+    public function destroy(Deck $deck, Card $card)
+    {
         $this->assertCardInDeck($deck, $card);
         $card->delete();
         return response()->noContent();
     }
-    
-    public function toggleKnown(Deck $deck, Card $card) {
+
+    public function toggleKnown(Deck $deck, Card $card)
+    {
         $this->assertCardInDeck($deck, $card);
-        
+
         if (!$card->known) {
             // تسجيل الإتقان
             $card->markAsKnown();
@@ -43,7 +48,7 @@ class CardController extends Controller
             // إلغاء الإتقان
             $card->update(['known' => false]);
         }
-        
+
         return response()->json([
             'success' => true,
             'data' => $card->fresh(),
@@ -58,7 +63,7 @@ class CardController extends Controller
     {
         $this->assertCardInDeck($deck, $card);
         $card->markAsSeen();
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Card viewed',
@@ -73,7 +78,7 @@ class CardController extends Controller
     {
         $this->assertCardInDeck($deck, $card);
         $card->markAsDifficult();
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Card marked as difficult',
@@ -87,7 +92,7 @@ class CardController extends Controller
     public function getStats(Deck $deck, Card $card)
     {
         $this->assertCardInDeck($deck, $card);
-        
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -101,9 +106,11 @@ class CardController extends Controller
             ]
         ]);
     }
-    
-    private function assertCardInDeck(Deck $deck, Card $card): void {
-        if ($card->deck_id !== $deck->id) { abort(404); }
+
+    private function assertCardInDeck(Deck $deck, Card $card): void
+    {
+        if ($card->deck_id !== $deck->id) {
+            abort(404);
+        }
     }
 }
-?>

@@ -10,7 +10,7 @@ class UserSettings extends Model
     use HasFactory;
 
     protected $fillable = [
-    'session_token',
+        'session_token',
         'user_id',
         'smart_mode_enabled',
         'hide_mastered_cards',
@@ -22,7 +22,7 @@ class UserSettings extends Model
 
     protected $casts = [
         'smart_mode_enabled' => 'boolean',
-        'hide_mastered_cards' => 'boolean', 
+        'hide_mastered_cards' => 'boolean',
         'shuffle_mode' => 'boolean',
         'unmastered_cards' => 'array',
         'current_card_index' => 'integer'
