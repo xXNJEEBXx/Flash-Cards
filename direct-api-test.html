@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>اختبار API مباشر</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; direction: rtl; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ddd; }
+        button { padding: 10px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .result { background: #f8f9fa; padding: 10px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 اختبار مباشر لـ API Flash Cards</h1>
+    
+    <div class="test">
+        <h3>Session Token الحالي:</h3>
+        <div id="current-token"></div>
+        <button onclick="showCurrentToken()">إظهار Token</button>
+        <button onclick="setTestToken()">وضع Test Token</button>
+    </div>
+
+    <div class="test">
+        <h3>اختبار جلب الإعدادات:</h3>
+        <button onclick="testGetSettings()">جلب الإعدادات</button>
+        <div class="result" id="get-result"></div>
+    </div>
+
+    <div class="test">
+        <h3>اختبار تحديث Smart Mode:</h3>
+        <button onclick="testToggleSmartMode()">تبديل Smart Mode</button>
+        <div class="result" id="smart-result"></div>
+    </div>
+
+    <div class="test">
+        <h3>اختبار تحديث Hide Mastered:</h3>
+        <button onclick="testToggleHideMastered()">تبديل Hide Mastered</button>
+        <div class="result" id="hide-result"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000/api';
+        
+        function getSessionToken() {
+            let token = localStorage.getItem('session_token');
+            if (!token) {
+                token = 'guest_' + Date.now() + '_' + Math.random().toString(36).substring(2);
+                localStorage.setItem('session_token', token);
+            }
+            return token;
+        }
+        
+        function setTestToken() {
+            localStorage.setItem('session_token', 'test_session_123');
+            showCurrentToken();
+        }
+        
+        function showCurrentToken() {
+            const token = getSessionToken();
+            document.getElementById('current-token').textContent = token;
+        }
+        
+        function getHeaders() {
+            return {
+                'Content-Type': 'application/json',
+                'X-Session-Token': getSessionToken(),
+                'Accept': 'application/json'
+            };
+        }
+        
+        async function testGetSettings() {
+            const resultEl = document.getElementById('get-result');
+            try {
+                console.log('Fetching settings...');
+                const response = await fetch(`${API_BASE_URL}/settings`, {
+                    method: 'GET',
+                    headers: getHeaders()
+                });
+                
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Settings data:', data);
+                resultEl.innerHTML = `
+                    <strong>نجح!</strong><br>
+                    Smart Mode: ${data.data.smart_mode_enabled}<br>
+                    Hide Mastered: ${data.data.hide_mastered_cards}<br>
+                    Shuffle Mode: ${data.data.shuffle_mode}<br>
+                    Unmastered Cards: ${JSON.stringify(data.data.unmastered_cards)}
+                `;
+            } catch (error) {
+                console.error('Error:', error);
+                resultEl.innerHTML = `<strong>خطأ:</strong> ${error.message}`;
+            }
+        }
+        
+        async function testToggleSmartMode() {
+            const resultEl = document.getElementById('smart-result');
+            try {
+                // أولاً جلب الإعدادات الحالية
+                const getResponse = await fetch(`${API_BASE_URL}/settings`, {
+                    headers: getHeaders()
+                });
+                
+                if (!getResponse.ok) throw new Error('Failed to get current settings');
+                
+                const currentData = await getResponse.json();
+                const currentValue = currentData.data.smart_mode_enabled;
+                const newValue = !currentValue;
+                
+                console.log(`Toggling smart mode from ${currentValue} to ${newValue}`);
+                
+                // ثم تحديث القيمة
+                const updateResponse = await fetch(`${API_BASE_URL}/settings`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({ smart_mode_enabled: newValue })
+                });
+                
+                if (!updateResponse.ok) throw new Error('Failed to update settings');
+                
+                const updateData = await updateResponse.json();
+                console.log('Update response:', updateData);
+                
+                resultEl.innerHTML = `
+                    <strong>نجح!</strong><br>
+                    تم تغيير Smart Mode من ${currentValue} إلى ${newValue}
+                `;
+            } catch (error) {
+                console.error('Error:', error);
+                resultEl.innerHTML = `<strong>خطأ:</strong> ${error.message}`;
+            }
+        }
+        
+        async function testToggleHideMastered() {
+            const resultEl = document.getElementById('hide-result');
+            try {
+                // أولاً جلب الإعدادات الحالية
+                const getResponse = await fetch(`${API_BASE_URL}/settings`, {
+                    headers: getHeaders()
+                });
+                
+                if (!getResponse.ok) throw new Error('Failed to get current settings');
+                
+                const currentData = await getResponse.json();
+                const currentValue = currentData.data.hide_mastered_cards;
+                const newValue = !currentValue;
+                
+                console.log(`Toggling hide mastered from ${currentValue} to ${newValue}`);
+                
+                // ثم تحديث القيمة
+                const updateResponse = await fetch(`${API_BASE_URL}/settings`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({ hide_mastered_cards: newValue })
+                });
+                
+                if (!updateResponse.ok) throw new Error('Failed to update settings');
+                
+                const updateData = await updateResponse.json();
+                console.log('Update response:', updateData);
+                
+                resultEl.innerHTML = `
+                    <strong>نجح!</strong><br>
+                    تم تغيير Hide Mastered من ${currentValue} إلى ${newValue}
+                `;
+            } catch (error) {
+                console.error('Error:', error);
+                resultEl.innerHTML = `<strong>خطأ:</strong> ${error.message}`;
+            }
+        }
+        
+        // عرض Token الحالي عند التحميل
+        window.onload = showCurrentToken;
+    </script>
+</body>
+</html>

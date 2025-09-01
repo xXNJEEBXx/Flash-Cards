@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>اختبار التكامل - Flash Cards</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 اختبار التكامل - Flash Cards API</h1>
+        
+        <div class="test">
+            <h3>1. اختبار جلب الإعدادات</h3>
+            <button onclick="testGetSettings()">جلب الإعدادات</button>
+            <pre id="get-result"></pre>
+        </div>
+        
+        <div class="test">
+            <h3>2. اختبار تحديث الإعدادات</h3>
+            <button onclick="testUpdateSettings()">تحديث الإعدادات</button>
+            <pre id="update-result"></pre>
+        </div>
+        
+        <div class="test">
+            <h3>3. اختبار إضافة بطاقة غير متقنة</h3>
+            <button onclick="testAddUnmastered()">إضافة بطاقة</button>
+            <pre id="add-result"></pre>
+        </div>
+        
+        <div class="test">
+            <h3>4. اختبار حفظ Session Token</h3>
+            <button onclick="testSessionToken()">اختبار Session</button>
+            <pre id="session-result"></pre>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000/api';
+        
+        // Session Token Management
+        const getSessionToken = () => {
+            let token = localStorage.getItem('session_token');
+            if (!token) {
+                token = 'guest_' + Date.now() + '_' + Math.random().toString(36).substring(2);
+                localStorage.setItem('session_token', token);
+            }
+            return token;
+        };
+        
+        const getHeaders = () => ({
+            'Content-Type': 'application/json',
+            'X-Session-Token': getSessionToken(),
+            'Accept': 'application/json'
+        });
+        
+        async function testGetSettings() {
+            const resultEl = document.getElementById('get-result');
+            try {
+                const response = await fetch(`${API_BASE_URL}/settings`, {
+                    method: 'GET',
+                    headers: getHeaders()
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                resultEl.textContent = JSON.stringify(data, null, 2);
+                resultEl.parentElement.className = 'test success';
+            } catch (error) {
+                resultEl.textContent = 'خطأ: ' + error.message;
+                resultEl.parentElement.className = 'test error';
+            }
+        }
+        
+        async function testUpdateSettings() {
+            const resultEl = document.getElementById('update-result');
+            try {
+                const settings = {
+                    smart_mode_enabled: true,
+                    hide_mastered_cards: false,
+                    shuffle_mode: true,
+                    unmastered_cards: [1, 2, 3]
+                };
+                
+                const response = await fetch(`${API_BASE_URL}/settings`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify(settings)
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                resultEl.textContent = JSON.stringify(data, null, 2);
+                resultEl.parentElement.className = 'test success';
+            } catch (error) {
+                resultEl.textContent = 'خطأ: ' + error.message;
+                resultEl.parentElement.className = 'test error';
+            }
+        }
+        
+        async function testAddUnmastered() {
+            const resultEl = document.getElementById('add-result');
+            try {
+                const response = await fetch(`${API_BASE_URL}/settings/unmastered/add`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify({ card_id: 5 })
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                resultEl.textContent = JSON.stringify(data, null, 2);
+                resultEl.parentElement.className = 'test success';
+            } catch (error) {
+                resultEl.textContent = 'خطأ: ' + error.message;
+                resultEl.parentElement.className = 'test error';
+            }
+        }
+        
+        async function testSessionToken() {
+            const resultEl = document.getElementById('session-result');
+            try {
+                const token = getSessionToken();
+                resultEl.textContent = `Session Token: ${token}\nمحفوظ في localStorage: ${localStorage.getItem('session_token')}`;
+                resultEl.parentElement.className = 'test success';
+            } catch (error) {
+                resultEl.textContent = 'خطأ: ' + error.message;
+                resultEl.parentElement.className = 'test error';
+            }
+        }
+    </script>
+</body>
+</html>

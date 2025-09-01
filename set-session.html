@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>إعداد Session Token</title>
+</head>
+<body>
+    <h1>إعداد Session Token للاختبار</h1>
+    <p>هذا الملف سيضع session token ثابت في localStorage</p>
+    
+    <script>
+        // وضع session token ثابت للاختبار
+        const testToken = 'test_session_123';
+        localStorage.setItem('session_token', testToken);
+        console.log('Session token set to:', testToken);
+        
+        // إعادة توجيه للتطبيق
+        setTimeout(() => {
+            window.location.href = 'http://localhost:3000';
+        }, 1000);
+    </script>
+    
+    <p>سيتم إعادة توجيهك للتطبيق في ثانية واحدة...</p>
+</body>
+</html>
