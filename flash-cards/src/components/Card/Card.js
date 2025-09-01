@@ -24,19 +24,6 @@ const Card = ({ card, onToggleKnown, inStudyMode = false }) => {
                 </div>
                 <div className="card-back">
                     <p>{card.answer}</p>
-                    {inStudyMode && (
-                        <div className="card-actions">
-                            <button
-                                className="btn-toggle-known"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onToggleKnown(card.id);
-                                }}
-                            >
-                                {card.known ? 'Mark as Unknown' : 'Mark as Known'}
-                            </button>
-                        </div>
-                    )}
                 </div>
             </div>
         </div>
