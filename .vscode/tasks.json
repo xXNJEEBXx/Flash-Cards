@@ -14,6 +14,33 @@
 			"command": "git add -A",
 			"problemMatcher": [],
 			"group": "build"
+		},
+		{
+			"label": "git-commit-simple",
+			"type": "shell",
+			"command": "git commit -m \"chore: sync local edits\"",
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "git-commit-quoted",
+			"type": "shell",
+			"command": "git commit -m 'chore: sync local edits'",
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "git-push-origin-main",
+			"type": "shell",
+			"command": "git push origin main",
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "push-smart-mode-fix",
+			"type": "shell",
+			"command": "git add -A; git commit -m 'fix(smart-mode): ensure review mode activates at 5 unmastered cards and resets index properly'; git push origin main",
+			"group": "build"
 		}
 	]
 }

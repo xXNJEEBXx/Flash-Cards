@@ -187,7 +187,7 @@ const StudyMode = ({ deckId, onBack }) => {
                 if (prev.includes(card.id)) return prev; // تجنب التكرار
 
                 const newList = [...prev, card.id];
-                if (smartModeEnabled && newList.length >= UNMASTERED_LIMIT) {
+                if (smartModeEnabled && newList.length >= UNMASTERED_LIMIT - 1) {
                     setReviewMode(true);
                 }
                 return newList;
@@ -197,7 +197,7 @@ const StudyMode = ({ deckId, onBack }) => {
             Promise.allSettled([
                 settingsAPI.addUnmasteredCard(card.id),
                 cardsAPI.markCardAsDifficult(currentDeck.id, card.id)
-            ]).catch(() => {});
+            ]).catch(() => { });
         } catch (error) {
             console.error('Failed to add unmastered card:', error);
         }
@@ -229,7 +229,7 @@ const StudyMode = ({ deckId, onBack }) => {
             });
 
             // مزامنة في الخلفية بدون تعطيل الواجهة
-            settingsAPI.removeUnmasteredCard(cardId).catch(() => {});
+            settingsAPI.removeUnmasteredCard(cardId).catch(() => { });
         } catch (error) {
             console.error('Failed to remove unmastered card:', error);
         }
@@ -239,11 +239,17 @@ const StudyMode = ({ deckId, onBack }) => {
     const handleNextButtonClick = () => {
         try {
             // سجّل في الخلفية
-            cardsAPI.markCardAsSeen(currentDeck.id, currentCard.id)?.catch(() => {});
+            cardsAPI.markCardAsSeen(currentDeck.id, currentCard.id)?.catch(() => { });
+            
+            const isAlreadyUnmastered = unmastered.includes(currentCard.id);
+            const newUnmasteredLength = isAlreadyUnmastered ? unmastered.length : unmastered.length + 1;
+            
             addToUnmastered(currentCard);
 
             // انتقال فوري
-            if (smartModeEnabled && unmastered.length >= UNMASTERED_LIMIT - 1) {
+            if (smartModeEnabled && newUnmasteredLength >= UNMASTERED_LIMIT) {
+                setCurrentCardIndex(0);
+            } else if (smartModeEnabled && reviewMode) {
                 if (currentCardIndex < totalCards - 1) {
                     setCurrentCardIndex(prev => prev + 1);
                 } else {
@@ -263,7 +269,7 @@ const StudyMode = ({ deckId, onBack }) => {
     const handleMarkAsKnown = () => {
         try {
             // تسجيل عرض البطاقة (خلفية)
-            cardsAPI.markCardAsSeen(currentDeck.id, currentCard.id)?.catch(() => {});
+            cardsAPI.markCardAsSeen(currentDeck.id, currentCard.id)?.catch(() => { });
 
             // اجعل البطاقة معروفة محلياً
             toggleCardKnown(currentDeck.id, currentCard.id);
@@ -299,7 +305,7 @@ const StudyMode = ({ deckId, onBack }) => {
     const handleToggleKnown = (cardId) => {
         try {
             // تسجيل عرض البطاقة (خلفية)
-            cardsAPI.markCardAsSeen(currentDeck.id, cardId)?.catch(() => {});
+            cardsAPI.markCardAsSeen(currentDeck.id, cardId)?.catch(() => { });
             // تبديل حالة البطاقة فوراً
             toggleCardKnown(currentDeck.id, cardId);
         } catch (error) {
@@ -327,7 +333,7 @@ const StudyMode = ({ deckId, onBack }) => {
             const newValue = !shuffleMode;
             setShuffleMode(newValue);
             // احفظ في الخلفية (السيف التلقائي سيغطي أيضاً)
-            settingsAPI.updateSettings({ shuffle_mode: newValue }).catch(() => {});
+            settingsAPI.updateSettings({ shuffle_mode: newValue }).catch(() => { });
         } catch (error) {
             console.error('Failed to toggle shuffle mode:', error);
         }
@@ -337,7 +343,7 @@ const StudyMode = ({ deckId, onBack }) => {
         try {
             const newValue = !smartModeEnabled;
             setSmartModeEnabled(newValue);
-            settingsAPI.updateSettings({ smart_mode_enabled: newValue }).catch(() => {});
+            settingsAPI.updateSettings({ smart_mode_enabled: newValue }).catch(() => { });
             if (!newValue) {
                 setReviewMode(false);
             }
@@ -350,7 +356,7 @@ const StudyMode = ({ deckId, onBack }) => {
         try {
             const newValue = !hideMasteredCards;
             setHideMasteredCards(newValue);
-            settingsAPI.updateSettings({ hide_mastered_cards: newValue }).catch(() => {});
+            settingsAPI.updateSettings({ hide_mastered_cards: newValue }).catch(() => { });
         } catch (error) {
             console.error('Failed to toggle hide mastered cards:', error);
         }
