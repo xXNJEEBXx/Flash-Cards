@@ -86,7 +86,11 @@
 }
 
 .daily-goal {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.1) 0%,
+    rgba(118, 75, 162, 0.1) 100%
+  );
   border: 1px solid rgba(102, 126, 234, 0.2);
   border-radius: 16px;
   padding: 20px;
@@ -145,26 +149,26 @@
     padding: 20px;
     margin-bottom: 20px;
   }
-  
+
   .actions-grid {
     grid-template-columns: 1fr;
     gap: 15px;
   }
-  
+
   .action-card {
     padding: 15px;
   }
-  
+
   .action-icon {
     width: 40px;
     height: 40px;
     font-size: 18px;
   }
-  
+
   .action-content h4 {
     font-size: 15px;
   }
-  
+
   .action-content p {
     font-size: 12px;
   }
@@ -174,15 +178,15 @@
   .quick-actions {
     padding: 15px;
   }
-  
+
   .quick-actions-header h3 {
     font-size: 20px;
   }
-  
+
   .quick-actions-header p {
     font-size: 14px;
   }
-  
+
   .action-card {
     padding: 12px;
   }

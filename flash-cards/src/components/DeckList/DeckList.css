@@ -95,7 +95,7 @@
 }
 
 .deck-card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -252,19 +252,28 @@
 }
 
 .progress-bar-fill::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
   animation: shimmer 2s infinite;
 }
 
 @keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .progress-details {
@@ -312,7 +321,11 @@
 }
 
 @keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
     transform: translateY(0);
   }
   40% {
@@ -365,7 +378,8 @@
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0px);
   }
   50% {
@@ -413,7 +427,7 @@
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 20px;
   }
-  
+
   .deck-stats-summary {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 15px;
@@ -424,44 +438,44 @@
   .deck-list {
     padding: 0 10px;
   }
-  
+
   .decks-grid {
     grid-template-columns: 1fr;
     gap: 20px;
   }
-  
+
   .deck-stats-summary {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .stat-card {
     padding: 15px;
   }
-  
+
   .stat-icon {
     font-size: 20px;
     min-width: 40px;
     height: 40px;
     padding: 10px;
   }
-  
+
   .stat-number {
     font-size: 20px;
   }
-  
+
   .deck-card-content {
     padding: 15px 20px;
   }
-  
+
   .deck-card-actions {
     padding: 0 20px 20px;
     flex-direction: column;
   }
-  
+
   .deck-action-btn {
     width: 100%;
   }
-  
+
   .deck-delete-btn {
     width: 100%;
   }
@@ -471,27 +485,27 @@
   .deck-stats-summary {
     grid-template-columns: 1fr;
   }
-  
+
   .stat-card {
     padding: 12px;
   }
-  
+
   .deck-card {
     margin: 0 5px;
   }
-  
+
   .deck-card-content h3 {
     font-size: 18px;
   }
-  
+
   .no-decks-content {
     padding: 20px;
   }
-  
+
   .no-decks-icon {
     font-size: 60px;
   }
-  
+
   .no-decks h2 {
     font-size: 22px;
   }

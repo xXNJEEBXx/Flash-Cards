@@ -168,23 +168,23 @@
   .search-filter {
     padding: 20px;
   }
-  
+
   .filter-section {
     flex-direction: column;
     align-items: stretch;
     gap: 15px;
   }
-  
+
   .filter-tabs {
     justify-content: center;
     gap: 6px;
   }
-  
+
   .filter-tab {
     padding: 8px 12px;
     font-size: 12px;
   }
-  
+
   .sort-section {
     justify-content: center;
   }
@@ -194,27 +194,27 @@
   .search-filter {
     padding: 15px;
   }
-  
+
   .search-input {
     padding: 12px 12px 12px 40px;
     font-size: 13px;
   }
-  
+
   .filter-tabs {
     grid-template-columns: repeat(2, 1fr);
     display: grid;
     gap: 8px;
   }
-  
+
   .filter-tab {
     justify-content: center;
     padding: 10px;
   }
-  
+
   .filter-icon {
     font-size: 16px;
   }
-  
+
   .filter-label {
     font-size: 11px;
   }

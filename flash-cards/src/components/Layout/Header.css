@@ -124,23 +124,23 @@
     text-align: center;
     padding: 15px;
   }
-  
+
   .header-logo h1 {
     font-size: 24px;
   }
-  
+
   .header-navigation {
     width: 100%;
     justify-content: center;
     flex-wrap: wrap;
   }
-  
+
   .nav-btn {
     flex: 1;
     min-width: 120px;
     justify-content: center;
   }
-  
+
   .header-actions {
     width: 100%;
     justify-content: center;
@@ -152,15 +152,15 @@
     padding: 10px 15px;
     font-size: 13px;
   }
-  
+
   .nav-icon {
     font-size: 16px;
   }
-  
+
   .header-logo h1 {
     font-size: 20px;
   }
-  
+
   .logo-icon {
     font-size: 24px;
   }

@@ -4,6 +4,15 @@
       "type": "stdio",
       "command": "npx",
       "args": ["@browsermcp/mcp@latest"]
+    },
+    "flashcards": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["dist/index.js"],
+      "cwd": "tools/mcp/flashcards-server",
+      "env": {
+        "BACKEND_BASE_URL": "http://localhost:8000/api"
+      }
     }
   }
 }

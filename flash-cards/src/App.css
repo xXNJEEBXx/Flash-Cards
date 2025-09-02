@@ -115,7 +115,7 @@ body {
 }
 
 .btn::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -251,7 +251,7 @@ body {
 }
 
 .card-list-item::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   top: 0;
@@ -326,14 +326,14 @@ body {
   .main-content {
     padding: 20px;
   }
-  
+
   .content-header {
     flex-direction: column;
     gap: 20px;
     align-items: stretch;
     text-align: center;
   }
-  
+
   .card-management-header {
     flex-direction: column;
     gap: 15px;
@@ -346,30 +346,30 @@ body {
   .main-content {
     padding: 15px;
   }
-  
+
   .content-header h1 {
     font-size: 24px;
   }
-  
+
   .card-list-item {
     flex-direction: column;
     align-items: stretch;
     text-align: left;
   }
-  
+
   .card-content {
     margin-right: 0;
     margin-bottom: 20px;
   }
-  
+
   .card-actions {
     justify-content: center;
   }
-  
+
   .header-with-menu {
     justify-content: center;
   }
-  
+
   .menu-toggle {
     position: fixed;
     top: 15px;
@@ -385,24 +385,24 @@ body {
   .main-content {
     padding: 10px;
   }
-  
+
   .content-header h1 {
     font-size: 20px;
   }
-  
+
   .card-management {
     padding: 20px 15px;
   }
-  
+
   .card-list-item {
     padding: 20px 15px;
   }
-  
+
   .btn {
     padding: 10px 16px;
     font-size: 13px;
   }
-  
+
   .btn-large {
     padding: 14px 24px;
     font-size: 14px;

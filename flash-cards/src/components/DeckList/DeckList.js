@@ -11,7 +11,7 @@ const DeckList = ({ onSelectDeck, onStudyDeck }) => {
 
     // Filter and sort decks
     const filteredAndSortedDecks = useMemo(() => {
-        let filtered = decks.filter(deck => 
+        let filtered = decks.filter(deck =>
             deck.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
             deck.description.toLowerCase().includes(searchTerm.toLowerCase())
         );
@@ -20,24 +20,24 @@ const DeckList = ({ onSelectDeck, onStudyDeck }) => {
         switch (filterType) {
             case 'new':
                 filtered = filtered.filter(deck => {
-                    const learnedRatio = deck.cards.length > 0 
-                        ? deck.cards.filter(card => card.known).length / deck.cards.length 
+                    const learnedRatio = deck.cards.length > 0
+                        ? deck.cards.filter(card => card.known).length / deck.cards.length
                         : 0;
                     return learnedRatio < 0.5;
                 });
                 break;
             case 'progress':
                 filtered = filtered.filter(deck => {
-                    const learnedRatio = deck.cards.length > 0 
-                        ? deck.cards.filter(card => card.known).length / deck.cards.length 
+                    const learnedRatio = deck.cards.length > 0
+                        ? deck.cards.filter(card => card.known).length / deck.cards.length
                         : 0;
                     return learnedRatio >= 0.5 && learnedRatio < 0.8;
                 });
                 break;
             case 'mastered':
                 filtered = filtered.filter(deck => {
-                    const learnedRatio = deck.cards.length > 0 
-                        ? deck.cards.filter(card => card.known).length / deck.cards.length 
+                    const learnedRatio = deck.cards.length > 0
+                        ? deck.cards.filter(card => card.known).length / deck.cards.length
                         : 0;
                     return learnedRatio >= 0.8;
                 });
@@ -54,11 +54,11 @@ const DeckList = ({ onSelectDeck, onStudyDeck }) => {
                 break;
             case 'progress':
                 filtered.sort((a, b) => {
-                    const aProgress = a.cards.length > 0 
-                        ? a.cards.filter(card => card.known).length / a.cards.length 
+                    const aProgress = a.cards.length > 0
+                        ? a.cards.filter(card => card.known).length / a.cards.length
                         : 0;
-                    const bProgress = b.cards.length > 0 
-                        ? b.cards.filter(card => card.known).length / b.cards.length 
+                    const bProgress = b.cards.length > 0
+                        ? b.cards.filter(card => card.known).length / b.cards.length
                         : 0;
                     return bProgress - aProgress;
                 });
@@ -97,7 +97,7 @@ const DeckList = ({ onSelectDeck, onStudyDeck }) => {
     if (filteredAndSortedDecks.length === 0) {
         return (
             <div className="deck-list">
-                <SearchFilter 
+                <SearchFilter
                     onSearch={handleSearch}
                     onFilter={handleFilter}
                     totalDecks={filteredAndSortedDecks.length}
@@ -107,7 +107,7 @@ const DeckList = ({ onSelectDeck, onStudyDeck }) => {
                         <div className="no-results-icon">🔍</div>
                         <h3>No decks match your search</h3>
                         <p>Try adjusting your search terms or filters</p>
-                        <button 
+                        <button
                             className="btn btn-outline"
                             onClick={() => {
                                 setSearchTerm('');
@@ -140,12 +140,12 @@ const DeckList = ({ onSelectDeck, onStudyDeck }) => {
 
     return (
         <div className="deck-list">
-            <SearchFilter 
+            <SearchFilter
                 onSearch={handleSearch}
                 onFilter={handleFilter}
                 totalDecks={filteredAndSortedDecks.length}
             />
-            
+
             <div className="deck-list-header">
                 <div className="deck-stats-summary">
                     <div className="stat-card">
@@ -168,7 +168,7 @@ const DeckList = ({ onSelectDeck, onStudyDeck }) => {
                         <span className="stat-icon">✅</span>
                         <div className="stat-info">
                             <span className="stat-number">
-                                {decks.reduce((total, deck) => 
+                                {decks.reduce((total, deck) =>
                                     total + deck.cards.filter(card => card.known).length, 0
                                 )}
                             </span>
@@ -184,23 +184,23 @@ const DeckList = ({ onSelectDeck, onStudyDeck }) => {
                     </div>
                 </div>
             </div>
-            
+
             <div className="decks-grid">
                 {filteredAndSortedDecks.map(deck => (
                     <div key={deck.id} className="deck-card">
                         <div className="deck-card-header">
-                            <div className="deck-difficulty-badge" 
-                                 style={{ backgroundColor: getDifficultyColor(deck.cards) }}>
+                            <div className="deck-difficulty-badge"
+                                style={{ backgroundColor: getDifficultyColor(deck.cards) }}>
                                 {getDifficultyLabel(deck.cards)}
                             </div>
                             <div className="deck-menu">⋮</div>
                         </div>
-                        
+
                         <div className="deck-card-content">
                             <div className="deck-icon">🎯</div>
                             <h3>{deck.title}</h3>
                             <p className="deck-description">{deck.description}</p>
-                            
+
                             <div className="deck-metrics">
                                 <div className="metric">
                                     <span className="metric-icon">🗃️</span>
@@ -213,7 +213,7 @@ const DeckList = ({ onSelectDeck, onStudyDeck }) => {
                                     </span>
                                 </div>
                             </div>
-                            
+
                             <div className="deck-progress">
                                 <div className="progress-header">
                                     <span className="progress-label">Progress</span>
@@ -240,7 +240,7 @@ const DeckList = ({ onSelectDeck, onStudyDeck }) => {
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div className="deck-card-actions">
                             <button
                                 className="btn btn-primary deck-action-btn"

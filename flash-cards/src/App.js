@@ -39,7 +39,7 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
   const deckStats = React.useMemo(() => {
     const totalDecks = decks.length;
     const totalCards = decks.reduce((sum, deck) => sum + deck.cards.length, 0);
-    const learnedCards = decks.reduce((sum, deck) => 
+    const learnedCards = decks.reduce((sum, deck) =>
       sum + deck.cards.filter(card => card.known).length, 0
     );
     const pendingCards = totalCards - learnedCards;
@@ -80,7 +80,7 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
           <div className="main-content">
             <div className="content-header">
               <div className="header-with-menu">
-                <button 
+                <button
                   className="menu-toggle"
                   onClick={() => setSidebarOpen(true)}
                 >
@@ -96,13 +96,13 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
                 Create New Deck
               </button>
             </div>
-            
-            <QuickActions 
+
+            <QuickActions
               onCreateDeck={() => setView('create-deck')}
               onImportDeck={() => console.log('Import deck')}
               deckStats={deckStats}
             />
-            
+
             <DeckList
               onSelectDeck={(deckId) => {
                 setSelectedDeckId(deckId);
@@ -256,13 +256,13 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
         onNavigate={setView}
         deckStats={deckStats}
       />
-      
+
       <Header
         currentView={view}
         onNavigate={setView}
         title={getViewTitle()}
       />
-      
+
       <main className="app-main">
         {renderCurrentView()}
       </main>
