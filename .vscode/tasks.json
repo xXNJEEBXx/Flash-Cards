@@ -41,6 +41,13 @@
 			"type": "shell",
 			"command": "git add -A; git commit -m 'fix(smart-mode): ensure review mode activates at 5 unmastered cards and resets index properly'; git push origin main",
 			"group": "build"
+		},
+		{
+			"label": "git-commit-smart-fix",
+			"type": "shell",
+			"command": "git add -A; git commit -m 'fix(smart-mode): cap unmastered at 6 and loop review set'; git push origin main",
+			"problemMatcher": [],
+			"group": "build"
 		}
 	]
 }

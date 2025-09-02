@@ -186,8 +186,13 @@ const StudyMode = ({ deckId, onBack }) => {
             setUnmastered(prev => {
                 if (prev.includes(card.id)) return prev; // تجنب التكرار
 
+                // إذا كان النظام الذكي مفعّل ووصلنا للحد أو في وضع المراجعة، لا نضيف بطاقات جديدة
+                if (smartModeEnabled && (reviewMode || prev.length >= UNMASTERED_LIMIT)) {
+                    return prev;
+                }
+
                 const newList = [...prev, card.id];
-                if (smartModeEnabled && newList.length >= UNMASTERED_LIMIT - 1) {
+                if (smartModeEnabled && newList.length >= UNMASTERED_LIMIT) {
                     setReviewMode(true);
                 }
                 return newList;
@@ -240,22 +245,25 @@ const StudyMode = ({ deckId, onBack }) => {
         try {
             // سجّل في الخلفية
             cardsAPI.markCardAsSeen(currentDeck.id, currentCard.id)?.catch(() => { });
-            
-            const isAlreadyUnmastered = unmastered.includes(currentCard.id);
-            const newUnmasteredLength = isAlreadyUnmastered ? unmastered.length : unmastered.length + 1;
-            
-            addToUnmastered(currentCard);
 
-            // انتقال فوري
-            if (smartModeEnabled && newUnmasteredLength >= UNMASTERED_LIMIT) {
-                setCurrentCardIndex(0);
-            } else if (smartModeEnabled && reviewMode) {
-                if (currentCardIndex < totalCards - 1) {
-                    setCurrentCardIndex(prev => prev + 1);
+            if (smartModeEnabled) {
+                if (reviewMode || unmastered.length >= UNMASTERED_LIMIT) {
+                    // في وضع المراجعة: لف داخل المجموعة الحالية فقط
+                    setCurrentCardIndex(prev => (totalCards > 0 ? (prev + 1) % totalCards : 0));
+                } else if (unmastered.length >= UNMASTERED_LIMIT - 1) {
+                    // هذه هي البطاقة السادسة، أضفها وادخل وضع المراجعة
+                    addToUnmastered(currentCard);
+                    // سيقوم effect بإعادة ضبط الفهرس عند التحول لوضع المراجعة
                 } else {
-                    setCurrentCardIndex(0);
+                    // أضف البطاقة واستمر بشكل طبيعي
+                    addToUnmastered(currentCard);
+                    if (currentCardIndex < totalCards - 1) {
+                        setCurrentCardIndex(prev => prev + 1);
+                    }
                 }
             } else {
+                // النظام الذكي غير مفعّل: سلوك عادي
+                addToUnmastered(currentCard);
                 if (currentCardIndex < totalCards - 1) {
                     setCurrentCardIndex(prev => prev + 1);
                 }
