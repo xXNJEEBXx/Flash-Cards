@@ -97,6 +97,13 @@
 			"command": "git add -A; git commit -m 'fix(study): preserve index when cards list recalculates (stop jumping to start)'; git push origin main",
 			"problemMatcher": [],
 			"group": "build"
+		},
+		{
+			"label": "git-push-optimistic-known",
+			"type": "shell",
+			"command": "git add -A; git commit -m 'perf(ui): optimistic toggle for known status to remove 5s lag'; git push origin main",
+			"problemMatcher": [],
+			"group": "build"
 		}
 	]
 }

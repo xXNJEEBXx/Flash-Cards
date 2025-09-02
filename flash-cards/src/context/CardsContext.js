@@ -132,16 +132,40 @@ export const CardsProvider = ({ children }) => {
         setDecks(prevDecks => prevDecks.map(deck => deck.id === deckId ? { ...deck, cards: deck.cards.filter(card => card.id !== cardId) } : deck));
     };
 
-    // Toggle a card's known status
-    const toggleCardKnown = async (deckId, cardId) => {
-        try {
-            const saved = await api.toggleKnown(deckId, cardId);
-            if (saved && saved.id) {
-                setDecks(prev => prev.map(deck => deck.id === deckId ? { ...deck, cards: deck.cards.map(c => c.id === saved.id ? { ...c, known: !!saved.known } : c) } : deck));
-                return;
-            }
-        } catch (_e) { /* fallback */ }
-        setDecks(prevDecks => prevDecks.map(deck => deck.id === deckId ? { ...deck, cards: deck.cards.map(card => card.id === cardId ? { ...card, known: !card.known } : card) } : deck));
+    // Toggle a card's known status (optimistic update)
+    const toggleCardKnown = (deckId, cardId) => {
+        // Determine previous known state from current snapshot
+        const deckSnapshot = decks.find(d => d.id === deckId);
+        const cardSnapshot = deckSnapshot?.cards?.find(c => c.id === cardId);
+        const prevKnown = !!cardSnapshot?.known;
+
+        // Optimistic UI update
+        setDecks(prev => prev.map(deck =>
+            deck.id === deckId
+                ? { ...deck, cards: deck.cards.map(c => c.id === cardId ? { ...c, known: !prevKnown } : c) }
+                : deck
+        ));
+
+        // Background sync
+        api.toggleKnown(deckId, cardId)
+            .then(saved => {
+                if (saved && saved.id !== undefined && saved.known !== undefined) {
+                    // Align with server truth in case it differs
+                    setDecks(prev => prev.map(deck =>
+                        deck.id === deckId
+                            ? { ...deck, cards: deck.cards.map(c => c.id === saved.id ? { ...c, known: !!saved.known } : c) }
+                            : deck
+                    ));
+                }
+            })
+            .catch(() => {
+                // Revert on failure
+                setDecks(prev => prev.map(deck =>
+                    deck.id === deckId
+                        ? { ...deck, cards: deck.cards.map(c => c.id === cardId ? { ...c, known: prevKnown } : c) }
+                        : deck
+                ));
+            });
     };
 
     // Reset progress for all cards in a deck
