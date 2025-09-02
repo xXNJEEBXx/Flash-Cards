@@ -104,6 +104,13 @@
 			"command": "git add -A; git commit -m 'perf(ui): optimistic toggle for known status to remove 5s lag'; git push origin main",
 			"problemMatcher": [],
 			"group": "build"
+		},
+		{
+			"label": "git-sync-remote",
+			"type": "shell",
+			"command": "git add -A; git commit -m 'chore: sync repo'; git push origin main",
+			"problemMatcher": [],
+			"group": "build"
 		}
 	]
 }
