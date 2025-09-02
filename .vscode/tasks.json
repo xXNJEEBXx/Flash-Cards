@@ -48,6 +48,20 @@
 			"command": "git add -A; git commit -m 'fix(smart-mode): cap unmastered at 6 and loop review set'; git push origin main",
 			"problemMatcher": [],
 			"group": "build"
+		},
+		{
+			"label": "git-commit-smart-filter",
+			"type": "shell",
+			"command": "git add -A; git commit -m \"fix(smart-mode): switch to unmastered view immediately when limit reached\"; git push origin main",
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "git-commit-switch-now",
+			"type": "shell",
+			"command": "git add -A; git commit -m 'fix(smart-mode): immediate switch to review set when next add reaches limit'; git push origin main",
+			"problemMatcher": [],
+			"group": "build"
 		}
 	]
 }

@@ -128,12 +128,10 @@ const StudyMode = ({ deckId, onBack }) => {
         if (currentDeck) {
             let cardsToDisplay = [];
 
-            if (smartModeEnabled && reviewMode) {
-                // في النظام الذكي ووضع المراجعة، اعرض البطاقات غير المتقنة فقط
-                // تحويل IDs إلى objects
-                cardsToDisplay = currentDeck.cards.filter(card =>
-                    unmastered.includes(card.id)
-                );
+            const reachedLimit = smartModeEnabled && unmastered.length >= UNMASTERED_LIMIT;
+            if (smartModeEnabled && (reviewMode || reachedLimit)) {
+                // في النظام الذكي ووضع المراجعة أو عند بلوغ الحد، اعرض غير المتقنة فقط
+                cardsToDisplay = currentDeck.cards.filter(card => unmastered.includes(card.id));
             } else {
                 // ابدأ بجميع البطاقات
                 cardsToDisplay = [...currentDeck.cards];
@@ -150,7 +148,7 @@ const StudyMode = ({ deckId, onBack }) => {
             }
 
             setCards(cardsToDisplay);
-            // Reset to the first card
+            // Reset to the first card عند تغير المجموعة المعروضة
             setCurrentCardIndex(0);
         }
     }, [shuffleMode, currentDeck, smartModeEnabled, reviewMode, unmastered, hideMasteredCards]);
@@ -250,15 +248,24 @@ const StudyMode = ({ deckId, onBack }) => {
                 if (reviewMode || unmastered.length >= UNMASTERED_LIMIT) {
                     // في وضع المراجعة: لف داخل المجموعة الحالية فقط
                     setCurrentCardIndex(prev => (totalCards > 0 ? (prev + 1) % totalCards : 0));
-                } else if (unmastered.length >= UNMASTERED_LIMIT - 1) {
-                    // هذه هي البطاقة السادسة، أضفها وادخل وضع المراجعة
-                    addToUnmastered(currentCard);
-                    // سيقوم effect بإعادة ضبط الفهرس عند التحول لوضع المراجعة
                 } else {
-                    // أضف البطاقة واستمر بشكل طبيعي
-                    addToUnmastered(currentCard);
-                    if (currentCardIndex < totalCards - 1) {
-                        setCurrentCardIndex(prev => prev + 1);
+                    const willAdd = !unmastered.includes(currentCard.id);
+                    const nextLen = unmastered.length + (willAdd ? 1 : 0);
+
+                    if (nextLen >= UNMASTERED_LIMIT) {
+                        // سنصل للحد بهذه البطاقة: أدخل وضع المراجعة فوراً وحدث العرض فوراً
+                        addToUnmastered(currentCard);
+                        const nextSet = willAdd ? [...unmastered, currentCard.id] : [...unmastered];
+                        const reviewCards = currentDeck.cards.filter(c => nextSet.includes(c.id));
+                        setCards(reviewCards);
+                        setReviewMode(true);
+                        setCurrentCardIndex(0);
+                    } else {
+                        // أضف البطاقة واستمر بشكل طبيعي
+                        addToUnmastered(currentCard);
+                        if (currentCardIndex < totalCards - 1) {
+                            setCurrentCardIndex(prev => prev + 1);
+                        }
                     }
                 }
             } else {
