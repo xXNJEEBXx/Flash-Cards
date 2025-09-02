@@ -130,8 +130,12 @@ const StudyMode = ({ deckId, onBack }) => {
 
             const reachedLimit = smartModeEnabled && unmastered.length >= UNMASTERED_LIMIT;
             if (smartModeEnabled && (reviewMode || reachedLimit)) {
-                // في النظام الذكي ووضع المراجعة أو عند بلوغ الحد، اعرض غير المتقنة فقط
-                cardsToDisplay = currentDeck.cards.filter(card => unmastered.includes(card.id));
+                // في النظام الذكي ووضع المراجعة أو عند بلوغ الحد، اعرض آخر 6 بطاقات غير متقنة فقط وبنفس ترتيب الإدراج
+                const activeUnmastered = unmastered.slice(-UNMASTERED_LIMIT);
+                const idToOrder = new Map(activeUnmastered.map((id, idx) => [id, idx]));
+                cardsToDisplay = currentDeck.cards
+                    .filter(card => idToOrder.has(card.id))
+                    .sort((a, b) => idToOrder.get(a.id) - idToOrder.get(b.id));
             } else {
                 // ابدأ بجميع البطاقات
                 cardsToDisplay = [...currentDeck.cards];
@@ -169,9 +173,13 @@ const StudyMode = ({ deckId, onBack }) => {
         );
     }
 
-    const currentCard = cards[currentCardIndex];
     const totalCards = cards.length;
-    const knownCards = currentDeck.cards.filter(card => card.known).length;
+    const safeIndex = totalCards > 0 ? Math.min(currentCardIndex, totalCards - 1) : 0;
+    const currentCard = totalCards > 0 ? cards[safeIndex] : null;
+    const deckTotal = currentDeck.cards.length;
+    const deckKnown = currentDeck.cards.filter(card => card.known).length;
+    const deckRemaining = Math.max(deckTotal - deckKnown, 0);
+    const progressPercent = deckTotal > 0 ? (deckKnown / deckTotal) * 100 : 0;
 
     const handlePrevCard = () => {
         setCurrentCardIndex(prev => (prev > 0 ? prev - 1 : prev));
@@ -256,7 +264,11 @@ const StudyMode = ({ deckId, onBack }) => {
                         // سنصل للحد بهذه البطاقة: أدخل وضع المراجعة فوراً وحدث العرض فوراً
                         addToUnmastered(currentCard);
                         const nextSet = willAdd ? [...unmastered, currentCard.id] : [...unmastered];
-                        const reviewCards = currentDeck.cards.filter(c => nextSet.includes(c.id));
+                        const activeUnmastered = nextSet.slice(-UNMASTERED_LIMIT);
+                        const idToOrder = new Map(activeUnmastered.map((id, idx) => [id, idx]));
+                        const reviewCards = currentDeck.cards
+                            .filter(c => idToOrder.has(c.id))
+                            .sort((a, b) => idToOrder.get(a.id) - idToOrder.get(b.id));
                         setCards(reviewCards);
                         setReviewMode(true);
                         setCurrentCardIndex(0);
@@ -386,36 +398,46 @@ const StudyMode = ({ deckId, onBack }) => {
             <div className="study-header">
                 <h2>Studying: {currentDeck.title}</h2>
 
-                {/* عداد البطاقات غير المتقنة */}
-                <div className="unmastered-counter">
-                    <span className="counter">
-                        البطاقات غير المتقنة: {unmastered.length}
-                    </span>
-                </div>
+                {/* إخفاء عداد النظام الذكي بناءً على الطلب */}
 
                 <div className="study-progress">
                     <span className="progress-text">
-                        Card {currentCardIndex + 1} of {cards.length}
+                        Card {totalCards > 0 ? safeIndex + 1 : 0} of {totalCards}
                     </span>
                     <div className="progress-bar-container">
                         <div
                             className="progress-bar"
-                            style={{ width: `${(knownCards / totalCards) * 100}%` }}
+                            style={{ width: `${progressPercent}%` }}
                         ></div>
                     </div>
                     <span className="progress-text">
-                        {knownCards} of {totalCards} learned
+                        تم إتقان {deckKnown} من أصل {deckTotal} • المتبقي {deckRemaining}
                     </span>
                 </div>
             </div>
 
-            <div className="card-container">
-                <Card
-                    card={currentCard}
-                    onToggleKnown={handleToggleKnown}
-                    inStudyMode={true}
-                />
-            </div>
+            {totalCards === 0 ? (
+                <div className="empty-deck">
+                    <h3>No cards to display</h3>
+                    <p>
+                        {smartModeEnabled ? (
+                            'Review set is empty. Mark some cards as not understood to build a set.'
+                        ) : hideMasteredCards ? (
+                            'All visible cards are mastered. Disable hide mastered or reset progress.'
+                        ) : (
+                            'Try adding cards to this deck.'
+                        )}
+                    </p>
+                </div>
+            ) : (
+                <div className="card-container">
+                    <Card
+                        card={currentCard}
+                        onToggleKnown={handleToggleKnown}
+                        inStudyMode={true}
+                    />
+                </div>
+            )}
 
             <div className="study-controls">
                 <button

@@ -62,6 +62,34 @@
 			"command": "git add -A; git commit -m 'fix(smart-mode): immediate switch to review set when next add reaches limit'; git push origin main",
 			"problemMatcher": [],
 			"group": "build"
+		},
+		{
+			"label": "git-commit-cap-order",
+			"type": "shell",
+			"command": "git add -A; git commit -m \"fix(smart-mode): cap to last 6 unmastered and keep stable order in review view & immediate switch\"; git push origin main",
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "git-commit-guard",
+			"type": "shell",
+			"command": "git add -A; git commit -m \"fix(ui): guard against empty cards in StudyMode and safe progress calc\"; git push origin main",
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "git-commit-counters",
+			"type": "shell",
+			"command": "git add -A; git commit -m \"feat(study): show learned/total and remaining; hide smart counter\"; git push origin main",
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "git-commit-counters-single-quoted",
+			"type": "shell",
+			"command": "git add -A; git commit -m 'feat(study): show learned/total and remaining; hide smart counter'; git push origin main",
+			"problemMatcher": [],
+			"group": "build"
 		}
 	]
 }
