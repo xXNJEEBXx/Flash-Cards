@@ -151,9 +151,14 @@ const StudyMode = ({ deckId, onBack }) => {
                 }
             }
 
+            // حدّث قائمة العرض مع الحفاظ على الفهرس الحالي قدر الإمكان
             setCards(cardsToDisplay);
-            // Reset to the first card عند تغير المجموعة المعروضة
-            setCurrentCardIndex(0);
+            setCurrentCardIndex(prev => {
+                if (!Array.isArray(cardsToDisplay) || cardsToDisplay.length === 0) return 0;
+                // لا تُعد ضبط الفهرس إلى 0 تلقائياً؛ ثبّت ضمن الحدود فقط
+                const maxIndex = cardsToDisplay.length - 1;
+                return Math.min(prev, maxIndex);
+            });
         }
     }, [shuffleMode, currentDeck, smartModeEnabled, reviewMode, unmastered, hideMasteredCards]);
 

@@ -90,6 +90,13 @@
 			"command": "git add -A; git commit -m 'feat(study): show learned/total and remaining; hide smart counter'; git push origin main",
 			"problemMatcher": [],
 			"group": "build"
+		},
+		{
+			"label": "git-push-study-index-fix",
+			"type": "shell",
+			"command": "git add -A; git commit -m 'fix(study): preserve index when cards list recalculates (stop jumping to start)'; git push origin main",
+			"problemMatcher": [],
+			"group": "build"
 		}
 	]
 }
