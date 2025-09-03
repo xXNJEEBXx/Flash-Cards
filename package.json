@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "install": "npm --prefix flash-cards install",
+    "install-deps": "npm --prefix flash-cards install",
     "build": "npm --prefix flash-cards run build",
     "install:frontend": "npm --prefix flash-cards install",
     "build:frontend": "npm --prefix flash-cards run build",
