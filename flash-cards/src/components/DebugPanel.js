@@ -31,7 +31,7 @@ const DebugPanel = () => {
     const testToggleKnown = async () => {
         try {
             addLog('Testing Supabase toggle known...');
-            
+
             // Get first deck and card
             const decks = await deckService.getAll();
             if (decks.length === 0 || !decks[0].cards || decks[0].cards.length === 0) {
@@ -42,14 +42,14 @@ const DebugPanel = () => {
             const deck = decks[0];
             const card = deck.cards[0];
             const originalState = card.known;
-            
+
             addLog(`Card ${card.id}: ${originalState ? 'Known' : 'Unknown'}`);
-            
+
             // Toggle the card
             const result = await cardService.toggleKnown(card.id);
             if (result && result.id) {
                 addLog(`Toggled to: ${result.known ? 'Known' : 'Unknown'}`, 'success');
-                
+
                 // Verify the change persisted
                 setTimeout(async () => {
                     const updatedDecks = await deckService.getAll();
@@ -101,25 +101,25 @@ const DebugPanel = () => {
             fontSize: '12px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
         }}>
-            <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
                 alignItems: 'center',
                 marginBottom: '10px',
                 borderBottom: '1px solid #eee',
                 paddingBottom: '5px'
             }}>
                 <h4 style={{ margin: 0, color: '#007bff' }}>🔧 Debug Panel (Supabase)</h4>
-                <span style={{ 
+                <span style={{
                     color: apiStatus === 'online' ? '#28a745' : '#dc3545',
                     fontWeight: 'bold'
                 }}>
                     {apiStatus === 'online' ? '🟢 Connected' : '🔴 Disconnected'}
                 </span>
             </div>
-            
+
             <div style={{ marginBottom: '10px' }}>
-                <button 
+                <button
                     onClick={testToggleKnown}
                     style={{
                         padding: '5px 10px',
@@ -134,7 +134,7 @@ const DebugPanel = () => {
                 >
                     Test Toggle
                 </button>
-                <button 
+                <button
                     onClick={checkApiStatus}
                     style={{
                         padding: '5px 10px',
@@ -149,7 +149,7 @@ const DebugPanel = () => {
                 >
                     Check Supabase
                 </button>
-                <button 
+                <button
                     onClick={clearLocalStorage}
                     style={{
                         padding: '5px 10px',
@@ -164,7 +164,7 @@ const DebugPanel = () => {
                 >
                     Clear Storage
                 </button>
-                <button 
+                <button
                     onClick={clearLogs}
                     style={{
                         padding: '5px 10px',
@@ -180,7 +180,7 @@ const DebugPanel = () => {
                     Clear Log
                 </button>
             </div>
-            
+
             <div style={{
                 height: '200px',
                 overflowY: 'auto',
@@ -196,13 +196,13 @@ const DebugPanel = () => {
                     </div>
                 ) : (
                     logs.map((log, index) => (
-                        <div 
+                        <div
                             key={index}
                             style={{
                                 marginBottom: '2px',
-                                color: log.type === 'error' ? '#dc3545' : 
-                                      log.type === 'success' ? '#28a745' : 
-                                      log.type === 'warning' ? '#ffc107' : '#495057'
+                                color: log.type === 'error' ? '#dc3545' :
+                                    log.type === 'success' ? '#28a745' :
+                                        log.type === 'warning' ? '#ffc107' : '#495057'
                             }}
                         >
                             [{log.timestamp}] {log.message}

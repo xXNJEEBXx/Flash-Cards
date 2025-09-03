@@ -267,7 +267,7 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
       <main className="app-main">
         {renderCurrentView()}
       </main>
-      
+
       <DebugPanel />
     </div>
   );

@@ -36,6 +36,7 @@ REACT_APP_SUPABASE_ANON_KEY=your-anon-key-here
 ```
 
 **مثال:**
+
 ```env
 REACT_APP_SUPABASE_URL=https://abcdefghijklmnop.supabase.co
 REACT_APP_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFiY2RlZmdoaWprbG1ub3AiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY5MDAwMDAwMCwiZXhwIjoyMDA1NTc2MDAwfQ.example-signature
@@ -44,6 +45,7 @@ REACT_APP_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXB
 ## الخطوة 5: تشغيل التطبيق
 
 1. أعد تشغيل خادم React:
+
 ```bash
 npm start
 ```
@@ -62,15 +64,18 @@ npm start
 ## استكشاف الأخطاء
 
 ### خطأ في الاتصال
+
 - تأكد من صحة الـ URL والـ API key
 - تحقق من أن المشروع نشط في Supabase
 - تأكد من إعادة تشغيل التطبيق بعد تحديث .env
 
 ### لا توجد بطاقات
+
 - تأكد من تشغيل سكريبت SQL بنجاح
 - تحقق من وجود البيانات في جدول `decks` و `cards` في Supabase
 
 ### أخطاء الأذونات
+
 - تأكد من إعداد Row Level Security policies بشكل صحيح
 - راجع قسم "Authentication" في Supabase إذا كنت تريد أذونات أكثر تعقيداً
 

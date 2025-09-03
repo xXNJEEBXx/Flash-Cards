@@ -1,12 +1,28 @@
 {
-  "buildCommand": "cd flash-cards && npm run build",
-  "outputDirectory": "flash-cards/build",
-  "installCommand": "cd flash-cards && npm install",
-  "framework": "create-react-app",
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.php",
+      "use": "@vercel/php"
+    },
+    {
+      "src": "flash-cards/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "installCommand": "cd flash-cards && npm install",
+        "buildCommand": "cd flash-cards && npm run build",
+        "outputDirectory": "flash-cards/build"
+      }
+    }
+  ],
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "/api/index.php"
+    },
+    {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": "/flash-cards/build/index.html"
     }
   ]
 }

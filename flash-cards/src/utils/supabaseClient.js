@@ -6,17 +6,17 @@ const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'YOUR_SUPABASE_AN
 
 // التحقق من صحة إعدادات Supabase
 const isValidSupabaseConfig = () => {
-    return supabaseUrl && 
-           supabaseKey && 
-           supabaseUrl !== 'YOUR_SUPABASE_URL' && 
-           supabaseUrl !== 'your_supabase_project_url' &&
-           supabaseKey !== 'YOUR_SUPABASE_ANON_KEY' && 
-           supabaseKey !== 'your_supabase_anon_key' &&
-           supabaseUrl.startsWith('http')
+    return supabaseUrl &&
+        supabaseKey &&
+        supabaseUrl !== 'YOUR_SUPABASE_URL' &&
+        supabaseUrl !== 'your_supabase_project_url' &&
+        supabaseKey !== 'YOUR_SUPABASE_ANON_KEY' &&
+        supabaseKey !== 'your_supabase_anon_key' &&
+        supabaseUrl.startsWith('http')
 }
 
 // إنشاء عميل Supabase أو قيمة وهمية
-export const supabase = isValidSupabaseConfig() 
+export const supabase = isValidSupabaseConfig()
     ? createClient(supabaseUrl, supabaseKey)
     : null
 
@@ -54,7 +54,7 @@ export const deckService = {
                 cards (*)
             `)
             .order('created_at', { ascending: false })
-        
+
         if (error) throw error
         return data
     },
@@ -71,7 +71,7 @@ export const deckService = {
             }])
             .select()
             .single()
-        
+
         if (error) throw error
         return { ...data, cards: [] }
     },
@@ -85,7 +85,7 @@ export const deckService = {
             .eq('id', id)
             .select()
             .single()
-        
+
         if (error) throw error
         return data
     },
@@ -97,7 +97,7 @@ export const deckService = {
             .from('decks')
             .delete()
             .eq('id', id)
-        
+
         if (error) throw error
         return true
     },
@@ -109,9 +109,9 @@ export const deckService = {
             .from('cards')
             .update({ known: false, times_seen: 0, times_known: 0 })
             .eq('deck_id', id)
-        
+
         if (error) throw error
-        
+
         // إعادة جلب المجموعة المحدثة
         return await this.getById(id)
     },
@@ -127,7 +127,7 @@ export const deckService = {
             `)
             .eq('id', id)
             .single()
-        
+
         if (error) throw error
         return data
     }
@@ -151,7 +151,7 @@ export const cardService = {
             }])
             .select()
             .single()
-        
+
         if (error) throw error
         return data
     },
@@ -165,7 +165,7 @@ export const cardService = {
             .eq('id', id)
             .select()
             .single()
-        
+
         if (error) throw error
         return data
     },
@@ -180,7 +180,7 @@ export const cardService = {
             .eq('deck_id', deckId)
             .select()
             .single()
-        
+
         if (error) throw error
         return data
     },
@@ -194,7 +194,7 @@ export const cardService = {
             .select('*')
             .eq('id', cardId)
             .single()
-        
+
         if (fetchError) throw fetchError
 
         // تحديث الحالة والإحصائيات
@@ -217,7 +217,7 @@ export const cardService = {
             .eq('id', cardId)
             .select()
             .single()
-        
+
         if (error) throw error
         return data
     },
@@ -229,7 +229,7 @@ export const cardService = {
             .from('cards')
             .delete()
             .eq('id', id)
-        
+
         if (error) throw error
         return true
     },
@@ -242,7 +242,7 @@ export const cardService = {
             .delete()
             .eq('id', cardId)
             .eq('deck_id', deckId)
-        
+
         if (error) throw error
         return true
     },
@@ -259,7 +259,7 @@ export const cardService = {
             .eq('id', cardId)
             .select()
             .single()
-        
+
         if (error) throw error
         return data
     }

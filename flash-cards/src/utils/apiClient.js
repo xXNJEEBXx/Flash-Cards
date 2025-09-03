@@ -13,14 +13,14 @@ const tryApi = async (fn, fallback) => {
         console.log('No API_URL configured, using fallback');
         return fallback();
     }
-    try { 
+    try {
         console.log('Trying API request to:', API_URL);
-        const result = await fn(); 
+        const result = await fn();
         console.log('API request successful');
         return result;
-    } catch (e) { 
+    } catch (e) {
         console.log('API request failed:', e.message, 'Using fallback');
-        return fallback(); 
+        return fallback();
     }
 };
 

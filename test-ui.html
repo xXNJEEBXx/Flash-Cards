@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +11,7 @@
             padding: 20px;
             direction: rtl;
         }
+
         .card {
             border: 1px solid #ddd;
             padding: 10px;
@@ -17,14 +19,17 @@
             border-radius: 5px;
             background-color: #f9f9f9;
         }
+
         .known {
             background-color: #d4edda;
             border-color: #c3e6cb;
         }
+
         .unknown {
             background-color: #f8d7da;
             border-color: #f5c6cb;
         }
+
         button {
             padding: 5px 10px;
             margin: 5px;
@@ -32,14 +37,17 @@
             border-radius: 3px;
             cursor: pointer;
         }
+
         .toggle-btn {
             background-color: #007bff;
             color: white;
         }
+
         .refresh-btn {
             background-color: #28a745;
             color: white;
         }
+
         #log {
             background-color: #f8f9fa;
             border: 1px solid #dee2e6;
@@ -52,27 +60,28 @@
         }
     </style>
 </head>
+
 <body>
     <h1>اختبار Flash Cards API</h1>
-    
+
     <button class="refresh-btn" onclick="loadCards()">تحديث البطاقات</button>
-    
+
     <div id="cards-container"></div>
-    
+
     <h2>سجل الأحداث</h2>
     <div id="log"></div>
 
     <script>
         const API_URL = 'http://localhost:8000';
         const logDiv = document.getElementById('log');
-        
+
         function log(message) {
             const timestamp = new Date().toLocaleTimeString();
             logDiv.textContent += `[${timestamp}] ${message}\n`;
             logDiv.scrollTop = logDiv.scrollHeight;
             console.log(message);
         }
-        
+
         async function apiCall(url, options = {}) {
             try {
                 log(`API Call: ${url}`);
@@ -85,7 +94,7 @@
                 throw error;
             }
         }
-        
+
         async function loadCards() {
             try {
                 log('جاري تحميل البطاقات...');
@@ -96,11 +105,11 @@
                 log(`خطأ في تحميل البطاقات: ${error.message}`);
             }
         }
-        
+
         function displayCards(cards) {
             const container = document.getElementById('cards-container');
             container.innerHTML = '';
-            
+
             cards.forEach(card => {
                 const cardDiv = document.createElement('div');
                 cardDiv.className = `card ${card.known ? 'known' : 'unknown'}`;
@@ -116,14 +125,14 @@
                 container.appendChild(cardDiv);
             });
         }
-        
+
         async function toggleKnown(cardId, currentKnown) {
             try {
                 log(`تغيير حالة البطاقة ${cardId} من ${currentKnown ? 'محفوظ' : 'غير محفوظ'}...`);
                 const result = await apiCall(`${API_URL}/api/decks/1/cards/${cardId}/toggle-known`, {
                     method: 'POST'
                 });
-                
+
                 if (result.success) {
                     log(`تم تغيير حالة البطاقة بنجاح إلى: ${result.data.known ? 'محفوظ' : 'غير محفوظ'}`);
                     // إعادة تحميل البطاقات لإظهار التحديث
@@ -135,9 +144,10 @@
                 log(`خطأ في تغيير حالة البطاقة: ${error.message}`);
             }
         }
-        
+
         // تحميل البطاقات عند فتح الصفحة
         loadCards();
     </script>
 </body>
+
 </html>

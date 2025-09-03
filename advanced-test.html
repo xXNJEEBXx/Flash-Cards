@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,17 +12,20 @@
             direction: rtl;
             background-color: #f5f5f5;
         }
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
         }
+
         .section {
             background: white;
             padding: 20px;
             margin: 20px 0;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
+
         .card {
             border: 1px solid #ddd;
             padding: 15px;
@@ -30,19 +34,23 @@
             background-color: #f9f9f9;
             transition: all 0.3s ease;
         }
+
         .card.known {
             background-color: #d4edda;
             border-color: #c3e6cb;
         }
+
         .card.unknown {
             background-color: #f8d7da;
             border-color: #f5c6cb;
         }
+
         .card.loading {
             opacity: 0.6;
             background-color: #fff3cd;
             border-color: #ffeaa7;
         }
+
         button {
             padding: 8px 16px;
             margin: 5px;
@@ -52,28 +60,35 @@
             font-weight: bold;
             transition: all 0.2s ease;
         }
+
         button:hover {
             transform: translateY(-1px);
         }
+
         .toggle-btn {
             background-color: #007bff;
             color: white;
         }
+
         .toggle-btn:hover {
             background-color: #0056b3;
         }
+
         .refresh-btn {
             background-color: #28a745;
             color: white;
         }
+
         .clear-btn {
             background-color: #dc3545;
             color: white;
         }
+
         .test-btn {
             background-color: #17a2b8;
             color: white;
         }
+
         #log {
             background-color: #f8f9fa;
             border: 1px solid #dee2e6;
@@ -86,46 +101,56 @@
             font-size: 12px;
             border-radius: 5px;
         }
+
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
             margin: 20px 0;
         }
+
         .stat-card {
             background: #e9ecef;
             padding: 15px;
             border-radius: 5px;
             text-align: center;
         }
+
         .stat-number {
             font-size: 24px;
             font-weight: bold;
             color: #007bff;
         }
+
         .controls {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
             margin-bottom: 20px;
         }
-        h1, h2, h3 {
+
+        h1,
+        h2,
+        h3 {
             color: #333;
         }
+
         .status-online {
             color: #28a745;
             font-weight: bold;
         }
+
         .status-offline {
             color: #dc3545;
             font-weight: bold;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>🧪 اختبار متقدم لـ Flash Cards API</h1>
-        
+
         <div class="section">
             <h2>حالة الاتصال</h2>
             <p>حالة API: <span id="api-status">جاري التحقق...</span></p>
@@ -181,7 +206,7 @@
         const API_URL = 'http://localhost:8000';
         const logDiv = document.getElementById('log');
         let currentDecks = [];
-        
+
         function log(message, type = 'info') {
             const timestamp = new Date().toLocaleTimeString();
             const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
@@ -189,17 +214,17 @@
             logDiv.scrollTop = logDiv.scrollHeight;
             console.log(message);
         }
-        
+
         function clearLog() {
             logDiv.textContent = '';
             log('تم مسح السجل');
         }
-        
+
         function clearLocalStorage() {
             localStorage.removeItem('flashcards-decks');
             log('تم مسح localStorage', 'warning');
         }
-        
+
         // محاكاة apiClient.js
         const json = (res) => {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -207,12 +232,12 @@
         };
 
         const tryApi = async (fn, fallback) => {
-            try { 
-                const result = await fn(); 
+            try {
+                const result = await fn();
                 return result;
-            } catch (e) { 
+            } catch (e) {
                 log(`API request failed: ${e.message}, using fallback`, 'warning');
-                return fallback(); 
+                return fallback();
             }
         };
 
@@ -235,8 +260,8 @@
             toggleKnown: (deckId, cardId) => tryApi(
                 async () => {
                     log(`تغيير حالة البطاقة ${cardId} في المجموعة ${deckId}...`);
-                    const response = await fetch(`${API_URL}/api/decks/${deckId}/cards/${cardId}/toggle-known`, { 
-                        method: 'POST' 
+                    const response = await fetch(`${API_URL}/api/decks/${deckId}/cards/${cardId}/toggle-known`, {
+                        method: 'POST'
                     });
                     const result = await json(response);
                     log(`تم تغيير حالة البطاقة: ${result.data.known ? 'محفوظ' : 'غير محفوظ'}`, 'success');
@@ -248,61 +273,61 @@
                 }
             ),
         };
-        
+
         async function checkApiStatus() {
             try {
                 const response = await fetch(`${API_URL}/api/health`);
                 const data = await response.json();
-                document.getElementById('api-status').innerHTML = 
+                document.getElementById('api-status').innerHTML =
                     `<span class="status-online">متصل ✅</span> (${data.laravel_version})`;
                 document.getElementById('current-url').textContent = API_URL;
                 log('API متاح ويعمل بشكل صحيح', 'success');
                 return true;
             } catch (error) {
-                document.getElementById('api-status').innerHTML = 
+                document.getElementById('api-status').innerHTML =
                     `<span class="status-offline">غير متصل ❌</span>`;
                 document.getElementById('current-url').textContent = API_URL;
                 log(`API غير متاح: ${error.message}`, 'error');
                 return false;
             }
         }
-        
+
         async function loadCards() {
             try {
                 log('بدء تحميل البطاقات...');
                 currentDecks = await api.listDecks();
                 displayCards();
                 updateStats();
-                
+
                 // حفظ في localStorage
                 if (currentDecks.length > 0) {
                     localStorage.setItem('flashcards-decks', JSON.stringify(currentDecks));
                     log(`تم حفظ ${currentDecks.length} مجموعة في localStorage`, 'success');
                 }
-                
+
             } catch (error) {
                 log(`خطأ في تحميل البطاقات: ${error.message}`, 'error');
             }
         }
-        
+
         function displayCards() {
             const container = document.getElementById('cards-container');
             container.innerHTML = '';
-            
+
             if (currentDecks.length === 0) {
                 container.innerHTML = '<p>لا توجد بطاقات للعرض</p>';
                 return;
             }
-            
+
             let totalCards = 0;
             currentDecks.forEach(deck => {
                 if (deck.cards && deck.cards.length > 0) {
                     totalCards += deck.cards.length;
-                    
+
                     const deckDiv = document.createElement('div');
                     deckDiv.innerHTML = `<h3>📚 ${deck.title} (${deck.cards.length} بطاقة)</h3>`;
                     container.appendChild(deckDiv);
-                    
+
                     deck.cards.slice(0, 10).forEach(card => {  // عرض أول 10 بطاقات فقط
                         const cardDiv = document.createElement('div');
                         cardDiv.className = `card ${card.known ? 'known' : 'unknown'}`;
@@ -323,7 +348,7 @@
                         `;
                         container.appendChild(cardDiv);
                     });
-                    
+
                     if (deck.cards.length > 10) {
                         const moreDiv = document.createElement('div');
                         moreDiv.innerHTML = `<p style="text-align: center; color: #666;">... و ${deck.cards.length - 10} بطاقة أخرى</p>`;
@@ -331,42 +356,42 @@
                     }
                 }
             });
-            
+
             if (totalCards === 0) {
                 container.innerHTML = '<p>لا توجد بطاقات في أي مجموعة</p>';
             }
         }
-        
+
         function updateStats() {
             let totalCards = 0;
             let knownCards = 0;
-            
+
             currentDecks.forEach(deck => {
                 if (deck.cards) {
                     totalCards += deck.cards.length;
                     knownCards += deck.cards.filter(c => c.known).length;
                 }
             });
-            
+
             const unknownCards = totalCards - knownCards;
             const successRate = totalCards > 0 ? Math.round((knownCards / totalCards) * 100) : 0;
-            
+
             document.getElementById('total-cards').textContent = totalCards;
             document.getElementById('known-cards').textContent = knownCards;
             document.getElementById('unknown-cards').textContent = unknownCards;
             document.getElementById('success-rate').textContent = `${successRate}%`;
         }
-        
+
         async function toggleKnown(deckId, cardId, currentKnown) {
             const cardElement = document.getElementById(`card-${cardId}`);
-            
+
             try {
                 // تحديث واجهة المستخدم فوراً (Optimistic Update)
                 cardElement.className = `card loading`;
                 log(`محاولة تغيير حالة البطاقة ${cardId}...`);
-                
+
                 const result = await api.toggleKnown(deckId, cardId);
-                
+
                 if (result && result.data) {
                     // تحديث البيانات المحلية
                     const deck = currentDecks.find(d => d.id === deckId);
@@ -378,60 +403,60 @@
                             card.times_seen = result.data.times_seen;
                         }
                     }
-                    
+
                     // حفظ في localStorage
                     localStorage.setItem('flashcards-decks', JSON.stringify(currentDecks));
-                    
+
                     // إعادة عرض البطاقات
                     displayCards();
                     updateStats();
-                    
+
                     log(`تم تغيير حالة البطاقة بنجاح إلى: ${result.data.known ? 'محفوظ' : 'غير محفوظ'}`, 'success');
-                    
+
                 } else {
                     // في حالة فشل API، العودة للحالة السابقة
                     cardElement.className = `card ${currentKnown ? 'known' : 'unknown'}`;
                     log('فشل في تغيير حالة البطاقة', 'error');
                 }
-                
+
             } catch (error) {
                 // في حالة وجود خطأ، العودة للحالة السابقة
                 cardElement.className = `card ${currentKnown ? 'known' : 'unknown'}`;
                 log(`خطأ في تغيير حالة البطاقة: ${error.message}`, 'error');
             }
         }
-        
+
         async function runFullTest() {
             log('🧪 بدء الاختبار الشامل...', 'info');
-            
+
             // 1. فحص API
             log('1️⃣ فحص حالة API...');
             const apiAvailable = await checkApiStatus();
-            
+
             if (apiAvailable) {
                 // 2. تحميل البطاقات
                 log('2️⃣ تحميل البطاقات...');
                 await loadCards();
-                
+
                 if (currentDecks.length > 0 && currentDecks[0].cards && currentDecks[0].cards.length > 0) {
                     const testCard = currentDecks[0].cards[0];
                     const originalState = testCard.known;
-                    
+
                     // 3. اختبار toggle
                     log(`3️⃣ اختبار تغيير حالة البطاقة ${testCard.id}...`);
                     await toggleKnown(currentDecks[0].id, testCard.id, originalState);
-                    
+
                     // 4. التحقق من الحفظ
                     log('4️⃣ التحقق من حفظ التغييرات...');
                     await loadCards();
-                    
+
                     const updatedCard = currentDecks[0].cards.find(c => c.id === testCard.id);
                     if (updatedCard && updatedCard.known !== originalState) {
                         log('✅ تم حفظ التغييرات بنجاح في قاعدة البيانات!', 'success');
                     } else {
                         log('❌ لم يتم حفظ التغييرات!', 'error');
                     }
-                    
+
                     // 5. اختبار localStorage
                     log('5️⃣ اختبار localStorage...');
                     const localData = localStorage.getItem('flashcards-decks');
@@ -444,15 +469,15 @@
                             log('⚠️ localStorage غير متزامن!', 'warning');
                         }
                     }
-                    
+
                 } else {
                     log('⚠️ لا توجد بطاقات لاختبارها', 'warning');
                 }
             }
-            
+
             log('🏁 انتهى الاختبار الشامل', 'info');
         }
-        
+
         // بدء التطبيق
         document.addEventListener('DOMContentLoaded', async () => {
             log('🚀 بدء تشغيل التطبيق...');
@@ -461,4 +486,5 @@
         });
     </script>
 </body>
+
 </html>

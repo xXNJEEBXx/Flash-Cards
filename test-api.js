@@ -12,14 +12,14 @@ const tryApi = async (fn, fallback) => {
         console.log('No API_URL configured, using fallback');
         return fallback();
     }
-    try { 
+    try {
         console.log('Trying API request to:', API_URL);
-        const result = await fn(); 
+        const result = await fn();
         console.log('API request successful');
         return result;
-    } catch (e) { 
+    } catch (e) {
         console.log('API request failed:', e.message, 'Using fallback');
-        return fallback(); 
+        return fallback();
     }
 };
 
@@ -49,25 +49,25 @@ const api = {
 // اختبار العمليات
 async function testFlashCards() {
     console.log('=== بداية اختبار Flash Cards ===');
-    
+
     // 1. جلب البطاقات
     console.log('\n1. جلب البطاقات...');
     const decks = await api.listDecks();
     console.log('البطاقات المحملة:', decks.length, 'مجموعة');
-    
+
     if (decks.length > 0 && decks[0].cards && decks[0].cards.length > 0) {
         const deck = decks[0];
         const firstCard = deck.cards[0];
-        
+
         console.log('\nبيانات البطاقة الأولى:');
         console.log('- ID:', firstCard.id);
         console.log('- السؤال:', firstCard.question);
         console.log('- الحالة الحالية:', firstCard.known ? 'محفوظ' : 'غير محفوظ');
-        
+
         // 2. تغيير حالة البطاقة
         console.log('\n2. تغيير حالة البطاقة...');
         const toggleResult = await api.toggleKnown(deck.id, firstCard.id);
-        
+
         if (toggleResult && toggleResult.data) {
             console.log('تم تغيير الحالة بنجاح:');
             console.log('- الحالة الجديدة:', toggleResult.data.known ? 'محفوظ' : 'غير محفوظ');
@@ -75,17 +75,17 @@ async function testFlashCards() {
         } else {
             console.log('فشل في تغيير الحالة أو تم استخدام fallback');
         }
-        
+
         // 3. التحقق من الحفظ
         console.log('\n3. التحقق من الحالة بعد التغيير...');
         const updatedDecks = await api.listDecks();
         const updatedCard = updatedDecks[0].cards.find(c => c.id === firstCard.id);
-        
+
         if (updatedCard) {
             console.log('حالة البطاقة بعد التحديث:', updatedCard.known ? 'محفوظ' : 'غير محفوظ');
             console.log('تم حفظ التغيير بنجاح في قاعدة البيانات!');
         }
-        
+
         // 4. اختبار localStorage
         console.log('\n4. اختبار localStorage...');
         const localData = localStorage.getItem('flashcards-decks');
@@ -97,7 +97,7 @@ async function testFlashCards() {
             }
         }
     }
-    
+
     console.log('\n=== انتهاء الاختبار ===');
 }
 

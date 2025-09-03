@@ -20,12 +20,12 @@ export const CardsProvider = ({ children }) => {
         (async () => {
             try {
                 console.log('🔄 Loading decks from Laravel API...');
-                
+
                 // Load decks from Laravel API
                 const apiDecks = await api.listDecks();
-                
+
                 if (!mounted) return;
-                
+
                 if (Array.isArray(apiDecks)) {
                     console.log(`✅ API returned ${apiDecks.length} decks`);
                     setDecks(apiDecks);
@@ -45,15 +45,15 @@ export const CardsProvider = ({ children }) => {
                 await loadFromLocalStorageOrCreateDefault();
             }
 
-        async function loadFromLocalStorageOrCreateDefault() {
+            async function loadFromLocalStorageOrCreateDefault() {
                 const storedDecks = localStorage.getItem('flashcards-decks');
                 if (storedDecks) {
                     const parsedDecks = JSON.parse(storedDecks);
                     console.log('📂 Loaded from localStorage:', parsedDecks.length, 'decks');
                     setDecks(parsedDecks);
                 } else {
-            console.log('🗃️ No localStorage decks found; using empty state');
-            setDecks([]);
+                    console.log('🗃️ No localStorage decks found; using empty state');
+                    setDecks([]);
                 }
             }
         })();
@@ -105,7 +105,7 @@ export const CardsProvider = ({ children }) => {
             if (updated && updated.id) {
                 console.log('✅ Deck updated in Laravel API:', updated.id);
                 setDecks(prev => prev.map(d => d.id === updated.id ? { ...d, ...updated } : d));
-                
+
                 // Update localStorage backup
                 const updatedDecks = decks.map(d => d.id === updated.id ? { ...d, ...updated } : d);
                 localStorage.setItem('flashcards-decks', JSON.stringify(updatedDecks));
@@ -114,24 +114,24 @@ export const CardsProvider = ({ children }) => {
         } catch (error) {
             console.log('❌ Error updating deck in Laravel API:', error.message);
         }
-        
+
         // Fallback to local only
         setDecks(prev => prev.map(d => d.id === id ? { ...d, title, description } : d));
     };
 
     // Delete a deck
     const deleteDeck = async (deckId) => {
-        try { 
+        try {
             console.log('🗑️ Deleting deck:', deckId);
-            await api.deleteDeck(deckId); 
+            await api.deleteDeck(deckId);
             console.log('✅ Deck deleted from Laravel API');
-        } catch (error) { 
+        } catch (error) {
             console.log('❌ Error deleting deck from Laravel API:', error.message);
         }
-        
+
         // Update local state regardless of API result
         setDecks(prevDecks => prevDecks.filter(deck => deck.id !== deckId));
-        
+
         // Update localStorage backup
         const updatedDecks = decks.filter(deck => deck.id !== deckId);
         localStorage.setItem('flashcards-decks', JSON.stringify(updatedDecks));
@@ -145,7 +145,7 @@ export const CardsProvider = ({ children }) => {
             if (created && created.id) {
                 console.log('✅ Card created in Laravel API:', created.id);
                 setDecks(prev => prev.map(deck => deck.id === deckId ? { ...deck, cards: [...deck.cards, created] } : deck));
-                
+
                 const updatedDecks = decks.map(deck => deck.id === deckId ? { ...deck, cards: [...deck.cards, created] } : deck);
                 localStorage.setItem('flashcards-decks', JSON.stringify(updatedDecks));
                 return;
@@ -153,7 +153,7 @@ export const CardsProvider = ({ children }) => {
         } catch (error) {
             console.log('❌ Error creating card in Laravel API:', error.message);
         }
-        
+
         // Fallback to local
         const newCard = {
             id: generateId(),
@@ -186,7 +186,7 @@ export const CardsProvider = ({ children }) => {
     // Toggle a card's known status (optimistic update with API sync)
     const toggleCardKnown = async (deckId, cardId) => {
         console.log(`🔄 Toggling card ${cardId} in deck ${deckId}`);
-        
+
         // Determine previous known state from current snapshot
         const deckSnapshot = decks.find(d => d.id === deckId);
         const cardSnapshot = deckSnapshot?.cards?.find(c => c.id === cardId);
@@ -207,42 +207,46 @@ export const CardsProvider = ({ children }) => {
             // Sync with Laravel API
             console.log('📡 Syncing with Laravel API...');
             const updated = await api.toggleKnown(deckId, cardId);
-            
+
             if (updated && updated.id !== undefined) {
                 console.log('✅ API sync successful:', updated);
-                
+
                 // Update with server truth
                 setDecks(prev => prev.map(deck =>
                     deck.id === deckId
-                        ? { ...deck, cards: deck.cards.map(c => 
-                            c.id === updated.id ? { ...c, ...updated } : c
-                        )}
+                        ? {
+                            ...deck, cards: deck.cards.map(c =>
+                                c.id === updated.id ? { ...c, ...updated } : c
+                            )
+                        }
                         : deck
                 ));
-                
+
                 // Update localStorage backup
                 const updatedDecks = decks.map(deck =>
                     deck.id === deckId
-                        ? { ...deck, cards: deck.cards.map(c => 
-                            c.id === updated.id ? { ...c, ...updated } : c
-                        )}
+                        ? {
+                            ...deck, cards: deck.cards.map(c =>
+                                c.id === updated.id ? { ...c, ...updated } : c
+                            )
+                        }
                         : deck
                 );
                 localStorage.setItem('flashcards-decks', JSON.stringify(updatedDecks));
-                
+
                 console.log('💾 Updated localStorage backup');
                 console.log(`Synced with API: ${!!updated.known}`);
             }
         } catch (error) {
             console.log('❌ API sync failed:', error.message);
-            
+
             // Revert optimistic update on failure
             setDecks(prev => prev.map(deck =>
                 deck.id === deckId
                     ? { ...deck, cards: deck.cards.map(c => c.id === cardId ? { ...c, known: prevKnown } : c) }
                     : deck
             ));
-            
+
             console.log('🔄 Reverted to previous state due to sync failure');
         }
     };
