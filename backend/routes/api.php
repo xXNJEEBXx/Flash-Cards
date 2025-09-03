@@ -8,20 +8,41 @@ use App\Http\Controllers\UserSettingsController;
 
 // Health check for Railway
 Route::get('/health', function () {
-    try {
-        // Test database connection
-        DB::connection()->getPdo();
-        $dbStatus = 'connected';
-    } catch (\Exception $e) {
-        $dbStatus = 'error: ' . $e->getMessage();
-    }
-
-    return response()->json([
+    $diag = [
         'status' => 'ok',
         'timestamp' => now(),
-        'database' => $dbStatus,
-        'laravel_version' => app()->version()
-    ]);
+        'laravel_version' => app()->version(),
+        'database' => [
+            'status' => 'unknown',
+            'driver' => config('database.default'),
+            'error' => null,
+            'tables' => [],
+            'counts' => [],
+        ],
+    ];
+
+    try {
+        DB::connection()->getPdo();
+        $diag['database']['status'] = 'connected';
+        // Inspect key tables
+        foreach (['decks', 'cards', 'migrations'] as $table) {
+            try {
+                if (DB::getSchemaBuilder()->hasTable($table)) {
+                    $diag['database']['tables'][] = $table;
+                    $diag['database']['counts'][$table] = DB::table($table)->count();
+                } else {
+                    $diag['database']['counts'][$table] = 'missing';
+                }
+            } catch (\Throwable $t) {
+                $diag['database']['counts'][$table] = 'error: ' . $t->getMessage();
+            }
+        }
+    } catch (\Throwable $e) {
+        $diag['database']['status'] = 'error';
+        $diag['database']['error'] = $e->getMessage();
+    }
+
+    return response()->json($diag);
 });
 
 Route::get('/decks', [DeckController::class, 'index']);

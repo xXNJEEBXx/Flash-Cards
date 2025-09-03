@@ -4,10 +4,25 @@ namespace App\Http\Controllers;
 use App\Models\Deck;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Log;
 
 class DeckController extends Controller
 {
-    public function index() { return Deck::with('cards')->orderBy('id','asc')->get(); }
+    public function index()
+    {
+        try {
+            return Deck::with('cards')->orderBy('id', 'asc')->get();
+        } catch (\Throwable $e) {
+            Log::error('Failed to fetch decks', [
+                'error' => $e->getMessage(),
+                'code' => $e->getCode(),
+            ]);
+            return response()->json([
+                'message' => 'Server error while fetching decks',
+                'hint' => 'Check /api/health for database status',
+            ], 500);
+        }
+    }
     public function show(Deck $deck) { return $deck->load('cards'); }
     public function store(Request $request) {
         $data = $request->validate(['title' => 'required|string|max:255', 'description' => 'nullable|string']);
