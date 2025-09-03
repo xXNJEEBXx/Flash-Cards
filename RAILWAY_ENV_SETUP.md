@@ -5,7 +5,10 @@
 ### Database Configuration (choose one method):
 
 #### Method 1: Individual Variables (Recommended)
+<<<<<<< HEAD
 
+=======
+>>>>>>> 1caaf0c8807754a66f5f324b80793288d7a7f4ed
 ```
 DB_CONNECTION=pgsql
 DB_HOST=db.mwashfvplyrygvrywtfh.supabase.co
@@ -17,13 +20,19 @@ DB_SSLMODE=require
 ```
 
 #### Method 2: Single URL (Alternative)
+<<<<<<< HEAD
 
+=======
+>>>>>>> 1caaf0c8807754a66f5f324b80793288d7a7f4ed
 ```
 DATABASE_URL=postgres://postgres:jT6OO733mxTFSMLs@db.mwashfvplyrygvrywtfh.supabase.co:6543/postgres?sslmode=require
 ```
 
 ### Laravel Configuration (Required)
+<<<<<<< HEAD
 
+=======
+>>>>>>> 1caaf0c8807754a66f5f324b80793288d7a7f4ed
 ```
 APP_NAME=FlashCards
 APP_ENV=production
@@ -44,21 +53,31 @@ QUEUE_CONNECTION=sync
 1. Go to Railway Dashboard
 2. Click on your Flash Cards service
 3. Go to "Variables" tab
+<<<<<<< HEAD
 4. Click "New Variable"
+=======
+4. Click "New Variable" 
+>>>>>>> 1caaf0c8807754a66f5f324b80793288d7a7f4ed
 5. Add each variable name and value
 6. Click "Deploy" after adding all variables
 
 ## Verification Commands:
 
 After deployment, test:
+<<<<<<< HEAD
 
+=======
+>>>>>>> 1caaf0c8807754a66f5f324b80793288d7a7f4ed
 ```bash
 curl https://flash-cards-production-5df5.up.railway.app/api/health
 curl https://flash-cards-production-5df5.up.railway.app/api/decks
 ```
 
 ## Alternative: Railway CLI
+<<<<<<< HEAD
 
+=======
+>>>>>>> 1caaf0c8807754a66f5f324b80793288d7a7f4ed
 ```bash
 railway login
 railway link

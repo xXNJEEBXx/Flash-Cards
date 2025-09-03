@@ -7,7 +7,12 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "install-deps": "npm --prefix flash-cards install",
+    "build": "npm --prefix flash-cards run build",
+    "install:frontend": "npm --prefix flash-cards install",
+    "build:frontend": "npm --prefix flash-cards run build",
+    "start:frontend": "npm --prefix flash-cards start"
   },
   "repository": {
     "type": "git",
