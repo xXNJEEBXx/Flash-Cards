@@ -1,7 +1,7 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "npm --prefix ./flash-cards run build",
   "outputDirectory": "flash-cards/build",
-  "installCommand": "npm run install-deps",
+  "installCommand": "npm --prefix ./flash-cards install",
   "framework": null,
   "rewrites": [
     {
