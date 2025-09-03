@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Supabase Flash Cards Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+            margin: 0;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            background: white;
+            padding: 25px;
+            margin: 20px 0;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status.online {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.offline {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.loading {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn-warning { background-color: #ffc107; color: #212529; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        .btn-info { background-color: #17a2b8; color: white; }
+        .log-container {
+            background-color: #2d3748;
+            border-radius: 8px;
+            padding: 20px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .log-entry {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
+        }
+        .log-time {
+            color: #a0aec0;
+            margin-right: 10px;
+            min-width: 80px;
+        }
+        .log-message {
+            color: #e2e8f0;
+        }
+        .log-message.success { color: #68d391; }
+        .log-message.error { color: #fc8181; }
+        .log-message.warning { color: #f6e05e; }
+        .log-message.info { color: #63b3ed; }
+        .config-section {
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .config-item {
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+        .config-label {
+            color: #6c757d;
+            display: inline-block;
+            width: 200px;
+        }
+        .config-value {
+            color: #495057;
+            font-weight: bold;
+        }
+        .hidden { color: #dc3545; }
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .card-item {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.3s ease;
+        }
+        .card-item.known {
+            border-color: #28a745;
+            background-color: #f8fff9;
+        }
+        .card-item.unknown {
+            border-color: #dc3545;
+            background-color: #fff8f8;
+        }
+        .card-question {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+        .card-answer {
+            color: #6c757d;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .card-stats {
+            font-size: 12px;
+            color: #adb5bd;
+            margin-bottom: 10px;
+        }
+        .toggle-btn {
+            width: 100%;
+            padding: 8px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 Supabase Flash Cards Test Suite</h1>
+            <p>Complete testing environment for Supabase integration</p>
+        </div>
+
+        <div class="section">
+            <h2>📡 Connection Status</h2>
+            <div>
+                <strong>Supabase:</strong>
+                <span id="supabase-status" class="status loading">Checking...</span>
+            </div>
+            <div style="margin-top: 10px;">
+                <strong>Local Storage:</strong>
+                <span id="storage-status" class="status loading">Checking...</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>⚙️ Configuration</h2>
+            <div class="config-section">
+                <div class="config-item">
+                    <span class="config-label">Supabase URL:</span>
+                    <span id="config-url" class="config-value hidden">Not configured</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">Supabase Key:</span>
+                    <span id="config-key" class="config-value hidden">Not configured</span>
+                </div>
+                <div class="config-item">
+                    <span class="config-label">Environment:</span>
+                    <span id="config-env" class="config-value">Development</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🎮 Test Controls</h2>
+            <div class="controls">
+                <button class="btn-primary" onclick="testConnection()">🔗 Test Connection</button>
+                <button class="btn-success" onclick="loadDecks()">📚 Load Decks</button>
+                <button class="btn-info" onclick="testToggleCard()">🔄 Test Toggle</button>
+                <button class="btn-warning" onclick="createTestCard()">➕ Add Test Card</button>
+                <button class="btn-danger" onclick="clearStorage()">🗑️ Clear Storage</button>
+                <button class="btn-primary" onclick="runFullTest()">🧪 Full Test Suite</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📊 Data Preview</h2>
+            <div id="data-stats" style="margin-bottom: 20px;">
+                <span>Total Decks: <strong id="total-decks">0</strong></span> |
+                <span>Total Cards: <strong id="total-cards">0</strong></span> |
+                <span>Known Cards: <strong id="known-cards">0</strong></span>
+            </div>
+            <div id="cards-container" class="cards-grid">
+                <p>No data loaded yet...</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📝 Test Log</h2>
+            <div style="margin-bottom: 10px;">
+                <button class="btn-warning" onclick="clearLog()" style="padding: 6px 12px; font-size: 12px;">Clear Log</button>
+            </div>
+            <div id="log-container" class="log-container">
+                <div class="log-entry">
+                    <span class="log-time">--:--:--</span>
+                    <span class="log-message">Waiting for tests to start...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Global variables
+        let supabaseClient = null;
+        let currentDecks = [];
+
+        // Configuration from environment or fallback
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // Replace with your URL
+        const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY'; // Replace with your key
+
+        // Logging function
+        function log(message, type = 'info') {
+            const now = new Date();
+            const time = now.toTimeString().split(' ')[0];
+            const logContainer = document.getElementById('log-container');
+            
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `
+                <span class="log-time">${time}</span>
+                <span class="log-message ${type}">${message}</span>
+            `;
+            
+            logContainer.appendChild(entry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            console.log(`[${time}] ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('log-container').innerHTML = '';
+            log('Log cleared');
+        }
+
+        // Initialize Supabase
+        function initSupabase() {
+            try {
+                if (SUPABASE_URL === 'YOUR_SUPABASE_URL' || SUPABASE_KEY === 'YOUR_SUPABASE_ANON_KEY') {
+                    log('⚠️ Please configure Supabase URL and KEY in the script', 'warning');
+                    document.getElementById('config-url').textContent = 'Not configured';
+                    document.getElementById('config-key').textContent = 'Not configured';
+                    return false;
+                }
+
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                
+                // Update config display
+                document.getElementById('config-url').textContent = SUPABASE_URL;
+                document.getElementById('config-key').textContent = SUPABASE_KEY.substring(0, 20) + '...';
+                
+                log('✅ Supabase client initialized', 'success');
+                return true;
+            } catch (error) {
+                log(`❌ Failed to initialize Supabase: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Test connection
+        async function testConnection() {
+            if (!supabaseClient) {
+                if (!initSupabase()) return;
+            }
+
+            try {
+                log('🔄 Testing Supabase connection...');
+                
+                const { data, error } = await supabaseClient
+                    .from('decks')
+                    .select('count')
+                    .limit(1);
+
+                if (error) {
+                    log(`❌ Connection failed: ${error.message}`, 'error');
+                    document.getElementById('supabase-status').className = 'status offline';
+                    document.getElementById('supabase-status').textContent = 'Offline';
+                    return false;
+                } else {
+                    log('✅ Supabase connection successful', 'success');
+                    document.getElementById('supabase-status').className = 'status online';
+                    document.getElementById('supabase-status').textContent = 'Online';
+                    return true;
+                }
+            } catch (error) {
+                log(`❌ Connection test error: ${error.message}`, 'error');
+                document.getElementById('supabase-status').className = 'status offline';
+                document.getElementById('supabase-status').textContent = 'Error';
+                return false;
+            }
+        }
+
+        // Load decks from Supabase
+        async function loadDecks() {
+            if (!supabaseClient) {
+                if (!initSupabase()) return;
+            }
+
+            try {
+                log('📚 Loading decks from Supabase...');
+                
+                const { data, error } = await supabaseClient
+                    .from('decks')
+                    .select(`
+                        *,
+                        cards (*)
+                    `)
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    log(`❌ Failed to load decks: ${error.message}`, 'error');
+                    return;
+                }
+
+                currentDecks = data || [];
+                log(`✅ Loaded ${currentDecks.length} decks`, 'success');
+                
+                updateDataStats();
+                displayCards();
+                
+                // Save to localStorage
+                localStorage.setItem('flashcards-decks', JSON.stringify(currentDecks));
+                document.getElementById('storage-status').className = 'status online';
+                document.getElementById('storage-status').textContent = 'Synced';
+                
+            } catch (error) {
+                log(`❌ Load error: ${error.message}`, 'error');
+            }
+        }
+
+        // Update statistics
+        function updateDataStats() {
+            const totalDecks = currentDecks.length;
+            let totalCards = 0;
+            let knownCards = 0;
+
+            currentDecks.forEach(deck => {
+                if (deck.cards) {
+                    totalCards += deck.cards.length;
+                    knownCards += deck.cards.filter(card => card.known).length;
+                }
+            });
+
+            document.getElementById('total-decks').textContent = totalDecks;
+            document.getElementById('total-cards').textContent = totalCards;
+            document.getElementById('known-cards').textContent = knownCards;
+        }
+
+        // Display cards
+        function displayCards() {
+            const container = document.getElementById('cards-container');
+            container.innerHTML = '';
+
+            if (currentDecks.length === 0) {
+                container.innerHTML = '<p>No decks loaded. Click "Load Decks" to fetch data.</p>';
+                return;
+            }
+
+            currentDecks.forEach(deck => {
+                if (deck.cards && deck.cards.length > 0) {
+                    // Show first 6 cards from each deck
+                    deck.cards.slice(0, 6).forEach(card => {
+                        const cardDiv = document.createElement('div');
+                        cardDiv.className = `card-item ${card.known ? 'known' : 'unknown'}`;
+                        cardDiv.innerHTML = `
+                            <div class="card-question">${card.question}</div>
+                            <div class="card-answer">${card.answer}</div>
+                            <div class="card-stats">
+                                Seen: ${card.times_seen || 0} | Known: ${card.times_known || 0}
+                            </div>
+                            <button class="toggle-btn ${card.known ? 'btn-warning' : 'btn-success'}" 
+                                    onclick="toggleCard(${card.id})">
+                                ${card.known ? '❌ Mark Unknown' : '✅ Mark Known'}
+                            </button>
+                        `;
+                        container.appendChild(cardDiv);
+                    });
+                }
+            });
+        }
+
+        // Toggle card known status
+        async function toggleCard(cardId) {
+            if (!supabaseClient) return;
+
+            try {
+                log(`🔄 Toggling card ${cardId}...`);
+
+                // Get current card state
+                const { data: currentCard, error: fetchError } = await supabaseClient
+                    .from('cards')
+                    .select('*')
+                    .eq('id', cardId)
+                    .single();
+
+                if (fetchError) {
+                    log(`❌ Failed to fetch card: ${fetchError.message}`, 'error');
+                    return;
+                }
+
+                // Toggle the state
+                const newKnownState = !currentCard.known;
+                const updates = {
+                    known: newKnownState,
+                    times_seen: currentCard.times_seen + 1,
+                    last_seen_at: new Date().toISOString()
+                };
+
+                if (newKnownState) {
+                    updates.times_known = currentCard.times_known + 1;
+                    updates.last_known_at = new Date().toISOString();
+                }
+
+                const { data, error } = await supabaseClient
+                    .from('cards')
+                    .update(updates)
+                    .eq('id', cardId)
+                    .select()
+                    .single();
+
+                if (error) {
+                    log(`❌ Failed to toggle card: ${error.message}`, 'error');
+                    return;
+                }
+
+                log(`✅ Card ${cardId} toggled to: ${data.known ? 'Known' : 'Unknown'}`, 'success');
+                
+                // Reload data to reflect changes
+                await loadDecks();
+                
+            } catch (error) {
+                log(`❌ Toggle error: ${error.message}`, 'error');
+            }
+        }
+
+        // Test specific card toggle
+        async function testToggleCard() {
+            if (currentDecks.length === 0) {
+                log('⚠️ No cards loaded. Load decks first.', 'warning');
+                return;
+            }
+
+            const firstCard = currentDecks[0]?.cards?.[0];
+            if (!firstCard) {
+                log('⚠️ No cards available for testing.', 'warning');
+                return;
+            }
+
+            const originalState = firstCard.known;
+            log(`🧪 Testing toggle on card ${firstCard.id} (currently ${originalState ? 'known' : 'unknown'})`);
+            
+            await toggleCard(firstCard.id);
+            
+            // Verify the change
+            setTimeout(async () => {
+                await loadDecks();
+                const updatedCard = currentDecks[0]?.cards?.find(c => c.id === firstCard.id);
+                if (updatedCard && updatedCard.known !== originalState) {
+                    log('✅ Toggle test successful - change persisted!', 'success');
+                } else {
+                    log('❌ Toggle test failed - change not persisted!', 'error');
+                }
+            }, 1000);
+        }
+
+        // Create a test card
+        async function createTestCard() {
+            if (!supabaseClient) {
+                if (!initSupabase()) return;
+            }
+
+            if (currentDecks.length === 0) {
+                log('⚠️ No decks available. Load decks first.', 'warning');
+                return;
+            }
+
+            try {
+                const deckId = currentDecks[0].id;
+                const testCard = {
+                    deck_id: deckId,
+                    question: `🧪 Test Card - ${new Date().toLocaleTimeString()}`,
+                    answer: 'This is a test card created to verify Supabase integration',
+                    known: false,
+                    times_seen: 0,
+                    times_known: 0
+                };
+
+                log('➕ Creating test card...');
+
+                const { data, error } = await supabaseClient
+                    .from('cards')
+                    .insert([testCard])
+                    .select()
+                    .single();
+
+                if (error) {
+                    log(`❌ Failed to create card: ${error.message}`, 'error');
+                    return;
+                }
+
+                log(`✅ Test card created with ID: ${data.id}`, 'success');
+                await loadDecks();
+
+            } catch (error) {
+                log(`❌ Create card error: ${error.message}`, 'error');
+            }
+        }
+
+        // Clear localStorage
+        function clearStorage() {
+            localStorage.removeItem('flashcards-decks');
+            document.getElementById('storage-status').className = 'status offline';
+            document.getElementById('storage-status').textContent = 'Cleared';
+            log('🗑️ Local storage cleared', 'warning');
+        }
+
+        // Run full test suite
+        async function runFullTest() {
+            log('🚀 Starting full test suite...', 'info');
+            
+            // Test 1: Connection
+            log('Test 1: Connection test');
+            const connected = await testConnection();
+            if (!connected) {
+                log('❌ Full test aborted - connection failed', 'error');
+                return;
+            }
+
+            // Test 2: Load data
+            log('Test 2: Data loading');
+            await loadDecks();
+
+            // Test 3: Toggle functionality
+            log('Test 3: Toggle functionality');
+            await testToggleCard();
+
+            // Test 4: Create card
+            log('Test 4: Card creation');
+            await createTestCard();
+
+            log('🏁 Full test suite completed!', 'success');
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            log('🌟 Supabase Flash Cards Test Suite loaded');
+            log('📋 Configure your Supabase credentials in the script to begin testing');
+            
+            // Check if we have stored data
+            const stored = localStorage.getItem('flashcards-decks');
+            if (stored) {
+                document.getElementById('storage-status').className = 'status online';
+                document.getElementById('storage-status').textContent = 'Has Data';
+            } else {
+                document.getElementById('storage-status').className = 'status offline';
+                document.getElementById('storage-status').textContent = 'Empty';
+            }
+        });
+    </script>
+</body>
+</html>

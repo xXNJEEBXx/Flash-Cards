@@ -9,8 +9,19 @@ const json = (res) => {
 };
 
 const tryApi = async (fn, fallback) => {
-    if (!API_URL) return fallback();
-    try { return await fn(); } catch (e) { return fallback(); }
+    if (!API_URL) {
+        console.log('No API_URL configured, using fallback');
+        return fallback();
+    }
+    try { 
+        console.log('Trying API request to:', API_URL);
+        const result = await fn(); 
+        console.log('API request successful');
+        return result;
+    } catch (e) { 
+        console.log('API request failed:', e.message, 'Using fallback');
+        return fallback(); 
+    }
 };
 
 export const api = {
@@ -65,7 +76,16 @@ export const api = {
         () => null
     ),
     toggleKnown: (deckId, cardId) => tryApi(
-        () => fetch(`${API_URL}/api/decks/${deckId}/cards/${cardId}/toggle-known`, { method: 'POST' }).then(json),
-        () => null
+        async () => {
+            console.log(`Toggling known state for card ${cardId} in deck ${deckId}`);
+            const response = await fetch(`${API_URL}/api/decks/${deckId}/cards/${cardId}/toggle-known`, { method: 'POST' });
+            const result = await json(response);
+            console.log('Toggle known result:', result);
+            return result;
+        },
+        () => {
+            console.log('Toggle known fallback - no API available');
+            return null;
+        }
     ),
 };

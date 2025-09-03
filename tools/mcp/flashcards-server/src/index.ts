@@ -32,7 +32,10 @@ if (rawRoot) {
     try {
       // Resolve ../flash-cards/.env relative to this file
       const here = path.dirname(new URL(import.meta.url).pathname);
-      const frontendEnvPath = path.resolve(here, "../../../../flash-cards/.env");
+      const frontendEnvPath = path.resolve(
+        here,
+        "../../../../flash-cards/.env"
+      );
       if (fs.existsSync(frontendEnvPath)) {
         const parsed = dotenv.parse(fs.readFileSync(frontendEnvPath));
         if (parsed.REACT_APP_API_URL) reactApi = parsed.REACT_APP_API_URL;
@@ -94,8 +97,8 @@ async function main() {
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
-  // Log backend target once when tools are listed (first interaction)
-  // eslint-disable-next-line no-console
+    // Log backend target once when tools are listed (first interaction)
+    // eslint-disable-next-line no-console
     console.log(`[MCP] Using backend: ${BASE_URL} (source: ${resolvedSource})`);
     return {
       tools: [

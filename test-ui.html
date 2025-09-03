@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار Flash Cards API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            direction: rtl;
+        }
+        .card {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .known {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .unknown {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        button {
+            padding: 5px 10px;
+            margin: 5px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .toggle-btn {
+            background-color: #007bff;
+            color: white;
+        }
+        .refresh-btn {
+            background-color: #28a745;
+            color: white;
+        }
+        #log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 20px 0;
+            height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>اختبار Flash Cards API</h1>
+    
+    <button class="refresh-btn" onclick="loadCards()">تحديث البطاقات</button>
+    
+    <div id="cards-container"></div>
+    
+    <h2>سجل الأحداث</h2>
+    <div id="log"></div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+        const logDiv = document.getElementById('log');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        async function apiCall(url, options = {}) {
+            try {
+                log(`API Call: ${url}`);
+                const response = await fetch(url, options);
+                const data = await response.json();
+                log(`API Response: ${JSON.stringify(data, null, 2)}`);
+                return data;
+            } catch (error) {
+                log(`API Error: ${error.message}`);
+                throw error;
+            }
+        }
+        
+        async function loadCards() {
+            try {
+                log('جاري تحميل البطاقات...');
+                const deck = await apiCall(`${API_URL}/api/decks/1`);
+                displayCards(deck.cards);
+                log(`تم تحميل ${deck.cards.length} بطاقة`);
+            } catch (error) {
+                log(`خطأ في تحميل البطاقات: ${error.message}`);
+            }
+        }
+        
+        function displayCards(cards) {
+            const container = document.getElementById('cards-container');
+            container.innerHTML = '';
+            
+            cards.forEach(card => {
+                const cardDiv = document.createElement('div');
+                cardDiv.className = `card ${card.known ? 'known' : 'unknown'}`;
+                cardDiv.innerHTML = `
+                    <h3>السؤال: ${card.question}</h3>
+                    <p>الإجابة: ${card.answer}</p>
+                    <p>الحالة: ${card.known ? 'محفوظ' : 'غير محفوظ'}</p>
+                    <p>مرات العرض: ${card.times_seen} | مرات الحفظ: ${card.times_known}</p>
+                    <button class="toggle-btn" onclick="toggleKnown(${card.id}, ${card.known})">
+                        ${card.known ? 'إلغاء الحفظ' : 'حفظ البطاقة'}
+                    </button>
+                `;
+                container.appendChild(cardDiv);
+            });
+        }
+        
+        async function toggleKnown(cardId, currentKnown) {
+            try {
+                log(`تغيير حالة البطاقة ${cardId} من ${currentKnown ? 'محفوظ' : 'غير محفوظ'}...`);
+                const result = await apiCall(`${API_URL}/api/decks/1/cards/${cardId}/toggle-known`, {
+                    method: 'POST'
+                });
+                
+                if (result.success) {
+                    log(`تم تغيير حالة البطاقة بنجاح إلى: ${result.data.known ? 'محفوظ' : 'غير محفوظ'}`);
+                    // إعادة تحميل البطاقات لإظهار التحديث
+                    loadCards();
+                } else {
+                    log(`فشل في تغيير حالة البطاقة: ${result.message}`);
+                }
+            } catch (error) {
+                log(`خطأ في تغيير حالة البطاقة: ${error.message}`);
+            }
+        }
+        
+        // تحميل البطاقات عند فتح الصفحة
+        loadCards();
+    </script>
+</body>
+</html>

@@ -7,6 +7,7 @@ import DeckList from './components/DeckList/DeckList';
 import DeckForm from './components/Forms/DeckForm';
 import CardForm from './components/Forms/CardForm';
 import StudyMode from './components/StudyMode/StudyMode';
+import DebugPanel from './components/DebugPanel';
 import './App.css';
 
 function App() {
@@ -266,6 +267,8 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
       <main className="app-main">
         {renderCurrentView()}
       </main>
+      
+      <DebugPanel />
     </div>
   );
 };

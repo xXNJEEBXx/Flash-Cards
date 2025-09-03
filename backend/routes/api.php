@@ -15,9 +15,9 @@ Route::get('/health', function () {
     } catch (\Exception $e) {
         $dbStatus = 'error: ' . $e->getMessage();
     }
-    
+
     return response()->json([
-        'status' => 'ok', 
+        'status' => 'ok',
         'timestamp' => now(),
         'database' => $dbStatus,
         'laravel_version' => app()->version()

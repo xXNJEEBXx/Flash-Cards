@@ -10,11 +10,13 @@ const API_CONFIG = {
     getApiUrl: () => {
         // إذا كان هناك متغير بيئة
         if (process.env.REACT_APP_API_URL) {
+            console.log('Using API URL from env:', process.env.REACT_APP_API_URL);
             return process.env.REACT_APP_API_URL;
         }
 
-        // استخدام Railway دائماً (حتى في التطوير المحلي)
-        return 'https://flash-cards-production-5df5.up.railway.app';
+        // استخدام المحلي للتطوير
+        console.log('Using development API URL:', 'http://localhost:8000');
+        return 'http://localhost:8000';
     }
 };
 
