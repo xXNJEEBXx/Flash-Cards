@@ -7,8 +7,7 @@ return [
         'http://localhost:3000',
         'http://127.0.0.1:3000',
         // Add your production frontend URLs here
-        // 'https://your-app.vercel.app',
-        // 'https://your-domain.com'
+    'https://flash-cards-ten-ochre.vercel.app',
     ],
     'allowed_origins_patterns' => [
         // Allow all Vercel preview deployments
