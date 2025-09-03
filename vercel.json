@@ -1,7 +1,7 @@
 {
-  "buildCommand": "npm --prefix ./flash-cards run build",
-  "outputDirectory": "flash-cards/build",
-  "installCommand": "npm --prefix ./flash-cards install",
+  "installCommand": "sh -c 'if [ -f flash-cards/package.json ]; then cd flash-cards; fi; npm ci'",
+  "buildCommand": "sh -c 'if [ -f flash-cards/package.json ]; then cd flash-cards; fi; npm run build'",
+  "outputDirectory": "build",
   "framework": null,
   "rewrites": [
     {
