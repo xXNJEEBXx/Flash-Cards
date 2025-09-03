@@ -1,5 +1,7 @@
 // خدمة API للإعدادات والتقدم
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+import { API_CONFIG } from '../config/api.js';
+
+const API_BASE_URL = API_CONFIG.getApiUrl() + '/api';
 
 // توليد أو جلب session token للضيوف
 const getSessionToken = () => {

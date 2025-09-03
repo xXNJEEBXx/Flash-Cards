@@ -1,0 +1,12 @@
+{
+  "buildCommand": "cd flash-cards && npm run build",
+  "outputDirectory": "flash-cards/build",
+  "installCommand": "cd flash-cards && npm install",
+  "framework": "create-react-app",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
