@@ -13,13 +13,8 @@ const API_CONFIG = {
       return process.env.REACT_APP_API_URL;
     }
     
-    // إذا كان في الإنتاج
-    if (process.env.NODE_ENV === 'production') {
-      return 'https://flash-cards-production-5df5.up.railway.app';
-    }
-    
-    // تطوير محلي
-    return 'http://localhost:8000';
+    // استخدام Railway دائماً (حتى في التطوير المحلي)
+    return 'https://flash-cards-production-5df5.up.railway.app';
   }
 };
 
