@@ -1,4 +1,7 @@
 import "dotenv/config";
+import fs from "fs";
+import path from "path";
+import dotenv from "dotenv";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {
@@ -12,9 +15,50 @@ import { CardSchema, DeckSchema } from "./schemas.js";
 const name = "flashcards-mcp-server";
 const version = "0.1.0";
 
-const BASE_URL =
-  process.env.BACKEND_BASE_URL ||
-  "https://flash-cards-production-5df5.up.railway.app/api";
+// Resolve backend base URL with priority:
+// 1) BACKEND_BASE_URL (env)
+// 2) REACT_APP_API_URL from env or frontend .env (auto + "/api")
+// 3) Default Railway URL
+let resolvedSource: string = "";
+let rawRoot = process.env.BACKEND_BASE_URL;
+
+if (rawRoot) {
+  resolvedSource = "BACKEND_BASE_URL";
+} else {
+  // Try REACT_APP_API_URL from env
+  let reactApi = process.env.REACT_APP_API_URL;
+  if (!reactApi) {
+    // Try loading from frontend .env
+    try {
+      // Resolve ../flash-cards/.env relative to this file
+      const here = path.dirname(new URL(import.meta.url).pathname);
+      const frontendEnvPath = path.resolve(here, "../../../../flash-cards/.env");
+      if (fs.existsSync(frontendEnvPath)) {
+        const parsed = dotenv.parse(fs.readFileSync(frontendEnvPath));
+        if (parsed.REACT_APP_API_URL) reactApi = parsed.REACT_APP_API_URL;
+      }
+    } catch {
+      // ignore
+    }
+  }
+  if (reactApi) {
+    rawRoot = reactApi;
+    resolvedSource = reactApi ? "REACT_APP_API_URL" : "";
+  }
+}
+
+if (!rawRoot) {
+  rawRoot = "https://flash-cards-production-5df5.up.railway.app";
+  resolvedSource = "DEFAULT_RAILWAY";
+}
+
+// Normalize to always include trailing "/api"
+const RAW_BASE = rawRoot.endsWith("/api")
+  ? rawRoot
+  : `${rawRoot.replace(/\/$/, "")}/api`;
+const BASE_URL = RAW_BASE.endsWith("/api")
+  ? RAW_BASE
+  : `${RAW_BASE.replace(/\/$/, "")}/api`;
 const AUTH_TOKEN = process.env.AUTH_TOKEN;
 
 const client = new ApiClient({ baseUrl: BASE_URL, authToken: AUTH_TOKEN });
@@ -25,7 +69,7 @@ function okJson(data: unknown) {
   return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
 }
 
-function errعغJson(message: string, extra?: any) {
+function errJson(message: string, extra?: any) {
   return {
     content: [
       {
@@ -50,8 +94,17 @@ async function main() {
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
+  // Log backend target once when tools are listed (first interaction)
+  // eslint-disable-next-line no-console
+    console.log(`[MCP] Using backend: ${BASE_URL} (source: ${resolvedSource})`);
     return {
       tools: [
+        {
+          name: "backendInfo",
+          description:
+            "Show the configured backend base URL and health status (to confirm MCP DB target)",
+          inputSchema: { type: "object", properties: {} },
+        },
         {
           name: "createCard",
           description: "Create a card in a deck",
@@ -197,6 +250,10 @@ async function main() {
 
     try {
       switch (name) {
+        case "backendInfo": {
+          const health = await client.call<any>("GET", "/health");
+          return okJson({ baseUrl: BASE_URL, health });
+        }
         case "createCard": {
           const { deckId, question, answer } = args as any;
           const res = await client.call<any>("POST", `/decks/${deckId}/cards`, {
