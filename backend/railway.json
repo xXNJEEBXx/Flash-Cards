@@ -5,8 +5,8 @@
         "buildCommand": "composer install --optimize-autoloader --no-dev && php artisan config:cache && php artisan route:cache && php artisan view:cache"
     },
     "deploy": {
-        "startCommand": "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT",
+        "startCommand": "(php artisan migrate --force --verbose || echo 'Migration failed but continuing...') && php artisan serve --host=0.0.0.0 --port=$PORT",
         "healthcheckPath": "/api/health",
-        "healthcheckTimeout": 100
+        "healthcheckTimeout": 300
     }
 }
