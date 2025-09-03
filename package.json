@@ -1,0 +1,23 @@
+{
+  "name": "flash-cards",
+  "version": "1.0.0",
+  "description": "An interactive app for creating and studying flash cards. The project is now split into:",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xXNJEEBXx/Flash-Cards.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/xXNJEEBXx/Flash-Cards/issues"
+  },
+  "homepage": "https://github.com/xXNJEEBXx/Flash-Cards#readme"
+}

@@ -5,6 +5,11 @@ use App\Http\Controllers\DeckController;
 use App\Http\Controllers\CardController;
 use App\Http\Controllers\UserSettingsController;
 
+// Health check for Railway
+Route::get('/health', function () {
+    return response()->json(['status' => 'ok', 'timestamp' => now()]);
+});
+
 Route::get('/decks', [DeckController::class, 'index']);
 Route::post('/decks', [DeckController::class, 'store']);
 Route::get('/decks/{deck}', [DeckController::class, 'show']);

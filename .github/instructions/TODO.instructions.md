@@ -51,6 +51,7 @@ applyTo: "**"
 إضافة MCP Tool للتحكم في البطاقات عبر AI (مطلوب بواسطة المستخدم)
 
 خطة التنفيذ المختصرة:
+
 - إنشاء MCP Server جديد (TypeScript) ضمن tools/mcp/flashcards-server
 - تعريف أدوات للتحكم في البطاقات: createCard, updateCard, deleteCard, toggleKnown, markSeen, markDifficult, getCardStats
 - دعم أدوات للمجموعات (اختياري الآن): listDecks, createDeck, updateDeck, deleteDeck, resetDeck
@@ -59,18 +60,21 @@ applyTo: "**"
 - إضافة README قصير يوضح التشغيل عبر Desktop Commander MCP Execute
 
 الخطوات التفصيلية:
-1) تهيئة مشروع MCP Server مستقل: package.json, tsconfig.json
-2) بناء عميل HTTP ذكي مع معالجة للأخطاء وتوحيد الاستجابات
-3) تعريف tools/list و tools/call وفق MCP SDK وتوصيل الأدوات المذكورة
-4) إعداد سكربتات npm للتشغيل المحلي عبر stdio
-5) إضافة tests بسيطة (Smoke + Schema) في /tests دون الاعتماد على الشبكة
-6) توثيق الإعداد والاستخدام في tools/mcp/flashcards-server/README.md
+
+1. تهيئة مشروع MCP Server مستقل: package.json, tsconfig.json
+2. بناء عميل HTTP ذكي مع معالجة للأخطاء وتوحيد الاستجابات
+3. تعريف tools/list و tools/call وفق MCP SDK وتوصيل الأدوات المذكورة
+4. إعداد سكربتات npm للتشغيل المحلي عبر stdio
+5. إضافة tests بسيطة (Smoke + Schema) في /tests دون الاعتماد على الشبكة
+6. توثيق الإعداد والاستخدام في tools/mcp/flashcards-server/README.md
 
 الافتراضات:
+
 - الخادم Laravel يعمل على http://localhost:8000/api افتراضياً، مع إمكانية ضبطه عبر متغير BACKEND_BASE_URL
 - لا حاجة لمصادقة حالياً؛ إن لزم لاحقاً سنضيف Header اختياري AUTH_TOKEN
 
 مخرجات متوقعة:
+
 - MCP server جاهز للتكامل مع عملاء MCP لتعديل البطاقات والمجموعات
 - وثائق تشغيل واختبارات دخانية للتحقق من الأساسيات
 
