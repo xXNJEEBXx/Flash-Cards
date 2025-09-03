@@ -9,19 +9,19 @@ console.log('================================');
 
 // اختبار الاتصال
 API_CONFIG.testConnection = async () => {
-  try {
-    const apiUrl = API_CONFIG.getApiUrl();
-    console.log('Testing API:', apiUrl);
-    
-    const response = await fetch(`${apiUrl}/api/health`);
-    const data = await response.json();
-    
-    console.log('✅ API Connection Success:', data);
-    return true;
-  } catch (error) {
-    console.error('❌ API Connection Failed:', error);
-    return false;
-  }
+    try {
+        const apiUrl = API_CONFIG.getApiUrl();
+        console.log('Testing API:', apiUrl);
+
+        const response = await fetch(`${apiUrl}/api/health`);
+        const data = await response.json();
+
+        console.log('✅ API Connection Success:', data);
+        return true;
+    } catch (error) {
+        console.error('❌ API Connection Failed:', error);
+        return false;
+    }
 };
 
 export default API_CONFIG;

@@ -12,7 +12,9 @@ import { CardSchema, DeckSchema } from "./schemas.js";
 const name = "flashcards-mcp-server";
 const version = "0.1.0";
 
-const BASE_URL = process.env.BACKEND_BASE_URL || "http://localhost:8000/api";
+const BASE_URL =
+  process.env.BACKEND_BASE_URL ||
+  "https://flash-cards-production-5df5.up.railway.app/api";
 const AUTH_TOKEN = process.env.AUTH_TOKEN;
 
 const client = new ApiClient({ baseUrl: BASE_URL, authToken: AUTH_TOKEN });
@@ -23,7 +25,7 @@ function okJson(data: unknown) {
   return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
 }
 
-function errJson(message: string, extra?: any) {
+function errعغJson(message: string, extra?: any) {
   return {
     content: [
       {

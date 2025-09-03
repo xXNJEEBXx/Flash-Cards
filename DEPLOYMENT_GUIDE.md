@@ -3,6 +3,7 @@
 ## 📋 الخطوات السريعة:
 
 ### 1. رفع الكود إلى GitHub
+
 ```powershell
 git add .
 git commit -m "Prepare for deployment"
@@ -10,6 +11,7 @@ git push origin main
 ```
 
 ### 2. نشر Backend على Railway
+
 1. اذهب إلى https://railway.app
 2. سجل دخول بـ GitHub
 3. New Project → Deploy from GitHub repo
@@ -24,6 +26,7 @@ git push origin main
    ```
 
 ### 3. نشر Frontend على Vercel
+
 1. اذهب إلى https://vercel.com
 2. سجل دخول بـ GitHub
 3. New Project → اختر repository
@@ -36,12 +39,14 @@ git push origin main
 ## 🔧 إعدادات إضافية:
 
 ### إنشاء APP_KEY جديد:
+
 ```powershell
 cd backend
 php artisan key:generate --show
 ```
 
 ### اختبار النشر محلياً:
+
 ```powershell
 # Backend
 cd backend
@@ -55,12 +60,14 @@ REACT_APP_API_URL=http://127.0.0.1:8000 npm start
 ## 🌐 مواقع الاستضافة البديلة:
 
 ### للـ Backend:
+
 - Railway (مجاني، سهل)
 - Heroku (محدود مجاناً)
 - DigitalOcean App Platform
 - AWS Elastic Beanstalk
 
 ### للـ Frontend:
+
 - Vercel (مجاني، سريع)
 - Netlify (مجاني، سهل)
 - GitHub Pages
@@ -76,12 +83,15 @@ REACT_APP_API_URL=http://127.0.0.1:8000 npm start
 ## 🔍 استكشاف الأخطاء:
 
 ### مشكلة CORS:
+
 - تأكد من إضافة رابط Frontend في `config/cors.php`
 
 ### مشكلة قاعدة البيانات:
+
 - تأكد من وجود ملف `database.sqlite`
 - شغل: `php artisan migrate --force`
 
 ### مشكلة Build:
+
 - تأكد من وجود كل dependencies في `package.json`
 - شغل: `npm run build` محلياً للاختبار

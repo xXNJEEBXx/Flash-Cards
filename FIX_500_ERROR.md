@@ -1,11 +1,13 @@
 # 🚨 حل خطأ 500 في Railway
 
 ## المشكلة:
+
 خطأ 500 عند الوصول للرابط الأساسي
 
 ## الحل السريع:
 
 ### 1️⃣ جرب API endpoints:
+
 ```
 ✅ https://flash-cards-production-5df5.up.railway.app/api/health
 ✅ https://flash-cards-production-5df5.up.railway.app/api/decks
@@ -14,6 +16,7 @@
 ### 2️⃣ أضف هذه المتغيرات في Railway Variables:
 
 **المتغيرات الضرورية:**
+
 ```
 APP_KEY=base64:NNk/aROjI3ydmSONWYNtS3sf/roeMKjo3Q6fgbvEVi0=
 APP_ENV=production
@@ -24,6 +27,7 @@ DB_DATABASE=/app/database/database.sqlite
 ```
 
 **متغيرات إضافية مهمة:**
+
 ```
 LOG_CHANNEL=stack
 LOG_LEVEL=debug
@@ -33,6 +37,7 @@ QUEUE_CONNECTION=sync
 ```
 
 ### 3️⃣ فحص Logs في Railway:
+
 1. Dashboard → Deployments
 2. اضغط آخر deployment
 3. راجع **Build Logs** و **Deploy Logs**
@@ -44,6 +49,7 @@ QUEUE_CONNECTION=sync
 ## 🧪 اختبار سريع:
 
 **API Health Check:**
+
 ```bash
 curl https://flash-cards-production-5df5.up.railway.app/api/health
 ```
@@ -53,7 +59,7 @@ curl https://flash-cards-production-5df5.up.railway.app/api/health
 ## 📋 أولويات الحل:
 
 1. ✅ أضف APP_KEY
-2. ✅ اختبر `/api/health` 
+2. ✅ اختبر `/api/health`
 3. ✅ راجع Deploy Logs
 4. ✅ أضف route للصفحة الرئيسية إذا لزم
 

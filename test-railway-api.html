@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,20 +13,24 @@
             padding: 20px;
             background: #f5f5f5;
         }
+
         .container {
             background: white;
             padding: 30px;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
+
         .input-group {
             margin: 20px 0;
         }
+
         label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
         }
+
         input {
             width: 100%;
             padding: 10px;
@@ -33,6 +38,7 @@
             border-radius: 5px;
             font-size: 16px;
         }
+
         button {
             background: #007bff;
             color: white;
@@ -43,9 +49,11 @@
             font-size: 16px;
             margin: 10px 5px;
         }
+
         button:hover {
             background: #0056b3;
         }
+
         .result {
             margin-top: 20px;
             padding: 15px;
@@ -54,11 +62,13 @@
             white-space: pre-wrap;
             direction: ltr;
         }
+
         .success {
             background: #d4edda;
             border: 1px solid #c3e6cb;
             color: #155724;
         }
+
         .error {
             background: #f8d7da;
             border: 1px solid #f5c6cb;
@@ -66,22 +76,23 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>🧪 اختبار Flash Cards API على Railway</h1>
-        
+
         <div class="input-group">
             <label for="apiUrl">رابط API (من Railway):</label>
             <input type="url" id="apiUrl" placeholder="https://your-app.up.railway.app" />
             <small>مثال: https://flash-cards-production.up.railway.app</small>
         </div>
-        
+
         <div class="input-group">
             <button onclick="testHealth()">🔍 اختبار Health Check</button>
             <button onclick="testDecks()">📚 اختبار Decks API</button>
             <button onclick="testCors()">🌐 اختبار CORS</button>
         </div>
-        
+
         <div id="result"></div>
     </div>
 
@@ -109,7 +120,7 @@
                 showResult('جاري الاختبار...');
                 const response = await fetch(`${apiUrl}/api/health`);
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     showResult({
                         status: '✅ نجح الاختصار',
@@ -140,7 +151,7 @@
                 showResult('جاري جلب المجموعات...');
                 const response = await fetch(`${apiUrl}/api/decks`);
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     showResult({
                         status: '✅ تم جلب المجموعات بنجاح',
@@ -175,7 +186,7 @@
                         'Origin': window.location.origin
                     }
                 });
-                
+
                 const data = await response.json();
                 showResult({
                     status: '✅ CORS يعمل بشكل صحيح',
@@ -192,10 +203,11 @@
         }
 
         // تعبئة تلقائية لرابط شائع
-        window.onload = function() {
+        window.onload = function () {
             // يمكنك تغيير هذا للرابط الفعلي بعد النشر
             document.getElementById('apiUrl').placeholder = 'https://flash-cards-production.up.railway.app';
         }
     </script>
 </body>
+
 </html>

@@ -51,7 +51,7 @@ try {
     // حفظ في ملف JSON
     $filename = 'database_export_' . date('Y-m-d_H-i-s') . '.json';
     $filepath = __DIR__ . '/' . $filename;
-    
+
     file_put_contents($filepath, json_encode($exportData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
     echo "\n✅ تم تصدير البيانات بنجاح!\n";
@@ -71,7 +71,6 @@ try {
     if (count($cards) > 0) {
         echo "- بطاقة: " . substr($cards->first()->question, 0, 50) . "...\n";
     }
-
 } catch (Exception $e) {
     echo "❌ خطأ في التصدير: " . $e->getMessage() . "\n";
     echo "تأكد من تشغيل السكريبت من مجلد backend وأن قاعدة البيانات موجودة.\n";

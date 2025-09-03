@@ -17,8 +17,11 @@ export class ApiClient {
     const url = `${this.baseUrl}${path}`;
     const headers: Record<string, string> = {
       "content-type": "application/json",
+      "accept": "application/json",
     };
     if (this.authToken) headers["authorization"] = `Bearer ${this.authToken}`;
+
+    console.log(`[MCP DEBUG] ${method} ${url}`, body ? JSON.stringify(body) : 'no body');
 
     const res = await fetch(url, {
       method,
