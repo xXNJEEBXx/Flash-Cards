@@ -1,9 +1,8 @@
 {
   "buildCommand": "npm run build",
-  "outputDirectory": "build",
-  "installCommand": "npm install",
-  "framework": "create-react-app",
-  "rootDirectory": "flash-cards",
+  "outputDirectory": "flash-cards/build",
+  "installCommand": "npm run install",
+  "framework": null,
   "rewrites": [
     {
       "source": "/(.*)",
