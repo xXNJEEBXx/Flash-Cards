@@ -1,10 +1,27 @@
 // Simple API client with graceful fallback to localStorage
 import { API_CONFIG } from '../config/api.js';
 
-const API_URL = process.env.REACT_APP_API_URL || API_CONFIG.getApiUrl();
+// FIXED: Always use the API URL from the config, not environment variables
+const API_URL = API_CONFIG.getApiUrl();
 
-const json = (res) => {
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+// Log the API URL being used for debugging
+console.log('⚠️ API Client initialized with URL:', API_URL);
+
+console.log('API Client initializing with URL:', API_URL);
+
+const json = async (res) => {
+    if (!res.ok) {
+        // Get more details about the error
+        let errorDetails;
+        try {
+            errorDetails = await res.json();
+            console.error('API Error Response:', errorDetails);
+        } catch (e) {
+            errorDetails = await res.text();
+            console.error('API Error Text:', errorDetails);
+        }
+        throw new Error(`HTTP ${res.status}: ${errorDetails?.message || 'Unknown error'}`);
+    }
     return res.json();
 };
 

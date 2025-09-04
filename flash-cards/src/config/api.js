@@ -8,15 +8,20 @@ const API_CONFIG = {
 
     // الحصول على الرابط الصحيح
     getApiUrl: () => {
-        // إذا كان هناك متغير بيئة
-        if (process.env.REACT_APP_API_URL) {
-            console.log('Using API URL from env:', process.env.REACT_APP_API_URL);
-            return process.env.REACT_APP_API_URL;
-        }
+        // IMPORTANT FIX: Hard-code local API URL to guarantee connection
+        const FIXED_API_URL = 'http://localhost:8000';
+        console.log('Using FIXED local API URL:', FIXED_API_URL);
+        return FIXED_API_URL;
+        
+        // REMOVED: Not using environment variables due to loading issues
+        // if (process.env.REACT_APP_API_URL) {
+        //    console.log('Using API URL from env:', process.env.REACT_APP_API_URL);
+        //    return process.env.REACT_APP_API_URL;
+        // }
 
-        // استخدام المحلي للتطوير
-        console.log('Using development API URL:', 'http://localhost:8000');
-        return 'http://localhost:8000';
+        // // استخدام المحلي للتطوير
+        // console.log('Using development API URL:', 'http://localhost:8000');
+        // return 'http://localhost:8000';
     }
 };
 

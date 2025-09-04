@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Deck;
@@ -11,11 +12,18 @@ class DeckController extends Controller
     public function index()
     {
         try {
-            return Deck::with('cards')->orderBy('id', 'asc')->get();
+            Log::info('Starting to fetch decks from database');
+            $decks = Deck::with('cards')->orderBy('id', 'asc')->get();
+            Log::info('Successfully fetched decks', [
+                'count' => $decks->count(),
+                'first_id' => $decks->first() ? $decks->first()->id : null
+            ]);
+            return $decks;
         } catch (\Throwable $e) {
             Log::error('Failed to fetch decks', [
                 'error' => $e->getMessage(),
                 'code' => $e->getCode(),
+                'trace' => $e->getTraceAsString()
             ]);
             return response()->json([
                 'message' => 'Server error while fetching decks',
@@ -23,18 +31,30 @@ class DeckController extends Controller
             ], 500);
         }
     }
-    public function show(Deck $deck) { return $deck->load('cards'); }
-    public function store(Request $request) {
+    public function show(Deck $deck)
+    {
+        return $deck->load('cards');
+    }
+    public function store(Request $request)
+    {
         $data = $request->validate(['title' => 'required|string|max:255', 'description' => 'nullable|string']);
         $deck = Deck::create($data);
         return response()->json($deck, 201);
     }
-    public function update(Request $request, Deck $deck) {
+    public function update(Request $request, Deck $deck)
+    {
         $data = $request->validate(['title' => 'required|string|max:255', 'description' => 'nullable|string']);
         $deck->update($data);
         return $deck;
     }
-    public function destroy(Deck $deck) { $deck->delete(); return response()->noContent(); }
-    public function reset(Deck $deck) { $deck->cards()->update(['known' => false]); return $deck->load('cards'); }
+    public function destroy(Deck $deck)
+    {
+        $deck->delete();
+        return response()->noContent();
+    }
+    public function reset(Deck $deck)
+    {
+        $deck->cards()->update(['known' => false]);
+        return $deck->load('cards');
+    }
 }
-?>

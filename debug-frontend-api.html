@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Frontend API Connection</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { border-color: green; background-color: #f0fff0; }
+        .error { border-color: red; background-color: #fff0f0; }
+        .warning { border-color: orange; background-color: #fff8f0; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background-color: #f5f5f5; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        .log { margin: 10px 0; padding: 10px; background-color: #f9f9f9; border-left: 4px solid #007cba; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Frontend API Connection Debugger</h1>
+    
+    <div class="test-section">
+        <h2>Test Configuration</h2>
+        <p><strong>Frontend URL:</strong> http://localhost:3000</p>
+        <p><strong>Backend URL:</strong> http://localhost:8000</p>
+        <button onclick="testApiConfig()">Test API Configuration</button>
+        <div id="config-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Health Check</h2>
+        <button onclick="testHealth()">Test /api/health</button>
+        <div id="health-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Decks API</h2>
+        <button onclick="testDecks()">Test /api/decks</button>
+        <div id="decks-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Console Logs</h2>
+        <button onclick="clearLogs()">Clear Logs</button>
+        <div id="console-logs"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let logContainer = document.getElementById('console-logs');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.createElement('div');
+            logDiv.className = 'log';
+            logDiv.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+            
+            if (type === 'error') {
+                logDiv.style.borderLeftColor = '#dc3545';
+            } else if (type === 'success') {
+                logDiv.style.borderLeftColor = '#28a745';
+            } else if (type === 'warning') {
+                logDiv.style.borderLeftColor = '#ffc107';
+            }
+            
+            logContainer.appendChild(logDiv);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function clearLogs() {
+            logContainer.innerHTML = '';
+        }
+
+        function setResult(elementId, content, type = 'success') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = content;
+            element.parentElement.className = `test-section ${type}`;
+        }
+
+        async function testApiConfig() {
+            log('Testing API configuration...');
+            
+            try {
+                // Test if API_CONFIG is available (simulating React app)
+                const testConfig = {
+                    PRODUCTION_API: 'https://flash-cards-production-5df5.up.railway.app',
+                    DEVELOPMENT_API: 'http://localhost:8000',
+                    getApiUrl: () => {
+                        if (window.location.hostname === 'localhost') {
+                            return 'http://localhost:8000';
+                        }
+                        return 'https://flash-cards-production-5df5.up.railway.app';
+                    }
+                };
+
+                const apiUrl = testConfig.getApiUrl();
+                log(`API URL determined: ${apiUrl}`, 'success');
+                
+                setResult('config-result', `
+                    <h3>✅ Configuration Test Passed</h3>
+                    <p><strong>Selected API URL:</strong> ${apiUrl}</p>
+                    <p><strong>Environment:</strong> ${window.location.hostname}</p>
+                `);
+            } catch (error) {
+                log(`Configuration error: ${error.message}`, 'error');
+                setResult('config-result', `
+                    <h3>❌ Configuration Error</h3>
+                    <pre>${error.message}</pre>
+                `, 'error');
+            }
+        }
+
+        async function testHealth() {
+            log('Testing health endpoint...');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/health`);
+                const data = await response.json();
+                
+                log(`Health check successful: ${data.status}`, 'success');
+                
+                setResult('health-result', `
+                    <h3>✅ Health Check Passed</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `);
+            } catch (error) {
+                log(`Health check failed: ${error.message}`, 'error');
+                setResult('health-result', `
+                    <h3>❌ Health Check Failed</h3>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p><strong>Possible causes:</strong></p>
+                    <ul>
+                        <li>Backend server not running on port 8000</li>
+                        <li>CORS configuration issues</li>
+                        <li>Network connectivity problems</li>
+                    </ul>
+                `, 'error');
+            }
+        }
+
+        async function testDecks() {
+            log('Testing decks endpoint...');
+            
+            try {
+                const headers = {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Session-Token': 'guest_debug_' + Date.now()
+                };
+
+                log(`Request headers: ${JSON.stringify(headers, null, 2)}`);
+                
+                const response = await fetch(`${API_BASE}/api/decks`, {
+                    method: 'GET',
+                    headers: headers
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                log(`Decks loaded successfully: ${data.length} decks`, 'success');
+                
+                setResult('decks-result', `
+                    <h3>✅ Decks API Test Passed</h3>
+                    <p><strong>Decks found:</strong> ${data.length}</p>
+                    <p><strong>Total cards:</strong> ${data.reduce((sum, deck) => sum + (deck.cards ? deck.cards.length : 0), 0)}</p>
+                    <h4>Response Preview:</h4>
+                    <pre>${JSON.stringify(data.slice(0, 1), null, 2)}</pre>
+                `);
+            } catch (error) {
+                log(`Decks API failed: ${error.message}`, 'error');
+                setResult('decks-result', `
+                    <h3>❌ Decks API Test Failed</h3>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <p><strong>This is the exact error your frontend is encountering!</strong></p>
+                `, 'error');
+            }
+        }
+
+        // Capture console errors
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            log(`JavaScript Error: ${msg} at ${url}:${lineNo}:${columnNo}`, 'error');
+            return false;
+        };
+
+        // Capture fetch errors
+        const originalFetch = window.fetch;
+        window.fetch = function(...args) {
+            return originalFetch(...args).catch(error => {
+                log(`Fetch Error: ${error.message}`, 'error');
+                throw error;
+            });
+        };
+
+        // Auto-run tests on page load
+        window.onload = function() {
+            log('Debug page loaded - starting tests...', 'info');
+            setTimeout(testApiConfig, 500);
+            setTimeout(testHealth, 1000);
+            setTimeout(testDecks, 1500);
+        };
+    </script>
+</body>
+</html>
