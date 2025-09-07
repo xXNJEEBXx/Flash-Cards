@@ -5,7 +5,7 @@ import { settingsAPI, cardsAPI } from '../../services/apiService';
 import './StudyMode.css';
 
 const StudyMode = ({ deckId, onBack }) => {
-    const { decks, toggleCardKnown, resetDeckProgress } = useContext(CardsContext);
+    const { decks, toggleCardKnown, resetDeckProgress, undoLastKnownCard, hasRecentlyKnownCards } = useContext(CardsContext);
     const [currentDeck, setCurrentDeck] = useState(null);
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
     const [shuffleMode, setShuffleMode] = useState(false);
@@ -345,6 +345,38 @@ const StudyMode = ({ deckId, onBack }) => {
         }
     };
 
+    // دالة إلغاء آخر بطاقة تم تحديدها كمعروفة
+    const handleUndoLastKnown = async () => {
+        try {
+            const success = await undoLastKnownCard();
+            if (success) {
+                console.log('✅ Successfully undid last known card');
+                // إعادة تحديث البيانات المحلية
+                const updatedDeck = decks.find(deck => deck.id === deckId);
+                if (updatedDeck) {
+                    setCurrentDeck(updatedDeck);
+                    
+                    // تحديث البطاقات بناءً على الإعدادات الحالية
+                    let cardsToDisplay = [...updatedDeck.cards];
+                    
+                    if (hideMasteredCards) {
+                        cardsToDisplay = cardsToDisplay.filter(card => !card.known);
+                    }
+                    
+                    if (shuffleMode) {
+                        cardsToDisplay = cardsToDisplay.sort(() => Math.random() - 0.5);
+                    }
+                    
+                    setCards(cardsToDisplay);
+                }
+            } else {
+                console.log('⚠️ Could not undo last known card');
+            }
+        } catch (error) {
+            console.error('Failed to undo last known card:', error);
+        }
+    };
+
     const handleResetProgress = async () => {
         if (window.confirm("Are you sure you want to reset your progress for this deck?")) {
             try {
@@ -467,6 +499,16 @@ const StudyMode = ({ deckId, onBack }) => {
                 >
                     ✓ Mark as Known
                 </button>
+
+                {hasRecentlyKnownCards && (
+                    <button
+                        className="btn btn-info"
+                        onClick={handleUndoLastKnown}
+                        title="إلغاء آخر بطاقة متقنة"
+                    >
+                        ↶ Undo Last Known
+                    </button>
+                )}
 
                 <button
                     className="btn btn-warning"

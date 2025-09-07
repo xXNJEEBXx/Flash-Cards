@@ -119,15 +119,15 @@
     max-width: 400px;
     min-height: 250px;
   }
-  
+
   .card-front h3 {
     font-size: 1.2rem;
   }
-  
+
   .card-back p {
     font-size: 1.1rem;
   }
-  
+
   .card-front,
   .card-back {
     padding: 20px;
@@ -139,15 +139,15 @@
     width: 95vw;
     min-height: 200px;
   }
-  
+
   .card-front h3 {
     font-size: 1.1rem;
   }
-  
+
   .card-back p {
     font-size: 1rem;
   }
-  
+
   .card-front,
   .card-back {
     padding: 15px;

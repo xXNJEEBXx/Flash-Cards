@@ -46,6 +46,21 @@
   display: flex;
   justify-content: space-between;
   margin: 20px 0;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* تحسين التخطيط للشاشات الصغيرة */
+@media (max-width: 768px) {
+  .study-controls {
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .study-controls .btn {
+    min-width: 100px;
+    font-size: 0.85rem;
+  }
 }
 
 .study-actions {
@@ -120,6 +135,21 @@
 
 .study-controls .btn {
   min-width: 120px;
+}
+
+/* زر إلغاء آخر بطاقة معروفة */
+.btn-info[title*="إلغاء"] {
+  background-color: #6f42c1;
+  border-color: #6f42c1;
+  color: white;
+  font-size: 0.9rem;
+}
+
+.btn-info[title*="إلغاء"]:hover {
+  background-color: #5a32a3;
+  border-color: #5a32a3;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .btn-warning {
@@ -261,21 +291,21 @@
   .study-mode {
     padding: 15px;
   }
-  
+
   .card-container {
     min-height: 280px;
     margin: 20px 0;
   }
-  
+
   .study-controls {
     flex-direction: column;
     gap: 15px;
   }
-  
+
   .study-actions {
     justify-content: space-around;
   }
-  
+
   .setting-item {
     flex-direction: column;
     align-items: flex-start;
@@ -292,17 +322,17 @@
   .study-mode {
     padding: 10px;
   }
-  
+
   .card-container {
     min-height: 220px;
     margin: 15px 0;
   }
-  
+
   .study-actions {
     flex-direction: column;
     gap: 10px;
   }
-  
+
   .study-actions button {
     width: 100%;
   }

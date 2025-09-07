@@ -13,6 +13,8 @@ const generateId = () => {
 export const CardsProvider = ({ children }) => {
     // Initial state
     const [decks, setDecks] = useState([]);
+    // Track recently marked as known cards for undo functionality
+    const [recentlyKnownCards, setRecentlyKnownCards] = useState([]);
 
     // Load decks: try Laravel API first, then localStorage fallback
     useEffect(() => {
@@ -194,6 +196,12 @@ export const CardsProvider = ({ children }) => {
 
         console.log(`Previous known state: ${prevKnown}`);
 
+        // If marking card as known, add to recently known cards for undo functionality
+        if (!prevKnown) {
+            setRecentlyKnownCards(prev => [...prev, { deckId, cardId, timestamp: Date.now() }]);
+            console.log('📝 Added card to recently known cards for undo');
+        }
+
         // Optimistic UI update
         setDecks(prev => prev.map(deck =>
             deck.id === deckId
@@ -263,6 +271,88 @@ export const CardsProvider = ({ children }) => {
         setDecks(prevDecks => prevDecks.map(deck => deck.id === deckId ? { ...deck, cards: deck.cards.map(card => ({ ...card, known: false })) } : deck));
     };
 
+    // Undo last card marked as known
+    const undoLastKnownCard = async () => {
+        if (recentlyKnownCards.length === 0) {
+            console.log('⚠️ No recently known cards to undo');
+            return false;
+        }
+
+        const lastKnownCard = recentlyKnownCards[recentlyKnownCards.length - 1];
+        const { deckId, cardId } = lastKnownCard;
+
+        console.log('🔄 Undoing last known card:', { deckId, cardId });
+
+        // Remove from recently known cards
+        setRecentlyKnownCards(prev => prev.slice(0, -1));
+
+        // Find the card and mark it as unknown
+        const targetDeck = decks.find(deck => deck.id === deckId);
+        const targetCard = targetDeck?.cards.find(card => card.id === cardId);
+
+        if (!targetCard) {
+            console.log('❌ Card not found for undo');
+            return false;
+        }
+
+        // Update UI optimistically
+        setDecks(prev => prev.map(deck =>
+            deck.id === deckId
+                ? { ...deck, cards: deck.cards.map(c => c.id === cardId ? { ...c, known: false } : c) }
+                : deck
+        ));
+
+        try {
+            // Sync with Laravel API
+            console.log('📡 Syncing undo with Laravel API...');
+            const updated = await api.toggleKnown(deckId, cardId);
+
+            if (updated && updated.id !== undefined) {
+                console.log('✅ Undo API sync successful:', updated);
+
+                // Update with server truth
+                setDecks(prev => prev.map(deck =>
+                    deck.id === deckId
+                        ? {
+                            ...deck, cards: deck.cards.map(c =>
+                                c.id === updated.id ? { ...c, ...updated } : c
+                            )
+                        }
+                        : deck
+                ));
+
+                // Update localStorage backup
+                const updatedDecks = decks.map(deck =>
+                    deck.id === deckId
+                        ? {
+                            ...deck, cards: deck.cards.map(c =>
+                                c.id === updated.id ? { ...c, ...updated } : c
+                            )
+                        }
+                        : deck
+                );
+                localStorage.setItem('flashcards-decks', JSON.stringify(updatedDecks));
+
+                console.log('💾 Updated localStorage backup after undo');
+            }
+            return true;
+        } catch (error) {
+            console.log('❌ Undo API sync failed:', error.message);
+
+            // Revert optimistic update on failure
+            setDecks(prev => prev.map(deck =>
+                deck.id === deckId
+                    ? { ...deck, cards: deck.cards.map(c => c.id === cardId ? { ...c, known: true } : c) }
+                    : deck
+            ));
+
+            console.log('🔄 Reverted undo due to sync failure');
+            // Re-add to recently known cards since undo failed
+            setRecentlyKnownCards(prev => [...prev, lastKnownCard]);
+            return false;
+        }
+    };
+
     return (
         <CardsContext.Provider
             value={{
@@ -275,6 +365,8 @@ export const CardsProvider = ({ children }) => {
                 deleteCard,
                 toggleCardKnown,
                 resetDeckProgress,
+                undoLastKnownCard,
+                hasRecentlyKnownCards: recentlyKnownCards.length > 0,
             }}
         >
             {children}
