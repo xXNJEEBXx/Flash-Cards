@@ -453,6 +453,7 @@ const StudyMode = ({ deckId, onBack }) => {
                 </div>
             </div>
 
+            {/* منطقة البطاقة مع أزرار التنقل */}
             {totalCards === 0 ? (
                 <div className="empty-deck">
                     <h3>No cards to display</h3>
@@ -467,55 +468,69 @@ const StudyMode = ({ deckId, onBack }) => {
                     </p>
                 </div>
             ) : (
-                <div className="card-container">
-                    <Card
-                        card={currentCard}
-                        onToggleKnown={handleToggleKnown}
-                        inStudyMode={true}
-                    />
+                <div className="card-area">
+                    {/* زر Previous على اليسار */}
+                    <button
+                        className="btn btn-navigation btn-previous"
+                        onClick={handlePrevCard}
+                        disabled={currentCardIndex === 0}
+                        title="البطاقة السابقة"
+                    >
+                        <span className="btn-icon">⬅️</span>
+                        <span className="btn-text">Previous</span>
+                    </button>
+
+                    {/* البطاقة في المنتصف */}
+                    <div className="card-container-flexible">
+                        <Card
+                            card={currentCard}
+                            onToggleKnown={handleToggleKnown}
+                            inStudyMode={true}
+                        />
+                    </div>
+
+                    {/* زر Next على اليمين */}
+                    <button
+                        className="btn btn-navigation btn-next"
+                        onClick={handleNextButtonClick}
+                        title="البطاقة التالية (لم أفهمها)"
+                    >
+                        <span className="btn-text">Next</span>
+                        <span className="btn-icon">➡️</span>
+                    </button>
                 </div>
             )}
 
-            <div className="study-controls">
+            {/* أزرار التحكم الرئيسية تحت البطاقة */}
+            <div className="study-controls-bottom">
                 <button
-                    className="btn btn-secondary"
-                    onClick={handlePrevCard}
-                    disabled={currentCardIndex === 0}
+                    className="btn btn-success btn-main-action"
+                    onClick={handleMarkAsKnown}
+                    title="فهمت هذه البطاقة"
                 >
-                    Previous
+                    <span className="btn-icon">✅</span>
+                    <span className="btn-text">Mark as Known</span>
                 </button>
 
                 <button
-                    className={`btn ${showSettingsPanel ? 'btn-info' : 'btn-secondary'}`}
+                    className={`btn btn-settings ${showSettingsPanel ? 'active' : ''}`}
                     onClick={toggleSettingsPanel}
                     title="إعدادات الدراسة"
                 >
-                    ⚙️ إعدادات
-                </button>
-
-                <button
-                    className="btn btn-success"
-                    onClick={handleMarkAsKnown}
-                >
-                    ✓ Mark as Known
+                    <span className="btn-icon">⚙️</span>
+                    <span className="btn-text">إعدادات</span>
                 </button>
 
                 {hasRecentlyKnownCards && (
                     <button
-                        className="btn btn-info"
+                        className="btn btn-undo"
                         onClick={handleUndoLastKnown}
                         title="إلغاء آخر بطاقة متقنة"
                     >
-                        ↶ Undo Last Known
+                        <span className="btn-icon">↶</span>
+                        <span className="btn-text">Undo Last</span>
                     </button>
                 )}
-
-                <button
-                    className="btn btn-warning"
-                    onClick={handleNextButtonClick}
-                >
-                    ✗ Next (لم أفهم)
-                </button>
             </div>
 
             {/* لوحة الإعدادات */}
