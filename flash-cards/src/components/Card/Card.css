@@ -1,7 +1,9 @@
 .card {
   background-color: transparent;
-  width: 300px;
-  height: 200px;
+  width: 500px;
+  min-height: 300px;
+  max-height: 600px;
+  height: auto;
   perspective: 1000px;
   margin: 16px;
   cursor: pointer;
@@ -26,16 +28,20 @@
 .card-back {
   position: absolute;
   width: 100%;
-  height: 100%;
+  min-height: 100%;
+  height: auto;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 20px;
+  padding: 30px;
   box-sizing: border-box;
   border-radius: 8px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  line-height: 1.6;
 }
 
 .card-front {
@@ -43,10 +49,26 @@
   color: #212529;
 }
 
+.card-front h3 {
+  font-size: 1.4rem;
+  margin: 0;
+  text-align: center;
+  word-break: break-word;
+  hyphens: auto;
+}
+
 .card-back {
   background-color: #e9ecef;
   color: #495057;
   transform: rotateY(180deg);
+}
+
+.card-back p {
+  font-size: 1.2rem;
+  margin: 0;
+  text-align: center;
+  word-break: break-word;
+  hyphens: auto;
 }
 
 .card.known .card-front {
@@ -88,4 +110,46 @@
 
 .card.known .btn-toggle-known:hover {
   background-color: #5a6268;
+}
+
+/* تحسينات للشاشات المختلفة */
+@media (max-width: 768px) {
+  .card {
+    width: 90vw;
+    max-width: 400px;
+    min-height: 250px;
+  }
+  
+  .card-front h3 {
+    font-size: 1.2rem;
+  }
+  
+  .card-back p {
+    font-size: 1.1rem;
+  }
+  
+  .card-front,
+  .card-back {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    width: 95vw;
+    min-height: 200px;
+  }
+  
+  .card-front h3 {
+    font-size: 1.1rem;
+  }
+  
+  .card-back p {
+    font-size: 1rem;
+  }
+  
+  .card-front,
+  .card-back {
+    padding: 15px;
+  }
 }

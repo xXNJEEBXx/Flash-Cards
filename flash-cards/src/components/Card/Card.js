@@ -1,8 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Card.css';
 
 const Card = ({ card, onToggleKnown, inStudyMode = false }) => {
     const [isFlipped, setIsFlipped] = useState(false);
+
+    // إعادة ضبط حالة الانقلاب عند تغيير البطاقة
+    useEffect(() => {
+        setIsFlipped(false);
+    }, [card.id]);
 
     const handleCardClick = () => {
         setIsFlipped(!isFlipped);
