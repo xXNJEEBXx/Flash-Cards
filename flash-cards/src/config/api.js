@@ -3,25 +3,15 @@ const API_CONFIG = {
     // Railway Backend URL
     PRODUCTION_API: 'https://flash-cards-production-5df5.up.railway.app',
 
-    // محلي للتطوير
-    DEVELOPMENT_API: 'http://localhost:8000',
+    // محلي للتطوير (موجّه الآن لنفس بيئة Railway لضمان التوحيد)
+    DEVELOPMENT_API: 'https://flash-cards-production-5df5.up.railway.app',
 
     // الحصول على الرابط الصحيح
     getApiUrl: () => {
-        // IMPORTANT FIX: Hard-code local API URL to guarantee connection
-        const FIXED_API_URL = 'http://localhost:8000';
-        console.log('Using FIXED local API URL:', FIXED_API_URL);
-        return FIXED_API_URL;
-        
-        // REMOVED: Not using environment variables due to loading issues
-        // if (process.env.REACT_APP_API_URL) {
-        //    console.log('Using API URL from env:', process.env.REACT_APP_API_URL);
-        //    return process.env.REACT_APP_API_URL;
-        // }
-
-        // // استخدام المحلي للتطوير
-        // console.log('Using development API URL:', 'http://localhost:8000');
-        // return 'http://localhost:8000';
+        // استخدام خادم Railway بدلاً من localhost
+        const RAILWAY_API_URL = 'https://flash-cards-production-5df5.up.railway.app';
+        console.log('استخدام واجهة برمجة التطبيقات من Railway:', RAILWAY_API_URL);
+        return RAILWAY_API_URL;
     }
 };
 

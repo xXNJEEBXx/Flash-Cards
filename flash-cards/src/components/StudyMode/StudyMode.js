@@ -99,7 +99,7 @@ const StudyMode = ({ deckId, onBack }) => {
                     session_token: localStorage.getItem('session_token')
                 };
                 navigator.sendBeacon && navigator.sendBeacon(
-                    'http://127.0.0.1:8000/api/settings',
+                    'https://flash-cards-production-5df5.up.railway.app/api/settings',
                     new Blob([JSON.stringify(payload)], { type: 'application/json' })
                 );
             } catch (_) {

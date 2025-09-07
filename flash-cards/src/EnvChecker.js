@@ -35,7 +35,7 @@ const EnvChecker = () => {
             backgroundColor: '#f9f9f9'
         }}>
             <h2>🔍 API Connection Diagnostics</h2>
-            
+
             <div style={{ marginBottom: '15px' }}>
                 <h3>Environment Variables</h3>
                 <ul>
@@ -47,8 +47,8 @@ const EnvChecker = () => {
             </div>
 
             <div>
-                <button 
-                    onClick={runDiagnostics} 
+                <button
+                    onClick={runDiagnostics}
                     disabled={loading}
                     style={{
                         padding: '8px 16px',
@@ -64,9 +64,9 @@ const EnvChecker = () => {
             </div>
 
             {error && (
-                <div style={{ 
-                    marginTop: '15px', 
-                    padding: '10px', 
+                <div style={{
+                    marginTop: '15px',
+                    padding: '10px',
                     backgroundColor: '#FFEBEE',
                     border: '1px solid #FFCDD2',
                     borderRadius: '4px'
@@ -79,9 +79,9 @@ const EnvChecker = () => {
                 <div style={{ marginTop: '15px' }}>
                     <h3>Diagnostic Results</h3>
                     <p><strong>Timestamp:</strong> {diagnostics.timestamp}</p>
-                    
+
                     {diagnostics.results.map((result, index) => (
-                        <div key={index} style={{ 
+                        <div key={index} style={{
                             margin: '10px 0',
                             padding: '10px',
                             backgroundColor: result.success ? '#E8F5E9' : '#FFEBEE',
@@ -91,7 +91,7 @@ const EnvChecker = () => {
                             <h4>
                                 {result.success ? '✅' : '❌'} {result.test}
                             </h4>
-                            <pre style={{ 
+                            <pre style={{
                                 backgroundColor: '#f5f5f5',
                                 padding: '10px',
                                 borderRadius: '4px',

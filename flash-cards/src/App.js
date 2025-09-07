@@ -7,9 +7,7 @@ import DeckList from './components/DeckList/DeckList';
 import DeckForm from './components/Forms/DeckForm';
 import CardForm from './components/Forms/CardForm';
 import StudyMode from './components/StudyMode/StudyMode';
-import DebugPanel from './components/DebugPanel';
-import EnvChecker from './EnvChecker';
-import ApiTester from './ApiTester';
+// Removed debug components for clean production interface
 import './App.css';
 
 function App() {
@@ -270,9 +268,7 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
         {renderCurrentView()}
       </main>
 
-      <ApiTester />
-      <EnvChecker />
-      <DebugPanel />
+      {/* Debug components removed for clean production interface */}
     </div>
   );
 };

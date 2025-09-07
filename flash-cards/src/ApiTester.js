@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_CONFIG } from './config/api';
 
 const ApiTester = () => {
   const [results, setResults] = useState({
@@ -6,21 +7,22 @@ const ApiTester = () => {
     error: null,
     data: null
   });
-  
+
   useEffect(() => {
     const testApi = async () => {
       try {
-        setResults(prev => ({...prev, loading: true}));
-        
+        setResults(prev => ({ ...prev, loading: true }));
+
         // Test API configuration first
         console.log('React API URL:', process.env.REACT_APP_API_URL);
-        
-        // Try to fetch from the API
+
+        // Try to fetch from the API (Railway via API_CONFIG)
+        const baseUrl = API_CONFIG.getApiUrl();
         const response = await fetch(
-          `${process.env.REACT_APP_API_URL || 'http://localhost:8000'}/api/decks`,
+          `${baseUrl}/api/decks`,
           { headers: { 'Accept': 'application/json' } }
         );
-        
+
         if (!response.ok) {
           let errorText;
           try {
@@ -31,7 +33,7 @@ const ApiTester = () => {
           }
           throw new Error(errorText);
         }
-        
+
         const data = await response.json();
         setResults({
           loading: false,
@@ -47,28 +49,28 @@ const ApiTester = () => {
         });
       }
     };
-    
+
     testApi();
   }, []);
-  
+
   return (
-    <div style={{padding: '20px', margin: '20px', border: '1px solid #ddd', borderRadius: '5px'}}>
+    <div style={{ padding: '20px', margin: '20px', border: '1px solid #ddd', borderRadius: '5px' }}>
       <h2>React API Connection Test</h2>
-      
+
       {results.loading ? (
         <p>Loading...</p>
       ) : results.error ? (
-        <div style={{color: 'red'}}>
+        <div style={{ color: 'red' }}>
           <h3>⚠️ Error:</h3>
           <p>{results.error}</p>
         </div>
       ) : (
-        <div style={{color: 'green'}}>
+        <div style={{ color: 'green' }}>
           <h3>✅ Success!</h3>
           <p>Found {results.data.length} decks</p>
           <pre style={{
-            backgroundColor: '#f5f5f5', 
-            padding: '10px', 
+            backgroundColor: '#f5f5f5',
+            padding: '10px',
             overflow: 'auto',
             maxHeight: '200px'
           }}>
@@ -76,10 +78,11 @@ const ApiTester = () => {
           </pre>
         </div>
       )}
-      
-      <div style={{marginTop: '20px'}}>
+
+      <div style={{ marginTop: '20px' }}>
         <h3>Environment Variables</h3>
         <p><strong>REACT_APP_API_URL:</strong> {process.env.REACT_APP_API_URL || 'not set'}</p>
+        <p><strong>Resolved API URL:</strong> {API_CONFIG.getApiUrl()}</p>
         <p><strong>NODE_ENV:</strong> {process.env.NODE_ENV || 'not set'}</p>
       </div>
     </div>
