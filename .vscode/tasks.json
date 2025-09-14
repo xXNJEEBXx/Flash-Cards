@@ -111,6 +111,62 @@
 			"command": "git add -A; git commit -m 'chore: sync repo'; git push origin main",
 			"problemMatcher": [],
 			"group": "build"
+		},
+		{
+			"label": "Build and Test Flash Cards",
+			"type": "shell",
+			"command": "cd \"c:\\xXNJEEBXx\\Projects\\flash Cards\\flash-cards\" && npm run build && npm start",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Build Flash Cards React App",
+			"type": "shell",
+			"command": "cd \"c:\\xXNJEEBXx\\Projects\\flash Cards\\flash-cards\"; npm run build",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Build React (smart fix)",
+			"type": "shell",
+			"command": "cd \"c:\\xXNJEEBXx\\Projects\\flash Cards\\flash-cards\"; npm run build",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Test React (smart fix)",
+			"type": "shell",
+			"command": "cd \"c:\\xXNJEEBXx\\Projects\\flash Cards\\flash-cards\"; npm test -- --watchAll=false",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Build Flash Cards React App",
+			"type": "shell",
+			"command": "cd \"c:\\xXNJEEBXx\\Projects\\flash Cards\\flash-cards\"; npm run build",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Build Fixed Flash Cards",
+			"type": "shell",
+			"command": "cd \"c:\\xXNJEEBXx\\Projects\\flash Cards\\flash-cards\"; npm run build",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Start Flash Cards Dev Server",
+			"type": "shell",
+			"command": "cd \"c:\\xXNJEEBXx\\Projects\\flash Cards\\flash-cards\"; npm start",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "serve"
 		}
 	]
 }

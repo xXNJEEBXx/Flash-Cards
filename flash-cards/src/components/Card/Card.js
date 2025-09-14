@@ -13,9 +13,16 @@ const Card = ({ card, onToggleKnown, inStudyMode = false }) => {
         setIsFlipped(!isFlipped);
     };
 
+    // التحقق من وجود خصائص النظام الذكي
+    const isSmartModeActive = card.smartModeHighlight || card.isHighPriority || card.isInReviewMode;
+
     return (
         <div
-            className={`card ${isFlipped ? 'flipped' : ''} ${card.known ? 'known' : ''}`}
+            className={`card ${isFlipped ? 'flipped' : ''} 
+                       ${card.known ? 'known' : ''} 
+                       ${isSmartModeActive ? 'smart-mode-active' : ''}
+                       ${card.isHighPriority ? 'high-priority' : ''}
+                       ${card.isInReviewMode ? 'review-mode' : ''}`}
             onClick={handleCardClick}
         >
             <div className="card-inner">

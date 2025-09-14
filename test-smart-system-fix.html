@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار النظام الذكي - التجارة الإلكترونية</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #007bff;
+            margin-bottom: 30px;
+        }
+
+        .status {
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .status-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .status-error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .status-info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+        }
+
+        .cards-container {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f8f9fa;
+        }
+
+        .card-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="test-container">
+        <h1>🧪 اختبار النظام الذكي - التجارة الإلكترونية</h1>
+
+        <div id="test-status" class="status status-info">
+            بدء الاختبار...
+        </div>
+
+        <div style="text-align: center; margin: 20px 0;">
+            <button class="btn" onclick="testSmartSystem()">اختبار النظام الذكي</button>
+            <button class="btn" onclick="testEcommerceDeck()">فحص بطاقات التجارة الإلكترونية</button>
+            <button class="btn" onclick="clearConsole()">مسح النتائج</button>
+        </div>
+
+        <div class="cards-container">
+            <h3>📊 نتائج الاختبار:</h3>
+            <div id="results"></div>
+        </div>
+
+        <div class="cards-container">
+            <h3>🃏 بطاقات المجموعة:</h3>
+            <div id="cards-list"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://flash-cards-production-5df5.up.railway.app';
+        const ECOMMERCE_DECK_ID = 5;
+
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString('ar-SA');
+            const statusClass = type === 'error' ? 'status-error' : 
+                              type === 'success' ? 'status-success' : 'status-info';
+            
+            results.innerHTML += `
+                <div class="${statusClass}" style="margin: 5px 0; padding: 8px; font-size: 14px;">
+                    <strong>${timestamp}:</strong> ${message}
+                </div>
+            `;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function clearConsole() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('cards-list').innerHTML = '';
+        }
+
+        async function testEcommerceDeck() {
+            try {
+                log('🔍 فحص مجموعة التجارة الإلكترونية...');
+                
+                const response = await fetch(`${API_URL}/api/decks/${ECOMMERCE_DECK_ID}`);
+                const deckData = await response.json();
+                
+                const totalCards = deckData.cards.length;
+                const knownCards = deckData.cards.filter(card => card.known).length;
+                const unknownCards = deckData.cards.filter(card => !card.known).length;
+                
+                log(`📚 المجموعة: ${deckData.title}`, 'success');
+                log(`📊 إجمالي البطاقات: ${totalCards}`, 'info');
+                log(`✅ البطاقات المتقنة: ${knownCards}`, 'success');
+                log(`❌ البطاقات غير المتقنة: ${unknownCards}`, unknownCards > 0 ? 'success' : 'error');
+                
+                // عرض البطاقات غير المتقنة
+                const cardsList = document.getElementById('cards-list');
+                cardsList.innerHTML = '';
+                
+                if (unknownCards > 0) {
+                    cardsList.innerHTML = `<h4>البطاقات غير المتقنة (${unknownCards}):</h4>`;
+                    
+                    deckData.cards.filter(card => !card.known).slice(0, 5).forEach((card, index) => {
+                        cardsList.innerHTML += `
+                            <div class="card-item">
+                                <strong>${index + 1}.</strong> ${card.question.substring(0, 100)}...
+                                <br><small>ID: ${card.id} | Known: ${card.known}</small>
+                            </div>
+                        `;
+                    });
+                    
+                    if (unknownCards > 5) {
+                        cardsList.innerHTML += `<p><em>... و ${unknownCards - 5} بطاقة أخرى غير متقنة</em></p>`;
+                    }
+                    
+                    log(`✨ يجب أن تظهر هذه البطاقات عند تفعيل النظام الذكي!`, 'success');
+                } else {
+                    cardsList.innerHTML = '<p>لا توجد بطاقات غير متقنة في هذه المجموعة.</p>';
+                }
+                
+            } catch (error) {
+                log(`❌ خطأ في فحص البطاقات: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSmartSystem() {
+            try {
+                log('🎯 اختبار النظام الذكي...');
+                
+                // 1. فحص الإعدادات الحالية
+                log('1. فحص الإعدادات الحالية...');
+                const settingsResponse = await fetch(`${API_URL}/api/settings`);
+                const settings = await settingsResponse.json();
+                
+                log(`النظام الذكي: ${settings.smart_mode_enabled ? 'مُفعل ✅' : 'مُطفأ ❌'}`, 
+                    settings.smart_mode_enabled ? 'success' : 'error');
+                log(`البطاقات غير المتقنة: ${settings.unmastered_cards?.length || 0} بطاقة`);
+                
+                // 2. تفعيل النظام الذكي إذا لم يكن مُفعل
+                if (!settings.smart_mode_enabled) {
+                    log('2. تفعيل النظام الذكي...');
+                    await fetch(`${API_URL}/api/settings`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ smart_mode_enabled: true })
+                    });
+                    log('✅ تم تفعيل النظام الذكي', 'success');
+                }
+                
+                // 3. فحص مجموعة التجارة الإلكترونية
+                log('3. فحص البطاقات المتاحة في مجموعة التجارة الإلكترونية...');
+                await testEcommerceDeck();
+                
+                log('🎉 انتهى الاختبار. يرجى فتح التطبيق والذهاب لمجموعة التجارة الإلكترونية وتفعيل النظام الذكي', 'success');
+                
+            } catch (error) {
+                log(`❌ خطأ في اختبار النظام الذكي: ${error.message}`, 'error');
+            }
+        }
+
+        // تشغيل فحص البطاقات عند فتح الصفحة
+        window.onload = function() {
+            testEcommerceDeck();
+        };
+    </script>
+</body>
+
+</html>
