@@ -1,13 +1,9 @@
-[[build]]
+[build]
 builder = "NIXPACKS"
 watchPatterns = ["**/*.php", "composer.json", "composer.lock"]
 
-[[deploy]]
+[deploy]
 healthcheckPath = "/api/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
-
-[deploy.environmentVariables]
-DB_CONNECTION = "sqlite"
-DB_DATABASE = "/app/database/database.sqlite"
