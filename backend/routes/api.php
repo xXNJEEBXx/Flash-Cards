@@ -6,43 +6,12 @@ use App\Http\Controllers\DeckController;
 use App\Http\Controllers\CardController;
 use App\Http\Controllers\UserSettingsController;
 
-// Health check for Railway
+// Simple health check for Railway - just return 200 OK
 Route::get('/health', function () {
-    $diag = [
+    return response()->json([
         'status' => 'ok',
-        'timestamp' => now(),
-        'laravel_version' => app()->version(),
-        'database' => [
-            'status' => 'unknown',
-            'driver' => config('database.default'),
-            'error' => null,
-            'tables' => [],
-            'counts' => [],
-        ],
-    ];
-
-    try {
-        DB::connection()->getPdo();
-        $diag['database']['status'] = 'connected';
-        // Inspect key tables
-        foreach (['decks', 'cards', 'migrations'] as $table) {
-            try {
-                if (DB::getSchemaBuilder()->hasTable($table)) {
-                    $diag['database']['tables'][] = $table;
-                    $diag['database']['counts'][$table] = DB::table($table)->count();
-                } else {
-                    $diag['database']['counts'][$table] = 'missing';
-                }
-            } catch (\Throwable $t) {
-                $diag['database']['counts'][$table] = 'error: ' . $t->getMessage();
-            }
-        }
-    } catch (\Throwable $e) {
-        $diag['database']['status'] = 'error';
-        $diag['database']['error'] = $e->getMessage();
-    }
-
-    return response()->json($diag);
+        'timestamp' => now()->toIso8601String(),
+    ], 200);
 });
 
 Route::get('/decks', [DeckController::class, 'index']);
