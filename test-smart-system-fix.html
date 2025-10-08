@@ -117,9 +117,9 @@
         function log(message, type = 'info') {
             const results = document.getElementById('results');
             const timestamp = new Date().toLocaleTimeString('ar-SA');
-            const statusClass = type === 'error' ? 'status-error' : 
-                              type === 'success' ? 'status-success' : 'status-info';
-            
+            const statusClass = type === 'error' ? 'status-error' :
+                type === 'success' ? 'status-success' : 'status-info';
+
             results.innerHTML += `
                 <div class="${statusClass}" style="margin: 5px 0; padding: 8px; font-size: 14px;">
                     <strong>${timestamp}:</strong> ${message}
@@ -136,26 +136,26 @@
         async function testEcommerceDeck() {
             try {
                 log('🔍 فحص مجموعة التجارة الإلكترونية...');
-                
+
                 const response = await fetch(`${API_URL}/api/decks/${ECOMMERCE_DECK_ID}`);
                 const deckData = await response.json();
-                
+
                 const totalCards = deckData.cards.length;
                 const knownCards = deckData.cards.filter(card => card.known).length;
                 const unknownCards = deckData.cards.filter(card => !card.known).length;
-                
+
                 log(`📚 المجموعة: ${deckData.title}`, 'success');
                 log(`📊 إجمالي البطاقات: ${totalCards}`, 'info');
                 log(`✅ البطاقات المتقنة: ${knownCards}`, 'success');
                 log(`❌ البطاقات غير المتقنة: ${unknownCards}`, unknownCards > 0 ? 'success' : 'error');
-                
+
                 // عرض البطاقات غير المتقنة
                 const cardsList = document.getElementById('cards-list');
                 cardsList.innerHTML = '';
-                
+
                 if (unknownCards > 0) {
                     cardsList.innerHTML = `<h4>البطاقات غير المتقنة (${unknownCards}):</h4>`;
-                    
+
                     deckData.cards.filter(card => !card.known).slice(0, 5).forEach((card, index) => {
                         cardsList.innerHTML += `
                             <div class="card-item">
@@ -164,16 +164,16 @@
                             </div>
                         `;
                     });
-                    
+
                     if (unknownCards > 5) {
                         cardsList.innerHTML += `<p><em>... و ${unknownCards - 5} بطاقة أخرى غير متقنة</em></p>`;
                     }
-                    
+
                     log(`✨ يجب أن تظهر هذه البطاقات عند تفعيل النظام الذكي!`, 'success');
                 } else {
                     cardsList.innerHTML = '<p>لا توجد بطاقات غير متقنة في هذه المجموعة.</p>';
                 }
-                
+
             } catch (error) {
                 log(`❌ خطأ في فحص البطاقات: ${error.message}`, 'error');
             }
@@ -182,16 +182,16 @@
         async function testSmartSystem() {
             try {
                 log('🎯 اختبار النظام الذكي...');
-                
+
                 // 1. فحص الإعدادات الحالية
                 log('1. فحص الإعدادات الحالية...');
                 const settingsResponse = await fetch(`${API_URL}/api/settings`);
                 const settings = await settingsResponse.json();
-                
-                log(`النظام الذكي: ${settings.smart_mode_enabled ? 'مُفعل ✅' : 'مُطفأ ❌'}`, 
+
+                log(`النظام الذكي: ${settings.smart_mode_enabled ? 'مُفعل ✅' : 'مُطفأ ❌'}`,
                     settings.smart_mode_enabled ? 'success' : 'error');
                 log(`البطاقات غير المتقنة: ${settings.unmastered_cards?.length || 0} بطاقة`);
-                
+
                 // 2. تفعيل النظام الذكي إذا لم يكن مُفعل
                 if (!settings.smart_mode_enabled) {
                     log('2. تفعيل النظام الذكي...');
@@ -202,20 +202,20 @@
                     });
                     log('✅ تم تفعيل النظام الذكي', 'success');
                 }
-                
+
                 // 3. فحص مجموعة التجارة الإلكترونية
                 log('3. فحص البطاقات المتاحة في مجموعة التجارة الإلكترونية...');
                 await testEcommerceDeck();
-                
+
                 log('🎉 انتهى الاختبار. يرجى فتح التطبيق والذهاب لمجموعة التجارة الإلكترونية وتفعيل النظام الذكي', 'success');
-                
+
             } catch (error) {
                 log(`❌ خطأ في اختبار النظام الذكي: ${error.message}`, 'error');
             }
         }
 
         // تشغيل فحص البطاقات عند فتح الصفحة
-        window.onload = function() {
+        window.onload = function () {
             testEcommerceDeck();
         };
     </script>

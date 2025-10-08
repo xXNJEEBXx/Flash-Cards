@@ -16,7 +16,7 @@
   width: 100%;
   /* Size to content of the tallest face */
   height: auto;
-  display: grid;              /* stack faces on top of each other */
+  display: grid; /* stack faces on top of each other */
   text-align: center;
   transition: transform 0.6s;
   transform-style: preserve-3d;

@@ -1,72 +1,72 @@
 .smart-mode-info {
-    margin-top: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    padding: 8px;
-    border-radius: 6px;
-    background-color: rgba(0, 123, 255, 0.1);
-    font-size: 0.85rem;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px;
+  border-radius: 6px;
+  background-color: rgba(0, 123, 255, 0.1);
+  font-size: 0.85rem;
 }
 
 .smart-stats {
-    font-weight: bold;
-    color: #0056b3;
+  font-weight: bold;
+  color: #0056b3;
 }
 
 .review-mode-badge {
-    display: inline-block;
-    padding: 3px 8px;
-    background-color: #28a745;
-    color: white;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    font-weight: bold;
+  display: inline-block;
+  padding: 3px 8px;
+  background-color: #28a745;
+  color: white;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
 }
 
 /* تنسيقات البطاقات في النظام الذكي */
 .smart-mode-active .card-front,
 .high-priority .card-front,
 .review-mode .card-front {
-    position: relative;
+  position: relative;
 }
 
 .smart-mode-active .card-front::after {
-    content: "🧠";
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 18px;
+  content: "🧠";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 18px;
 }
 
 .high-priority .card-front::after {
-    content: "⚠️";
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 18px;
+  content: "⚠️";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 18px;
 }
 
 .review-mode .card-front::after {
-    content: "🔄";
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 18px;
+  content: "🔄";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 18px;
 }
 
 /* تحسينات الألوان للنظام الذكي */
 .smart-mode-active .card-front {
-    background: linear-gradient(135deg, #f8f9fa 25%, #e6f7ff 100%);
-    border-left: 5px solid #1890ff;
+  background: linear-gradient(135deg, #f8f9fa 25%, #e6f7ff 100%);
+  border-left: 5px solid #1890ff;
 }
 
 .high-priority .card-front {
-    background: linear-gradient(135deg, #f8f9fa 25%, #fff1e6 100%);
-    border-left: 5px solid #fa8c16;
+  background: linear-gradient(135deg, #f8f9fa 25%, #fff1e6 100%);
+  border-left: 5px solid #fa8c16;
 }
 
 .review-mode .card-front {
-    background: linear-gradient(135deg, #f8f9fa 25%, #f6ffed 100%);
-    border-left: 5px solid #52c41a;
+  background: linear-gradient(135deg, #f8f9fa 25%, #f6ffed 100%);
+  border-left: 5px solid #52c41a;
 }

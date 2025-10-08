@@ -17,40 +17,42 @@
 تم إصلاح المنطق في `StudyMode.js` على النحو التالي:
 
 ### 1. إصلاح منطق الفلترة:
+
 ```javascript
 if (smartModeEnabled) {
-    const reachedLimit = unmastered.length >= UNMASTERED_LIMIT;
-    
-    if (reviewMode || reachedLimit) {
-        // في وضع المراجعة أو عند بلوغ الحد
-        const activeUnmastered = unmastered.slice(-UNMASTERED_LIMIT);
-        
-        if (activeUnmastered.length === 0) {
-            // إذا لم توجد بطاقات في القائمة، اعرض جميع البطاقات غير المتقنة
-            cardsToDisplay = currentDeck.cards.filter(card => !card.known);
-        } else {
-            // اعرض البطاقات من القائمة بالترتيب
-            const idToOrder = new Map(activeUnmastered.map((id, idx) => [id, idx]));
-            cardsToDisplay = currentDeck.cards
-                .filter(card => idToOrder.has(card.id))
-                .sort((a, b) => idToOrder.get(a.id) - idToOrder.get(b.id));
-        }
-    } else {
-        // النظام الذكي مُفعل لكن لم نصل للحد: اعرض جميع البطاقات مع الأولوية لغير المتقنة
-        cardsToDisplay = [...currentDeck.cards];
-        
-        if (hideMasteredCards) {
-            cardsToDisplay = cardsToDisplay.filter(card => !card.known);
-        }
+  const reachedLimit = unmastered.length >= UNMASTERED_LIMIT;
 
-        if (shuffleMode) {
-            cardsToDisplay = cardsToDisplay.sort(() => Math.random() - 0.5);
-        }
+  if (reviewMode || reachedLimit) {
+    // في وضع المراجعة أو عند بلوغ الحد
+    const activeUnmastered = unmastered.slice(-UNMASTERED_LIMIT);
+
+    if (activeUnmastered.length === 0) {
+      // إذا لم توجد بطاقات في القائمة، اعرض جميع البطاقات غير المتقنة
+      cardsToDisplay = currentDeck.cards.filter((card) => !card.known);
+    } else {
+      // اعرض البطاقات من القائمة بالترتيب
+      const idToOrder = new Map(activeUnmastered.map((id, idx) => [id, idx]));
+      cardsToDisplay = currentDeck.cards
+        .filter((card) => idToOrder.has(card.id))
+        .sort((a, b) => idToOrder.get(a.id) - idToOrder.get(b.id));
     }
+  } else {
+    // النظام الذكي مُفعل لكن لم نصل للحد: اعرض جميع البطاقات مع الأولوية لغير المتقنة
+    cardsToDisplay = [...currentDeck.cards];
+
+    if (hideMasteredCards) {
+      cardsToDisplay = cardsToDisplay.filter((card) => !card.known);
+    }
+
+    if (shuffleMode) {
+      cardsToDisplay = cardsToDisplay.sort(() => Math.random() - 0.5);
+    }
+  }
 }
 ```
 
 ### 2. النتيجة:
+
 - ✅ عندما يُفعّل النظام الذكي لأول مرة، يعرض جميع البطاقات كما هو معتاد
 - ✅ عندما تكون قائمة البطاقات غير المتقنة فارغة، يعرض جميع البطاقات غير المتقنة بدلاً من قائمة فارغة
 - ✅ النظام يبدأ في جمع البطاقات غير المتقنة تدريجياً عند الضغط على "Next"
@@ -59,6 +61,7 @@ if (smartModeEnabled) {
 ## 🧪 كيفية اختبار الحل:
 
 ### اختبار سريع:
+
 1. افتح التطبيق: https://flash-cards-jade.vercel.app/
 2. اذهب لمجموعة "التجارة الإلكترونية (E-commerce)"
 3. ادخل وضع الدراسة
@@ -66,6 +69,7 @@ if (smartModeEnabled) {
 5. **النتيجة المتوقعة**: يجب أن تظهر البطاقات فوراً (15 بطاقة غير متقنة)
 
 ### اختبار شامل:
+
 1. فعّل النظام الذكي
 2. اضغط "Next" على 6 بطاقات مختلفة
 3. **النتيجة المتوقعة**: سيدخل النظام في وضع المراجعة ويعرض آخر 6 بطاقات فقط
@@ -73,11 +77,13 @@ if (smartModeEnabled) {
 5. **النتيجة المتوقعة**: ستختفي من المراجعة ويضاف غيرها
 
 ## 📊 البيانات الحالية:
+
 - **مجموعة التجارة الإلكترونية**: 23 بطاقة إجمالي
 - **البطاقات المتقنة**: 8 بطاقات
 - **البطاقات غير المتقنة**: 15 بطاقة ← هذه يجب أن تظهر!
 
 ## 🔄 الخطوات التالية:
+
 1. اختبار الحل على التطبيق المباشر
 2. التأكد من عمل النظام الذكي بشكل صحيح
 3. إذا لزم الأمر، رفع التحديث للإنتاج
