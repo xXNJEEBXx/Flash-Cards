@@ -1,0 +1,12 @@
+# Root-level Apache fallback to route everything to /public
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # If request points to existing file or directory at root, allow it
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Otherwise rewrite everything to /public/index.php preserving path
+    RewriteRule ^ public/index.php [L]
+</IfModule>
