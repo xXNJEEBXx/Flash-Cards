@@ -15,3 +15,8 @@ Route::get('/', function () {
         'timestamp' => now()
     ]);
 });
+
+// Railway healthcheck endpoint
+Route::get('/up', function () {
+    return response()->json(['status' => 'ok'], 200);
+});

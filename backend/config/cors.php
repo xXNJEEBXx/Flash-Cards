@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    'paths' => ['*'],  // Allow CORS for all routes including /api/*
     'allowed_methods' => ['*'],
     'allowed_origins' => [
         'http://localhost:3000',
