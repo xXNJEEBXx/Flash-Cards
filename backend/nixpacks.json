@@ -1,7 +1,7 @@
 {
   "phases": {
     "setup": {
-      "nixPkgs": ["php82", "php82Packages.composer"]
+      "nixPkgs": ["php82", "php82Packages.composer", "php82Extensions.sqlite3", "php82Extensions.pdo_sqlite"]
     },
     "install": {
       "cmds": ["composer install --optimize-autoloader --no-dev"]
@@ -9,9 +9,7 @@
     "build": {
       "cmds": [
         "chmod +x init-db.sh",
-        "php artisan config:cache",
-        "php artisan route:cache",
-        "php artisan view:cache"
+        "chmod +x start.sh"
       ]
     }
   },
