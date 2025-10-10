@@ -7,15 +7,18 @@
 ## 1️⃣ **الوصول إلى إعدادات المشروع**
 
 ### الخطوة 1: افتح Railway Dashboard
+
 ```
 🌐 اذهب إلى: https://railway.app/dashboard
 ```
 
 ### الخطوة 2: اختر مشروعك
+
 - ابحث عن مشروع **Flash Cards Backend**
 - اضغط عليه للدخول
 
 ### الخطوة 3: افتح الإعدادات
+
 - في الصفحة الرئيسية للمشروع
 - اضغط على تبويب **"Settings"** (⚙️) في الأعلى
 
@@ -24,6 +27,7 @@
 ## 2️⃣ **ربط GitHub Repository**
 
 ### في صفحة Settings، ابحث عن قسم:
+
 ```
 📦 "Source" أو "Service Source" أو "GitHub Repo"
 ```
@@ -31,22 +35,28 @@
 ### تحقق من الإعدادات التالية:
 
 #### أ) Repository
+
 ```
 Repository: xXNJEEBXx/Flash-Cards
 ```
+
 - إذا لم يكن محدد، اضغط **"Connect GitHub"**
 - اختر Repository من القائمة
 
 #### ب) Branch
+
 ```
 Branch: main
 ```
+
 - تأكد أن الـ branch المحدد هو `main` وليس `master`
 
 #### ج) Root Directory ⚠️ **الأهم!**
+
 ```
 Root Directory: backend
 ```
+
 - هذا مهم جداً! لأن كود Laravel في مجلد `backend/`
 - إذا لم يكن محدد، اكتب: `backend`
 
@@ -57,17 +67,20 @@ Root Directory: backend
 ### ابحث عن أحد هذه الأقسام:
 
 #### الخيار أ: "Deployment Triggers"
+
 ```
 ✅ Deploy on Push to Branch
 ✅ Watch Paths: backend/**
 ```
 
 #### الخيار ب: "Automatic Deployments"
+
 ```
 ✅ Enable automatic deployments
 ```
 
 #### الخيار ج: "Deploy Settings"
+
 ```
 ✅ Auto-deploy on push
 ```
@@ -88,10 +101,13 @@ Root Directory: backend
 بعد ربط GitHub وتفعيل Auto-Deploy:
 
 ### الخطوة 1: ارجع للصفحة الرئيسية
+
 - اضغط على اسم المشروع في الأعلى
 
 ### الخطوة 2: ابدأ Deploy يدوياً
+
 ابحث عن واحد من هذه الأزرار:
+
 ```
 🚀 "Deploy" (زر كبير في الوسط)
 أو
@@ -101,6 +117,7 @@ Root Directory: backend
 ```
 
 ### الخطوة 3: انتظر اكتمال البناء
+
 - راقب الـ **Build Logs**
 - يجب أن يكتمل في 2-3 دقائق
 
@@ -109,6 +126,7 @@ Root Directory: backend
 ## 6️⃣ **التحقق من نجاح Auto-Deploy**
 
 ### اختبار 1: Push جديد
+
 ```powershell
 # في terminal
 cd "c:\xXNJEEBXx\Projects\flash Cards"
@@ -118,6 +136,7 @@ git push origin main
 ```
 
 ### اختبار 2: راقب Railway
+
 - ارجع إلى Railway Dashboard
 - يجب أن ترى deployment جديد يبدأ تلقائياً خلال 10-30 ثانية
 - في تبويب **"Deployments"**
@@ -128,10 +147,12 @@ git push origin main
 
 إذا نجح Auto-Deploy، ستلاحظ:
 
-1. **في GitHub**: 
+1. **في GitHub**:
+
    - ✅ Webhook active في Settings → Webhooks
 
 2. **في Railway**:
+
    - ✅ رسالة "Deployment triggered by push" في الـ logs
    - ✅ Build يبدأ تلقائياً بعد كل push
 
@@ -144,9 +165,11 @@ git push origin main
 ## 🔧 **إعدادات إضافية (اختيارية)**
 
 ### تخصيص Watch Paths
+
 إذا أردت Deploy فقط عند تغيير ملفات معينة:
 
 في Settings → Deploy Triggers:
+
 ```
 Watch Paths:
   backend/**/*.php
@@ -156,7 +179,9 @@ Watch Paths:
 ```
 
 ### إيقاف Auto-Deploy مؤقتاً
+
 في Settings:
+
 ```
 ❌ Pause automatic deployments
 ```
@@ -166,13 +191,17 @@ Watch Paths:
 ## 🐛 **حل المشاكل الشائعة**
 
 ### مشكلة 1: لا يوجد خيار "Auto-Deploy"
+
 **الحل:**
+
 - تأكد من ربط GitHub أولاً
 - بعض النسخ القديمة من Railway تستخدم أسماء مختلفة
 - ابحث عن: "Deploy Triggers" أو "Webhooks"
 
 ### مشكلة 2: Auto-Deploy لا يعمل بعد التفعيل
+
 **الحل:**
+
 ```
 1. تحقق من Root Directory = backend
 2. تحقق من Branch = main
@@ -181,7 +210,9 @@ Watch Paths:
 ```
 
 ### مشكلة 3: كل push يُفشل الـ Deploy
+
 **الحل:**
+
 - راجع **Build Logs** لمعرفة الخطأ
 - تأكد من صحة ملفات: `railway.json`, `nixpacks.toml`
 - تأكد من وجود `init-db.sh` في مجلد backend
@@ -200,6 +231,7 @@ Watch Paths:
 ## 🎉 **تم! الآن لديك Auto-Deploy**
 
 كل ما عليك هو:
+
 ```bash
 git add .
 git commit -m "تحديث جديد"
@@ -213,6 +245,7 @@ git push origin main
 ## 📞 **إذا لم تنجح الطريقة**
 
 أرسل لي screenshot من:
+
 1. Settings → Source section
 2. Deployments tab
 3. آخر Build Logs

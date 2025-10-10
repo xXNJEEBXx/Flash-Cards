@@ -18,6 +18,7 @@
 ### **الطريقة 2: تفعيل Auto-Deploy** 🔄
 
 #### الخطوة 1: التحقق من الاتصال بـ GitHub
+
 1. اذهب إلى **Settings** (⚙️)
 2. ابحث عن قسم **Source** أو **Service Source**
 3. تحقق من:
@@ -28,6 +29,7 @@
    ```
 
 #### الخطوة 2: تفعيل Auto-Deploy
+
 1. في نفس صفحة **Settings**
 2. ابحث عن **Deploy Triggers** أو **Automatic Deployments**
 3. تأكد من تفعيل:
@@ -35,7 +37,9 @@
    - ✅ **Watch Paths** (إذا موجود): `backend/**`
 
 #### الخطوة 3: إعادة ربط GitHub (إذا لزم الأمر)
+
 إذا لم يكن متصل:
+
 1. اضغط **"Disconnect"** ثم **"Connect"**
 2. اختر Repository: `xXNJEEBXx/Flash-Cards`
 3. اختر Branch: `main`
@@ -68,9 +72,11 @@ railway up
 بعد بدء الـ Deploy، راقب:
 
 ### 1. **Deployment Logs**
+
 في Railway Dashboard → **Deployments** → اضغط على آخر deployment
 
 يجب أن ترى:
+
 ```
 ✅ Cloning repository...
 ✅ Installing dependencies...
@@ -81,7 +87,9 @@ railway up
 ```
 
 ### 2. **اختبار الـ API**
+
 بعد نجاح الـ Deploy:
+
 ```bash
 # افتح في المتصفح
 https://your-app.railway.app/api/health
@@ -95,10 +103,12 @@ https://your-app.railway.app/api/health
 ## ⚠️ إذا استمرت المشكلة
 
 ### السيناريو 1: لا يوجد Deployment تلقائي
+
 - **الحل**: استخدم Deploy يدوياً كل مرة
 - أو تحقق من إعدادات GitHub Webhooks
 
 ### السيناريو 2: Deployment يفشل
+
 - راجع **Logs** في Railway
 - تحقق من **Environment Variables**:
   ```
@@ -107,6 +117,7 @@ https://your-app.railway.app/api/health
   ```
 
 ### السيناريو 3: Root Directory خاطئ
+
 - تأكد من `Root Directory: backend`
 - وليس المجلد الجذر للمشروع
 
@@ -115,6 +126,7 @@ https://your-app.railway.app/api/health
 ## 📋 Checklist سريع
 
 قبل الـ Deploy، تأكد من:
+
 - ✅ GitHub متصل بـ Railway
 - ✅ Branch محدد: `main`
 - ✅ Root Directory: `backend`

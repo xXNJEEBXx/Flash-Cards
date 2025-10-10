@@ -5,6 +5,7 @@
 ---
 
 ### ☐ 1. افتح Railway Dashboard
+
 ```
 https://railway.app/dashboard
 ```
@@ -12,11 +13,13 @@ https://railway.app/dashboard
 ---
 
 ### ☐ 2. اختر مشروع Flash Cards Backend
+
 - اضغط على المشروع من القائمة
 
 ---
 
 ### ☐ 3. اذهب إلى Settings (⚙️)
+
 - تبويب Settings في الأعلى
 
 ---
@@ -30,6 +33,7 @@ https://railway.app/dashboard
 - ☐ **Root Directory**: `backend` ⚠️ **مهم جداً!**
 
 إذا لم يكن محدد:
+
 - اضغط "Connect GitHub"
 - اختر Repository + Branch
 - اكتب `backend` في Root Directory
@@ -47,11 +51,13 @@ https://railway.app/dashboard
 ---
 
 ### ☐ 6. احفظ الإعدادات
+
 - اضغط "Save" أو "Update"
 
 ---
 
 ### ☐ 7. افعل أول Deploy يدوياً
+
 - ارجع للصفحة الرئيسية
 - اضغط زر **"Deploy"** أو **"Redeploy"**
 - انتظر حتى يكتمل (2-3 دقائق)
@@ -75,6 +81,7 @@ git push origin main
 ---
 
 ## ✅ نجح! إذا رأيت:
+
 - ✅ Deployment جديد في "Deployments" tab
 - ✅ Logs تقول "Triggered by push to main"
 - ✅ Build يكتمل بنجاح
@@ -82,6 +89,7 @@ git push origin main
 ---
 
 ## ❌ لم ينجح؟ تحقق من:
+
 - ❌ Root Directory = `backend` (وليس فارغ)
 - ❌ Branch = `main` (وليس master)
 - ❌ GitHub متصل بشكل صحيح
@@ -90,6 +98,7 @@ git push origin main
 ---
 
 ## 📞 تحتاج مساعدة؟
+
 افتح ملف `HOW_TO_ENABLE_AUTO_DEPLOY.md` للدليل الكامل المفصّل!
 
 ---
