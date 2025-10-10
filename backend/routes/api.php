@@ -6,12 +6,35 @@ use App\Http\Controllers\DeckController;
 use App\Http\Controllers\CardController;
 use App\Http\Controllers\UserSettingsController;
 
-// Simple health check for Railway - just return 200 OK
+// Health check with database verification
 Route::get('/health', function () {
-    return response()->json([
-        'status' => 'ok',
-        'timestamp' => now()->toIso8601String(),
-    ], 200);
+    try {
+        // Test database connection
+        DB::connection()->getPdo();
+        
+        // Check if tables exist
+        $tablesExist = DB::select("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('decks', 'cards')");
+        
+        // Count records
+        $deckCount = DB::table('decks')->count();
+        $cardCount = DB::table('cards')->count();
+        
+        return response()->json([
+            'status' => 'ok',
+            'database' => 'connected',
+            'tables' => count($tablesExist) === 2 ? 'ready' : 'missing',
+            'decks' => $deckCount,
+            'cards' => $cardCount,
+            'timestamp' => now()->toIso8601String(),
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'database' => 'disconnected',
+            'error' => $e->getMessage(),
+            'timestamp' => now()->toIso8601String(),
+        ], 500);
+    }
 });
 
 Route::get('/decks', [DeckController::class, 'index']);

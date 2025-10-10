@@ -18,8 +18,8 @@ if ! grep -q '^APP_KEY=' .env || grep -q '^APP_KEY=$' .env; then
   php artisan key:generate --force || true
 fi
 
-# Run migrations in background (do not block healthcheck)
-php artisan migrate --force >/dev/null 2>&1 &
+# Run migrations and seed database (non-blocking)
+(php artisan migrate --force && php artisan db:seed --force) >/dev/null 2>&1 &
 
 # Start Laravel server (fast boot, correct routing)
 echo "✨ Starting Laravel server on port ${PORT:-8000}..."
