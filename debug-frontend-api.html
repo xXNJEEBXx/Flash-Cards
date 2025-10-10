@@ -124,13 +124,13 @@
             try {
                 // Test if API_CONFIG is available (simulating React app)
                 const testConfig = {
-                    PRODUCTION_API: 'https://flash-cards-production-5df5.up.railway.app',
+                    PRODUCTION_API: 'https://flash-cards-production-e52d.up.railway.app',
                     DEVELOPMENT_API: 'http://localhost:8000',
                     getApiUrl: () => {
                         if (window.location.hostname === 'localhost') {
                             return 'http://localhost:8000';
                         }
-                        return 'https://flash-cards-production-5df5.up.railway.app';
+                        return 'https://flash-cards-production-e52d.up.railway.app';
                     }
                 };
 

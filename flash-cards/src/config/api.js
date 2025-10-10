@@ -1,15 +1,15 @@
 // إعدادات API للـ Frontend
 const API_CONFIG = {
     // Railway Backend URL
-    PRODUCTION_API: 'https://flash-cards-production-5df5.up.railway.app',
+    PRODUCTION_API: 'https://flash-cards-production-e52d.up.railway.app',
 
     // محلي للتطوير (موجّه الآن لنفس بيئة Railway لضمان التوحيد)
-    DEVELOPMENT_API: 'https://flash-cards-production-5df5.up.railway.app',
+    DEVELOPMENT_API: 'https://flash-cards-production-e52d.up.railway.app',
 
     // الحصول على الرابط الصحيح
     getApiUrl: () => {
         // استخدام خادم Railway بدلاً من localhost
-        const RAILWAY_API_URL = 'https://flash-cards-production-5df5.up.railway.app';
+        const RAILWAY_API_URL = 'https://flash-cards-production-e52d.up.railway.app';
         console.log('استخدام واجهة برمجة التطبيقات من Railway:', RAILWAY_API_URL);
         return RAILWAY_API_URL;
     }

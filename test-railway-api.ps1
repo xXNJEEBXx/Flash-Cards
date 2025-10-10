@@ -1,7 +1,7 @@
 # اختبار API على Railway
 Write-Host "🧪 Testing Railway API..." -ForegroundColor Cyan
 
-$API_URL = "https://flash-cards-production-5df5.up.railway.app"
+$API_URL = "https://flash-cards-production-e52d.up.railway.app"
 
 Write-Host "`n1️⃣ Testing Health Check..." -ForegroundColor Yellow
 try {
