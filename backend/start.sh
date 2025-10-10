@@ -19,14 +19,17 @@ fi
 
 # Force SQLite in .env file
 echo "🔧 Forcing SQLite configuration in .env..."
-sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
-sed -i 's|DB_DATABASE=.*|DB_DATABASE=/app/database/database.sqlite|' .env
+sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env || true
+sed -i 's|DB_DATABASE=.*|DB_DATABASE=/app/database/database.sqlite|' .env || true
 
 # Ensure APP_KEY exists to avoid 500 on boot
 if ! grep -q '^APP_KEY=' .env || grep -q '^APP_KEY=$' .env; then
   echo "🔐 Generating APP_KEY"
   php artisan key:generate --force || true
 fi
+
+# Clear caches to avoid stale config/routes/views
+php artisan optimize:clear || true
 
 # Start Laravel server FIRST (for healthcheck)
 echo "✨ Starting Laravel server on port ${PORT:-8000}..."
@@ -38,7 +41,7 @@ sleep 5
 
 # Run migrations and seed database (in background)
 echo "🔄 Running migrations and seeding..."
-(php artisan migrate --force && php artisan db:seed --force) &
+(php artisan migrate --force && php artisan db:seed --force) >/dev/null 2>&1 &
 
 # Wait for server process
 wait $SERVER_PID
