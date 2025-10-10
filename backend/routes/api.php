@@ -18,7 +18,10 @@ Route::get('/health', function () {
 Route::get('/db-status', function () {
     try {
         // Test database connection
-        DB::connection()->getPdo();
+        $conn = DB::connection();
+        $pdo = $conn->getPdo();
+        $driver = $conn->getDriverName();
+        $config = $conn->getConfig();
         
         // Check if tables exist
         $tablesExist = DB::select("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('decks', 'cards')");
@@ -30,6 +33,13 @@ Route::get('/db-status', function () {
         return response()->json([
             'status' => 'ok',
             'database' => 'connected',
+            'driver' => $driver,
+            'config' => [
+                'host' => $config['host'] ?? null,
+                'port' => $config['port'] ?? null,
+                'database' => $config['database'] ?? null,
+                'username' => $config['username'] ?? null,
+            ],
             'tables' => count($tablesExist) === 2 ? 'ready' : 'missing',
             'decks' => $deckCount,
             'cards' => $cardCount,
@@ -40,6 +50,13 @@ Route::get('/db-status', function () {
             'status' => 'error',
             'database' => 'disconnected',
             'error' => $e->getMessage(),
+            'env' => [
+                'DB_CONNECTION' => env('DB_CONNECTION'),
+                'DB_HOST' => env('DB_HOST'),
+                'DB_PORT' => env('DB_PORT'),
+                'DB_DATABASE' => env('DB_DATABASE'),
+                'DB_USERNAME' => env('DB_USERNAME'),
+            ],
             'timestamp' => now()->toIso8601String(),
         ], 200);
     }

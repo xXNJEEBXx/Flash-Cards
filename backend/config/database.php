@@ -60,7 +60,14 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
+                // Optional SSL: if you have a CA cert path, set MYSQL_ATTR_SSL_CA env
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                // If Railway proxy requires TLS but without CA, you may disable server cert verify
+                // by setting DB_SSLMODE (prefer/require). Defaults to false for safety.
+                defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT') ? PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT : null
+                    => env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT', env('DB_SSLMODE') ? false : null),
+                // Connection timeout in seconds (avoid hanging healthchecks)
+                PDO::ATTR_TIMEOUT => env('DB_CONNECT_TIMEOUT', 5),
             ]) : [],
         ],
 
