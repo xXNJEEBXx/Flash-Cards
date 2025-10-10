@@ -2,6 +2,10 @@
 # Script to initialize SQLite database on Railway
 
 echo "🔧 Initializing database..."
+echo "🔍 Current environment variables:"
+echo "   DB_CONNECTION=$DB_CONNECTION"
+echo "   DB_DATABASE=$DB_DATABASE"
+echo "   DATABASE_URL=$DATABASE_URL"
 
 # Create database directory if it doesn't exist
 mkdir -p /app/database

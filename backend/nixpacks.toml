@@ -16,3 +16,7 @@ cmds = [
 
 [start]
 cmd = "bash start.sh"
+
+[[phases.setup.staticEnvVars]]
+DB_CONNECTION = "sqlite"
+DB_DATABASE = "/app/database/database.sqlite"
