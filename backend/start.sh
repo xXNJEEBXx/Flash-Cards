@@ -28,9 +28,17 @@ if ! grep -q '^APP_KEY=' .env || grep -q '^APP_KEY=$' .env; then
   php artisan key:generate --force || true
 fi
 
-# Run migrations and seed database (non-blocking)
-(php artisan migrate --force && php artisan db:seed --force) >/dev/null 2>&1 &
-
-# Start Laravel server (fast boot, correct routing)
+# Start Laravel server FIRST (for healthcheck)
 echo "✨ Starting Laravel server on port ${PORT:-8000}..."
-exec php artisan serve --host=0.0.0.0 --port="${PORT:-8000}" --no-reload
+php artisan serve --host=0.0.0.0 --port="${PORT:-8000}" --no-reload &
+SERVER_PID=$!
+
+# Give server 5 seconds to start
+sleep 5
+
+# Run migrations and seed database (in background)
+echo "🔄 Running migrations and seeding..."
+(php artisan migrate --force && php artisan db:seed --force) &
+
+# Wait for server process
+wait $SERVER_PID

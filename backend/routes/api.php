@@ -6,8 +6,16 @@ use App\Http\Controllers\DeckController;
 use App\Http\Controllers\CardController;
 use App\Http\Controllers\UserSettingsController;
 
-// Health check with database verification
+// Simple health check - always return 200 for Railway healthcheck
 Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'timestamp' => now()->toIso8601String(),
+    ], 200);
+});
+
+// Detailed database status check
+Route::get('/db-status', function () {
     try {
         // Test database connection
         DB::connection()->getPdo();
@@ -28,8 +36,6 @@ Route::get('/health', function () {
             'timestamp' => now()->toIso8601String(),
         ], 200);
     } catch (\Exception $e) {
-        // Return 200 even on DB error so Railway healthcheck passes
-        // Frontend will check 'status' field to determine actual health
         return response()->json([
             'status' => 'error',
             'database' => 'disconnected',
