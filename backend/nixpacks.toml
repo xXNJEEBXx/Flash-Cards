@@ -5,8 +5,7 @@ nixPkgs = [
     "php82Packages.composer",
     "php82Extensions.sqlite3",
     "php82Extensions.pdo_sqlite",
-    "php82Extensions.pdo_mysql",
-    "cacert"
+    "php82Extensions.pdo_mysql"
 ]
 aptPkgs = []
 
