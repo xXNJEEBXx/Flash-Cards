@@ -1,6 +1,12 @@
 [phases.setup]
-# Include PHP 8.2, Composer, and SQLite extensions
-nixPkgs = ["php82", "php82Packages.composer", "php82Extensions.sqlite3", "php82Extensions.pdo_sqlite"]
+# Include PHP 8.2, Composer, and DB extensions (SQLite + MySQL)
+nixPkgs = [
+    "php82",
+    "php82Packages.composer",
+    "php82Extensions.sqlite3",
+    "php82Extensions.pdo_sqlite",
+    "php82Extensions.pdo_mysql"
+]
 aptPkgs = []
 
 [phases.install]
@@ -15,6 +21,4 @@ cmds = [
 [start]
 cmd = "bash start.sh"
 
-[[phases.setup.staticEnvVars]]
-DB_CONNECTION = "sqlite"
-DB_DATABASE = "/app/database/database.sqlite"
+# No static env here; Railway Variables provide DB_* for MySQL

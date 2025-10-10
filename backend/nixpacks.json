@@ -1,19 +1,4 @@
 {
-  "phases": {
-    "setup": {
-      "nixPkgs": ["php82", "php82Packages.composer", "php82Extensions.sqlite3", "php82Extensions.pdo_sqlite"]
-    },
-    "install": {
-      "cmds": ["composer install --optimize-autoloader --no-dev"]
-    },
-    "build": {
-      "cmds": [
-        "chmod +x init-db.sh",
-        "chmod +x start.sh"
-      ]
-    }
-  },
-  "start": {
-    "cmd": "bash start.sh"
-  }
+  "note": "Deprecated: use nixpacks.toml only",
+  "disabled": true
 }
