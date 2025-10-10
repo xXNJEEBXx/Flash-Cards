@@ -1,5 +1,6 @@
 [phases.setup]
 nixPkgs = ["php82", "php82Packages.composer"]
+aptPkgs = []
 
 [phases.install]
 cmds = ["composer install --optimize-autoloader --no-dev"]
@@ -7,10 +8,11 @@ cmds = ["composer install --optimize-autoloader --no-dev"]
 [phases.build]
 cmds = [
     "chmod +x init-db.sh",
+    "chmod +x start.sh",
     "php artisan config:cache",
     "php artisan route:cache",
     "php artisan view:cache"
 ]
 
 [start]
-cmd = "bash init-db.sh && (php artisan migrate --force --verbose || echo 'Migration warning, continuing...') && php artisan serve --host=0.0.0.0 --port=$PORT"
+cmd = "bash start.sh"
