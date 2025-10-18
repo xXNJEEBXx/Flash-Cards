@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './FolderItem.css';
 
-const FolderItem = ({ folder, onSelectFolder, onEditFolder, onDeleteFolder, onMoveFolder, onDrop, level = 0 }) => {
+const FolderItem = ({ folder, onSelectFolder, onEditFolder, onDeleteFolder, onMoveFolder, onDrop, onOpenFolder, level = 0 }) => {
     const [isExpanded, setIsExpanded] = useState(true);
     const [showMenu, setShowMenu] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
@@ -78,7 +78,7 @@ const FolderItem = ({ folder, onSelectFolder, onEditFolder, onDeleteFolder, onMo
                     {hasSubfolders || hasDecks ? (isExpanded ? '📂' : '📁') : '📁'}
                 </button>
                 
-                <div className="folder-info" onClick={() => onSelectFolder(folder)}>
+                <div className="folder-info" onClick={() => onOpenFolder && onOpenFolder(folder.id)}>
                     <span className="folder-name">{folder.name}</span>
                     {folder.description && (
                         <span className="folder-description">{folder.description}</span>
@@ -92,6 +92,7 @@ const FolderItem = ({ folder, onSelectFolder, onEditFolder, onDeleteFolder, onMo
                                 {learnedCards}/{totalCards} cards learned
                             </span>
                         )}
+                        <span className="folder-link-hint">Click to open →</span>
                     </div>
                 </div>
 
@@ -124,18 +125,17 @@ const FolderItem = ({ folder, onSelectFolder, onEditFolder, onDeleteFolder, onMo
                             onDeleteFolder={onDeleteFolder}
                             onMoveFolder={onMoveFolder}
                             onDrop={onDrop}
+                            onOpenFolder={onOpenFolder}
                             level={level + 1}
                         />
                     ))}
                     
-                    {/* Render decks */}
-                    {hasDecks && folder.decks.map(deck => (
-                        <div key={deck.id} className="folder-deck-item" style={{ marginLeft: `${(level + 1) * 20}px` }}>
-                            <span className="deck-icon">🎯</span>
-                            <span className="deck-name">{deck.title}</span>
-                            <span className="deck-cards">{deck.cards?.length || 0} cards</span>
+                    {/* Show deck count only */}
+                    {hasDecks && (
+                        <div className="folder-decks-summary" style={{ marginLeft: `${(level + 1) * 20}px` }}>
+                            📚 {folder.decks.length} deck{folder.decks.length !== 1 ? 's' : ''} inside - Click folder to view
                         </div>
-                    ))}
+                    )}
                 </div>
             )}
         </div>

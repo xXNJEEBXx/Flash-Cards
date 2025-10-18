@@ -1,9 +1,9 @@
 {
   "name": "flashcards-mcp-server",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "MCP server to control Flash Cards via Laravel REST API",
+  "description": "MCP server to control Flash Cards via Laravel REST API (with Folders support)",
   "main": "dist/index.js",
   "bin": {
     "flashcards-mcp-server": "dist/index.js"

@@ -17,9 +17,21 @@ export const DeckSchema = z.object({
   id: z.number(),
   title: z.string(),
   description: z.string().nullable().optional(),
+  folder_id: z.number().nullable().optional(),
   cards: z.array(CardSchema).optional(),
+});
+
+export const FolderSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  description: z.string().nullable().optional(),
+  parent_folder_id: z.number().nullable().optional(),
+  order: z.number().optional(),
+  decks: z.array(DeckSchema).optional(),
+  subfolders: z.lazy(() => z.array(FolderSchema)).optional(),
 });
 
 // Using any types here to avoid requiring type-level zod during bootstrap.
 export type Card = any;
 export type Deck = any;
+export type Folder = any;

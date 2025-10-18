@@ -59,9 +59,21 @@
 
 /* Unified Content Section */
 .unified-content-section {
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+/* Make folders fit in the grid naturally */
+.unified-content-section .folders-container {
+  grid-column: span 1;
+  margin: 0;
+}
+
+/* Ensure deck cards fit properly */
+.unified-content-section .deck-card {
+  margin: 0;
 }
 
 /* Legacy sections support (will be merged into unified) */

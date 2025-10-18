@@ -10,10 +10,10 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { ApiClient } from "./http.js";
-import { CardSchema, DeckSchema } from "./schemas.js";
+import { CardSchema, DeckSchema, FolderSchema } from "./schemas.js";
 
 const name = "flashcards-mcp-server";
-const version = "0.1.0";
+const version = "0.2.0";
 
 // Resolve backend base URL with priority:
 // 1) BACKEND_BASE_URL (env)
@@ -244,6 +244,70 @@ async function main() {
             properties: { deckId: { type: "number" } },
           },
         },
+        // ===== Folder Management Tools =====
+        {
+          name: "listFolders",
+          description: "List all folders with their decks and subfolders",
+          inputSchema: { type: "object", properties: {} },
+        },
+        {
+          name: "createFolder",
+          description: "Create a new folder",
+          inputSchema: {
+            type: "object",
+            required: ["name"],
+            properties: {
+              name: { type: "string", description: "Folder name" },
+              description: { type: "string", description: "Folder description" },
+              parent_folder_id: { type: "number", description: "Parent folder ID for nested folders" },
+            },
+          },
+        },
+        {
+          name: "updateFolder",
+          description: "Update an existing folder",
+          inputSchema: {
+            type: "object",
+            required: ["folderId"],
+            properties: {
+              folderId: { type: "number" },
+              name: { type: "string" },
+              description: { type: "string" },
+            },
+          },
+        },
+        {
+          name: "deleteFolder",
+          description: "Delete a folder (decks and subfolders will be moved to parent level)",
+          inputSchema: {
+            type: "object",
+            required: ["folderId"],
+            properties: { folderId: { type: "number" } },
+          },
+        },
+        {
+          name: "moveDeckToFolder",
+          description: "Move a deck into a folder",
+          inputSchema: {
+            type: "object",
+            required: ["folderId", "deckId"],
+            properties: {
+              folderId: { type: "number", description: "Target folder ID" },
+              deckId: { type: "number", description: "Deck ID to move" },
+            },
+          },
+        },
+        {
+          name: "removeDeckFromFolder",
+          description: "Remove a deck from its folder (move to root level)",
+          inputSchema: {
+            type: "object",
+            required: ["deckId"],
+            properties: {
+              deckId: { type: "number", description: "Deck ID to remove from folder" },
+            },
+          },
+        },
       ],
     };
   });
@@ -356,6 +420,53 @@ async function main() {
           const { deckId } = args as any;
           const res = await client.call<any>("POST", `/decks/${deckId}/reset`);
           return okJson(DeckSchema.parse(res));
+        }
+
+        // ===== Folder Handlers =====
+        case "listFolders": {
+          const res = await client.call<any>("GET", `/folders`);
+          const folders = z.array(FolderSchema).parse(res);
+          return okJson(folders);
+        }
+
+        case "createFolder": {
+          const { name, description, parent_folder_id } = args as any;
+          const body: any = { name };
+          if (description) body.description = description;
+          if (parent_folder_id) body.parent_folder_id = parent_folder_id;
+          const res = await client.call<any>("POST", `/folders`, body);
+          return okJson(FolderSchema.parse(res));
+        }
+
+        case "updateFolder": {
+          const { folderId, name, description } = args as any;
+          const body: any = {};
+          if (name) body.name = name;
+          if (description !== undefined) body.description = description;
+          const res = await client.call<any>("PUT", `/folders/${folderId}`, body);
+          return okJson(FolderSchema.parse(res));
+        }
+
+        case "deleteFolder": {
+          const { folderId } = args as any;
+          await client.call<void>("DELETE", `/folders/${folderId}`);
+          return okJson({ success: true });
+        }
+
+        case "moveDeckToFolder": {
+          const { folderId, deckId } = args as any;
+          const res = await client.call<any>("POST", `/folders/${folderId}/move-deck`, {
+            deck_id: deckId,
+          });
+          return okJson(res);
+        }
+
+        case "removeDeckFromFolder": {
+          const { deckId } = args as any;
+          const res = await client.call<any>("POST", `/folders/remove-deck`, {
+            deck_id: deckId,
+          });
+          return okJson(res);
         }
 
         default:

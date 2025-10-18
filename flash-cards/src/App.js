@@ -5,6 +5,7 @@ import Header from './components/Layout/Header';
 import Sidebar from './components/Layout/Sidebar';
 import QuickActions from './components/Dashboard/QuickActions';
 import DeckListWithFolders from './components/DeckList/DeckListWithFolders';
+import FolderView from './components/Folders/FolderView';
 import DeckForm from './components/Forms/DeckForm';
 import CardForm from './components/Forms/CardForm';
 import StudyMode from './components/StudyMode/StudyMode';
@@ -12,9 +13,10 @@ import StudyMode from './components/StudyMode/StudyMode';
 import './App.css';
 
 function App() {
-  const [view, setView] = useState('decks'); // 'decks', 'create-deck', 'edit-deck', 'create-card', 'edit-card', 'study'
+  const [view, setView] = useState('decks'); // 'decks', 'folder-view', 'create-deck', 'edit-deck', 'create-card', 'edit-card', 'study'
   const [selectedDeckId, setSelectedDeckId] = useState(null);
   const [selectedCardId, setSelectedCardId] = useState(null);
+  const [selectedFolderId, setSelectedFolderId] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -27,6 +29,8 @@ function App() {
           setSelectedDeckId={setSelectedDeckId}
           selectedCardId={selectedCardId}
           setSelectedCardId={setSelectedCardId}
+          selectedFolderId={selectedFolderId}
+          setSelectedFolderId={setSelectedFolderId}
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
         />
@@ -36,7 +40,7 @@ function App() {
 }
 
 // The main app content with access to the context
-const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selectedCardId, setSelectedCardId, sidebarOpen, setSidebarOpen }) => {
+const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selectedCardId, setSelectedCardId, selectedFolderId, setSelectedFolderId, sidebarOpen, setSidebarOpen }) => {
   const { addCard, editCard, decks } = React.useContext(CardsContext);
 
   // Calculate deck statistics
@@ -108,6 +112,28 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
             />
 
             <DeckListWithFolders
+              onSelectDeck={(deckId) => {
+                setSelectedDeckId(deckId);
+                setView('edit-deck');
+              }}
+              onStudyDeck={(deckId) => {
+                setSelectedDeckId(deckId);
+                setView('study');
+              }}
+              onOpenFolder={(folderId) => {
+                setSelectedFolderId(folderId);
+                setView('folder-view');
+              }}
+            />
+          </div>
+        );
+
+      case 'folder-view':
+        return (
+          <div className="main-content">
+            <FolderView
+              folderId={selectedFolderId}
+              onBack={() => setView('decks')}
               onSelectDeck={(deckId) => {
                 setSelectedDeckId(deckId);
                 setView('edit-deck');

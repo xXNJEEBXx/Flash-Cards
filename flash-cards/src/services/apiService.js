@@ -317,7 +317,10 @@ export const foldersAPI = {
                 body: JSON.stringify({ deck_id: deckId })
             });
 
-            if (!response.ok) throw new Error('Failed to remove deck from folder');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to remove deck from folder');
+            }
 
             const result = await response.json();
             return result.data;

@@ -173,6 +173,17 @@ body {
   box-shadow: 0 6px 25px rgba(253, 121, 168, 0.4);
 }
 
+.btn-warning {
+  background: linear-gradient(135deg, #fdcb6e 0%, #f39c12 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
+}
+
+.btn-warning:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(243, 156, 18, 0.4);
+}
+
 .btn-outline {
   background: transparent;
   border: 2px solid #667eea;

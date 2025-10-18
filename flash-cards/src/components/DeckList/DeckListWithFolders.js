@@ -7,7 +7,7 @@ import FolderForm from '../Folders/FolderForm';
 import './DeckList.css';
 import '../Folders/FoldersView.css';
 
-const DeckListWithFolders = ({ onSelectDeck, onStudyDeck }) => {
+const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
     const { decks, deleteDeck } = useContext(CardsContext);
     const {
         folders,
@@ -28,10 +28,31 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck }) => {
     const [draggedDeck, setDraggedDeck] = useState(null);
     const [viewMode, setViewMode] = useState('both'); // 'both', 'folders', 'decks'
 
-    // Get decks not in any folder
+    // Get decks not in any folder (must be defined BEFORE unifiedItems)
     const rootDecks = useMemo(() => {
         return decks.filter(deck => !deck.folder_id);
     }, [decks]);
+
+    // Combine folders and decks into unified items
+    const unifiedItems = useMemo(() => {
+        const items = [];
+        
+        // Add folders based on view mode
+        if (viewMode === 'both' || viewMode === 'folders') {
+            folders.forEach(folder => {
+                items.push({ type: 'folder', data: folder, order: 0 });
+            });
+        }
+        
+        // Add decks based on view mode
+        if (viewMode === 'both' || viewMode === 'decks') {
+            rootDecks.forEach(deck => {
+                items.push({ type: 'deck', data: deck, order: 1 });
+            });
+        }
+        
+        return items;
+    }, [folders, rootDecks, viewMode]);
 
     // Filter and sort decks
     const filteredAndSortedDecks = useMemo(() => {
@@ -272,31 +293,53 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck }) => {
                 </button>
             </div>
 
-            {/* Unified Section - Folders and Decks Together */}
+            {/* Unified Section - All Items Together */}
             <div className="unified-content-section">
-                {/* Folders */}
-                {(viewMode === 'both' || viewMode === 'folders') && folders.length > 0 && (
-                    <div className="folders-container">
-                        {folders.map(folder => (
+                {unifiedItems.map((item, index) => {
+                    if (item.type === 'folder') {
+                        return (
                             <FolderItem
-                                key={folder.id}
-                                folder={folder}
+                                key={`folder-${item.data.id}`}
+                                folder={item.data}
                                 onSelectFolder={handleSelectFolder}
                                 onEditFolder={handleEditFolder}
                                 onDeleteFolder={handleDeleteFolder}
                                 onMoveFolder={moveDeckToFolder}
                                 onDrop={handleDrop}
+                                onOpenFolder={onOpenFolder}
                             />
-                        ))}
-                    </div>
-                )}
-
-                {/* Decks */}
-                {(viewMode === 'both' || viewMode === 'decks') && filteredAndSortedDecks.length > 0 && (
-                    <div className="decks-grid">
-                        {filteredAndSortedDecks.map(deck => (
+                        );
+                    } else {
+                        const deck = item.data;
+                        // Apply search filter
+                        const matchesSearch = deck.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            deck.description.toLowerCase().includes(searchTerm.toLowerCase());
+                        
+                        if (!matchesSearch) return null;
+                        
+                        // Apply deck filter
+                        const learnedRatio = deck.cards.length > 0
+                            ? deck.cards.filter(card => card.known).length / deck.cards.length
+                            : 0;
+                        
+                        let passesFilter = true;
+                        switch (filterType) {
+                            case 'new':
+                                passesFilter = learnedRatio < 0.5;
+                                break;
+                            case 'progress':
+                                passesFilter = learnedRatio >= 0.5 && learnedRatio < 0.8;
+                                break;
+                            case 'mastered':
+                                passesFilter = learnedRatio >= 0.8;
+                                break;
+                        }
+                        
+                        if (!passesFilter) return null;
+                        
+                        return (
                             <div
-                                key={deck.id}
+                                key={`deck-${deck.id}`}
                                 className="deck-card"
                                 draggable
                                 onDragStart={() => handleDragStart(deck)}
@@ -382,9 +425,9 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck }) => {
                                     </button>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                )}
+                        );
+                    }
+                })}
             </div>
 
             {/* Folder Form Modal */}
