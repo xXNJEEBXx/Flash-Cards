@@ -4,8 +4,7 @@ import { FoldersProvider } from './context/FoldersContext';
 import Header from './components/Layout/Header';
 import Sidebar from './components/Layout/Sidebar';
 import QuickActions from './components/Dashboard/QuickActions';
-import DeckList from './components/DeckList/DeckList';
-import FoldersView from './components/Folders/FoldersView';
+import DeckListWithFolders from './components/DeckList/DeckListWithFolders';
 import DeckForm from './components/Forms/DeckForm';
 import CardForm from './components/Forms/CardForm';
 import StudyMode from './components/StudyMode/StudyMode';
@@ -13,7 +12,7 @@ import StudyMode from './components/StudyMode/StudyMode';
 import './App.css';
 
 function App() {
-  const [view, setView] = useState('decks'); // 'decks', 'folders', 'create-deck', 'edit-deck', 'create-card', 'edit-card', 'study'
+  const [view, setView] = useState('decks'); // 'decks', 'create-deck', 'edit-deck', 'create-card', 'edit-card', 'study'
   const [selectedDeckId, setSelectedDeckId] = useState(null);
   const [selectedCardId, setSelectedCardId] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -91,24 +90,15 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
                 >
                   ☰
                 </button>
-                <h1>My Flash Card Decks</h1>
+                <h1>My Flash Cards</h1>
               </div>
-              <div className="header-actions">
-                <button
-                  className="btn btn-outline"
-                  onClick={() => setView('folders')}
-                >
-                  <span className="btn-icon">📁</span>
-                  Folders
-                </button>
-                <button
-                  className="btn btn-primary btn-large"
-                  onClick={() => setView('create-deck')}
-                >
-                  <span className="btn-icon">➕</span>
-                  Create New Deck
-                </button>
-              </div>
+              <button
+                className="btn btn-primary btn-large"
+                onClick={() => setView('create-deck')}
+              >
+                <span className="btn-icon">➕</span>
+                Create New Deck
+              </button>
             </div>
 
             <QuickActions
@@ -117,7 +107,7 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
               deckStats={deckStats}
             />
 
-            <DeckList
+            <DeckListWithFolders
               onSelectDeck={(deckId) => {
                 setSelectedDeckId(deckId);
                 setView('edit-deck');
@@ -126,42 +116,6 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
                 setSelectedDeckId(deckId);
                 setView('study');
               }}
-            />
-          </div>
-        );
-
-      case 'folders':
-        return (
-          <div className="main-content">
-            <div className="content-header">
-              <div className="header-with-menu">
-                <button
-                  className="menu-toggle"
-                  onClick={() => setSidebarOpen(true)}
-                >
-                  ☰
-                </button>
-                <h1>📁 Organize with Folders</h1>
-              </div>
-              <button
-                className="btn btn-outline"
-                onClick={() => setView('decks')}
-              >
-                <span className="btn-icon">🔙</span>
-                Back to Decks
-              </button>
-            </div>
-
-            <FoldersView
-              onSelectDeck={(deckId) => {
-                setSelectedDeckId(deckId);
-                setView('edit-deck');
-              }}
-              onStudyDeck={(deckId) => {
-                setSelectedDeckId(deckId);
-                setView('study');
-              }}
-              decks={decks}
             />
           </div>
         );
