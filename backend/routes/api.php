@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\DeckController;
 use App\Http\Controllers\CardController;
 use App\Http\Controllers\UserSettingsController;
+use App\Http\Controllers\FolderController;
 
 // Simple health check - always return 200 for Railway healthcheck
 Route::get('/health', function () {
@@ -22,14 +23,14 @@ Route::get('/db-status', function () {
         $pdo = $conn->getPdo();
         $driver = $conn->getDriverName();
         $config = $conn->getConfig();
-        
+
         // Check if tables exist
         $tablesExist = DB::select("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('decks', 'cards')");
-        
+
         // Count records
         $deckCount = DB::table('decks')->count();
         $cardCount = DB::table('cards')->count();
-        
+
         return response()->json([
             'status' => 'ok',
             'database' => 'connected',
@@ -83,3 +84,12 @@ Route::post('/settings', [UserSettingsController::class, 'update']);
 Route::post('/settings/reset', [UserSettingsController::class, 'reset']);
 Route::post('/settings/unmastered/add', [UserSettingsController::class, 'addUnmasteredCard']);
 Route::post('/settings/unmastered/remove', [UserSettingsController::class, 'removeUnmasteredCard']);
+
+// Folder routes
+Route::get('/folders', [FolderController::class, 'index']);
+Route::post('/folders', [FolderController::class, 'store']);
+Route::get('/folders/{folder}', [FolderController::class, 'show']);
+Route::put('/folders/{folder}', [FolderController::class, 'update']);
+Route::delete('/folders/{folder}', [FolderController::class, 'destroy']);
+Route::post('/folders/{folder}/move-deck', [FolderController::class, 'moveDeck']);
+Route::post('/folders/remove-deck', [FolderController::class, 'removeDeck']);

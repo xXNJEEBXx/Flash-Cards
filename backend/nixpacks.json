@@ -1,4 +1,4 @@
 {
-  "note": "Deprecated: use nixpacks.toml only",
-  "disabled": true
+    "note": "Deprecated: use nixpacks.toml only",
+    "disabled": true
 }

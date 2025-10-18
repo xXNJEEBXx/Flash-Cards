@@ -53,6 +53,14 @@ body {
   margin-bottom: 30px;
   padding: 20px 0;
   border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
 .header-with-menu {

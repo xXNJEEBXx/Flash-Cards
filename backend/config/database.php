@@ -65,9 +65,9 @@ return [
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA') ?: null,
                 // Allow opt-in verify toggle via MYSQL_ATTR_SSL_VERIFY_SERVER_CERT=true/false
                 defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT') ? PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT : null
-                    => env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT') !== null
-                        ? filter_var(env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT'), FILTER_VALIDATE_BOOLEAN)
-                        : null,
+                => env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT') !== null
+                    ? filter_var(env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT'), FILTER_VALIDATE_BOOLEAN)
+                    : null,
                 // Connection timeout in seconds (avoid hanging healthchecks)
                 PDO::ATTR_TIMEOUT => env('DB_CONNECT_TIMEOUT', 5),
             ]) : [],

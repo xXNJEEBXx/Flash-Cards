@@ -198,7 +198,138 @@ export const cardsAPI = {
     }
 };
 
+export const foldersAPI = {
+    // Get all folders
+    async getFolders() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/folders`, {
+                headers: getHeaders()
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch folders');
+
+            const result = await response.json();
+            return result.data;
+        } catch (error) {
+            console.error('Error fetching folders:', error);
+            return [];
+        }
+    },
+
+    // Get a specific folder
+    async getFolder(folderId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/folders/${folderId}`, {
+                headers: getHeaders()
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch folder');
+
+            const result = await response.json();
+            return result.data;
+        } catch (error) {
+            console.error('Error fetching folder:', error);
+            throw error;
+        }
+    },
+
+    // Create a new folder
+    async createFolder(folderData) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/folders`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify(folderData)
+            });
+
+            if (!response.ok) throw new Error('Failed to create folder');
+
+            const result = await response.json();
+            return result.data;
+        } catch (error) {
+            console.error('Error creating folder:', error);
+            throw error;
+        }
+    },
+
+    // Update a folder
+    async updateFolder(folderId, folderData) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/folders/${folderId}`, {
+                method: 'PUT',
+                headers: getHeaders(),
+                body: JSON.stringify(folderData)
+            });
+
+            if (!response.ok) throw new Error('Failed to update folder');
+
+            const result = await response.json();
+            return result.data;
+        } catch (error) {
+            console.error('Error updating folder:', error);
+            throw error;
+        }
+    },
+
+    // Delete a folder
+    async deleteFolder(folderId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/folders/${folderId}`, {
+                method: 'DELETE',
+                headers: getHeaders()
+            });
+
+            if (!response.ok) throw new Error('Failed to delete folder');
+
+            const result = await response.json();
+            return result;
+        } catch (error) {
+            console.error('Error deleting folder:', error);
+            throw error;
+        }
+    },
+
+    // Move a deck to a folder
+    async moveDeckToFolder(folderId, deckId, order = 0) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/folders/${folderId}/move-deck`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({ deck_id: deckId, order })
+            });
+
+            if (!response.ok) throw new Error('Failed to move deck');
+
+            const result = await response.json();
+            return result.data;
+        } catch (error) {
+            console.error('Error moving deck to folder:', error);
+            throw error;
+        }
+    },
+
+    // Remove deck from folder (move to root)
+    async removeDeckFromFolder(deckId) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/folders/remove-deck`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({ deck_id: deckId })
+            });
+
+            if (!response.ok) throw new Error('Failed to remove deck from folder');
+
+            const result = await response.json();
+            return result.data;
+        } catch (error) {
+            console.error('Error removing deck from folder:', error);
+            throw error;
+        }
+    }
+};
+
 export default {
     settings: settingsAPI,
-    cards: cardsAPI
+    cards: cardsAPI,
+    folders: foldersAPI
 };

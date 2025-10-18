@@ -167,6 +167,16 @@
 			"isBackground": true,
 			"problemMatcher": [],
 			"group": "serve"
+		},
+		{
+			"label": "Start Frontend via Root Script",
+			"type": "shell",
+			"command": "npm run start:frontend",
+			"isBackground": true,
+			"problemMatcher": [
+				"$eslint - stylish"
+			],
+			"group": "serve"
 		}
 	]
 }

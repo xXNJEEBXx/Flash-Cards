@@ -1,7 +1,22 @@
 [
-  {"question": "Digital Signature (التوقيع الرقمي)", "answer": "A mathematical technique used to validate the authenticity of a message, verifying it was sent by a particular sender. (إثبات مرسل وصحة رسالة.)"},
-  {"question": "AES (Advanced Encryption Standard) (معيار التشفير المتقدم)", "answer": "The current symmetric block cipher standard, using 128-bit blocks and key sizes of 128, 192, or 256 bits, based on a substitution-permutation network (not Feistel). (معيار تشفير حديث وقوي.)"},
-  {"question": "SSL/TLS (Secure Sockets Layer / Transport Layer Security) (طبقة المقابس الآمنة / أمن طبقة النقل)", "answer": "Standard technology for keeping an internet connection secure and data confidential between two systems (e.g., browser-server), using encryption and MACs. TLS is the successor to SSL. (تأمين اتصال الإنترنت.)"},
-  {"question": "Firewall (جدار الحماية)", "answer": "A network security system that monitors and controls incoming and outgoing network traffic based on security rules. (نظام يراقب ويتحكم في حركة الشبكة.)"},
-  {"question": "VPN (Virtual Private Network) (الشبكة الافتراضية الخاصة)", "answer": "A secure connection over the internet that encrypts your data and hides your IP address. (اتصال آمن يشفر بياناتك ويخفي عنوان IP.)"}
+    {
+        "question": "Digital Signature (التوقيع الرقمي)",
+        "answer": "A mathematical technique used to validate the authenticity of a message, verifying it was sent by a particular sender. (إثبات مرسل وصحة رسالة.)"
+    },
+    {
+        "question": "AES (Advanced Encryption Standard) (معيار التشفير المتقدم)",
+        "answer": "The current symmetric block cipher standard, using 128-bit blocks and key sizes of 128, 192, or 256 bits, based on a substitution-permutation network (not Feistel). (معيار تشفير حديث وقوي.)"
+    },
+    {
+        "question": "SSL/TLS (Secure Sockets Layer / Transport Layer Security) (طبقة المقابس الآمنة / أمن طبقة النقل)",
+        "answer": "Standard technology for keeping an internet connection secure and data confidential between two systems (e.g., browser-server), using encryption and MACs. TLS is the successor to SSL. (تأمين اتصال الإنترنت.)"
+    },
+    {
+        "question": "Firewall (جدار الحماية)",
+        "answer": "A network security system that monitors and controls incoming and outgoing network traffic based on security rules. (نظام يراقب ويتحكم في حركة الشبكة.)"
+    },
+    {
+        "question": "VPN (Virtual Private Network) (الشبكة الافتراضية الخاصة)",
+        "answer": "A secure connection over the internet that encrypts your data and hides your IP address. (اتصال آمن يشفر بياناتك ويخفي عنوان IP.)"
+    }
 ]

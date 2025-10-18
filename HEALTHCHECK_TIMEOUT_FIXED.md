@@ -1,6 +1,7 @@
 # ✅ تم إصلاح مشكلة Healthcheck Timeout!
 
 ## ❌ المشكلة السابقة:
+
 ```
 Network › Healthcheck (09:50)
 Healthcheck failure
@@ -13,7 +14,9 @@ Healthcheck failure
 ## 🔧 الإصلاحات المُطبّقة:
 
 ### 1. **تبسيط `start.sh`** ⚡
+
 **قبل:**
+
 ```bash
 bash init-db.sh
 php artisan migrate --force --verbose
@@ -23,6 +26,7 @@ php artisan serve
 ```
 
 **بعد:**
+
 ```bash
 bash init-db.sh
 php artisan migrate --force 2>&1 || echo "Migration skipped"
@@ -30,6 +34,7 @@ exec php artisan serve --host=0.0.0.0 --port="${PORT}"
 ```
 
 **الفوائد:**
+
 - ✅ إزالة `config:clear` و `cache:clear` (غير ضرورية)
 - ✅ تشغيل الخادم فوراً
 - ✅ استخدام `exec` لتحسين الأداء
@@ -37,25 +42,30 @@ exec php artisan serve --host=0.0.0.0 --port="${PORT}"
 ---
 
 ### 2. **تحسين إعدادات Healthcheck** ⏱️
+
 **قبل:**
+
 ```json
 "healthcheckTimeout": 600  // 10 دقائق
 "restartPolicyMaxRetries": 10
 ```
 
 **بعد:**
+
 ```json
 "healthcheckTimeout": 300  // 5 دقائق
 "restartPolicyMaxRetries": 3
 ```
 
 **الفوائد:**
+
 - ✅ وقت أقل = فشل أسرع إذا كانت هناك مشكلة حقيقية
 - ✅ محاولات أقل = تجنب الانتظار الطويل
 
 ---
 
 ### 3. **المسار الصحيح** 📁
+
 - ✅ `backend/.htaccess` - يُوجّه كل شيء إلى `/public`
 - ✅ `backend/public/.htaccess` - Laravel routing
 - ✅ `start.sh` - يبدأ Laravel server فوراً
@@ -66,6 +76,7 @@ exec php artisan serve --host=0.0.0.0 --port="${PORT}"
 ## 🎯 النتيجة المتوقعة:
 
 ### في الـ Deployment Logs ستر ى:
+
 ```bash
 🚀 Starting Flash Cards Backend...
 ✅ Database file created
@@ -77,6 +88,7 @@ Laravel development server started: <http://0.0.0.0:8000>
 ```
 
 ### Healthcheck Timeline:
+
 ```
 00:00 → Build starts
 01:30 → Build completes
@@ -88,6 +100,7 @@ Laravel development server started: <http://0.0.0.0:8000>
 ```
 
 **بدلاً من:**
+
 ```
 09:50 → Healthcheck timeout ❌
 ```
@@ -99,10 +112,12 @@ Laravel development server started: <http://0.0.0.0:8000>
 ### بعد 2-3 دقائق من الـ push:
 
 1. **راقب Deployment في Railway**
+
    - يجب أن يكتمل في أقل من دقيقتين
    - لا توجد أخطاء حمراء
 
 2. **اختبر API:**
+
 ```powershell
 # استبدل YOUR_DOMAIN بالرابط الحقيقي
 $API="https://web-production-98f62.up.railway.app"
@@ -110,11 +125,12 @@ $API="https://web-production-98f62.up.railway.app"
 # Health check
 Invoke-WebRequest "$API/api/health" | Select StatusCode, Content
 
-# Decks endpoint  
+# Decks endpoint
 Invoke-WebRequest "$API/api/decks" | Select StatusCode, Content
 ```
 
 **النتيجة المتوقعة:**
+
 ```
 StatusCode: 200
 Content: {"status":"ok","timestamp":"..."}
@@ -138,12 +154,14 @@ Content: []
 ## 🎉 الخلاصة:
 
 **قبل:**
+
 - ⏱️ البدء: 9+ دقائق
 - ❌ Healthcheck: فشل
 - ❌ Apache يعمل
 - ❌ /api/decks → 404
 
 **بعد:**
+
 - ⚡ البدء: ~1-2 دقيقة
 - ✅ Healthcheck: نجح
 - ✅ Laravel server يعمل
@@ -157,6 +175,7 @@ Content: []
 ثم افتح Railway Dashboard وراقب الـ logs!
 
 يجب أن ترى:
+
 ```
 ✅ Build (01:30)
 ✅ Deploy (00:12)
