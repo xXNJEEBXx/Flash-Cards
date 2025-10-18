@@ -272,13 +272,10 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck }) => {
                 </button>
             </div>
 
-            {/* Folders Section */}
-            {(viewMode === 'both' || viewMode === 'folders') && folders.length > 0 && (
-                <div className="folders-section">
-                    <h2 className="section-title">
-                        <span className="section-icon">📁</span>
-                        My Folders
-                    </h2>
+            {/* Unified Section - Folders and Decks Together */}
+            <div className="unified-content-section">
+                {/* Folders */}
+                {(viewMode === 'both' || viewMode === 'folders') && folders.length > 0 && (
                     <div className="folders-container">
                         {folders.map(folder => (
                             <FolderItem
@@ -292,16 +289,10 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck }) => {
                             />
                         ))}
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* Decks Section */}
-            {(viewMode === 'both' || viewMode === 'decks') && filteredAndSortedDecks.length > 0 && (
-                <div className="decks-section">
-                    <h2 className="section-title">
-                        <span className="section-icon">📚</span>
-                        My Decks {rootDecks.length !== decks.length && `(${filteredAndSortedDecks.length} not in folders)`}
-                    </h2>
+                {/* Decks */}
+                {(viewMode === 'both' || viewMode === 'decks') && filteredAndSortedDecks.length > 0 && (
                     <div className="decks-grid">
                         {filteredAndSortedDecks.map(deck => (
                             <div
@@ -393,8 +384,8 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck }) => {
                             </div>
                         ))}
                     </div>
-                </div>
-            )}
+                )}
+            </div>
 
             {/* Folder Form Modal */}
             {showFolderForm && (

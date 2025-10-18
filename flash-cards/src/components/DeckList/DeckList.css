@@ -57,7 +57,14 @@
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
-/* Sections */
+/* Unified Content Section */
+.unified-content-section {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+/* Legacy sections support (will be merged into unified) */
 .folders-section,
 .decks-section {
   margin-bottom: 40px;
