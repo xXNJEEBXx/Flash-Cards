@@ -4,6 +4,7 @@ import { FoldersContext } from '../../context/FoldersContext';
 import SearchFilter from '../Search/SearchFilter';
 import FolderItem from '../Folders/FolderItem';
 import FolderForm from '../Folders/FolderForm';
+import { confirmDeleteWithPassword } from '../../utils/passwordProtection';
 import './DeckList.css';
 import '../Folders/FoldersView.css';
 
@@ -145,6 +146,13 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
     };
 
     const handleDeleteFolder = async (folderId) => {
+        const folder = folders.find(f => f.id === folderId);
+        const folderName = folder ? folder.name : '';
+        
+        if (!confirmDeleteWithPassword('المجلد', folderName)) {
+            return;
+        }
+        
         try {
             await deleteFolder(folderId);
         } catch (error) {
@@ -416,7 +424,7 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
                                     <button
                                         className="btn btn-danger deck-action-btn deck-delete-btn"
                                         onClick={() => {
-                                            if (window.confirm(`Are you sure you want to delete "${deck.title}"? This action cannot be undone.`)) {
+                                            if (confirmDeleteWithPassword('المجموعة', deck.title)) {
                                                 deleteDeck(deck.id);
                                             }
                                         }}

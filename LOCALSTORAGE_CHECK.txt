@@ -1,0 +1,61 @@
+========================================
+  Check LocalStorage Instructions
+========================================
+
+To check localStorage for missing flashcard decks:
+
+1. Open the app: http://localhost:3000
+2. Press F12 to open Developer Tools
+3. Go to "Console" tab
+4. Copy and paste this code:
+
+-------- START CODE --------
+
+const decks = JSON.parse(localStorage.getItem('flashcards-decks') || '[]');
+
+console.log('='.repeat(50));
+console.log('LOCALSTORAGE ANALYSIS');
+console.log('='.repeat(50));
+console.log('Total decks:', decks.length);
+console.log('Total cards:', decks.reduce((s,d) => s + (d.cards?.length || 0), 0));
+
+const apiDecks = decks.filter(d => d.id && typeof d.id === 'number');
+const localDecks = decks.filter(d => !d.id || typeof d.id === 'string');
+
+console.log('\nDecks in API:', apiDecks.length);
+console.log('Local-only decks:', localDecks.length);
+
+if (localDecks.length > 0) {
+    console.log('\n⚠️ WARNING: Found local-only decks not in API:');
+    localDecks.forEach((d, i) => {
+        console.log(`  ${i+1}. "${d.title}" - ${d.cards?.length || 0} cards`);
+    });
+    
+    console.log('\n📋 Full details:');
+    console.table(localDecks.map(d => ({
+        title: d.title,
+        cards: d.cards?.length || 0,
+        id: d.id || 'N/A',
+        folder_id: d.folder_id || 'N/A'
+    })));
+} else {
+    console.log('\n✅ All decks are synced with API!');
+}
+
+console.log('='.repeat(50));
+
+-------- END CODE --------
+
+5. Press Enter to run
+6. Check the console output for any "Local-only decks"
+
+========================================
+  Alternative: Open HTML Check File
+========================================
+
+Open this file in your browser:
+C:\xXNJEEBXx\Projects\flash Cards\check-localstorage.html
+
+It will show a visual interface with all localStorage data.
+
+========================================

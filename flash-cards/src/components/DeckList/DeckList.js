@@ -1,6 +1,7 @@
 import React, { useContext, useState, useMemo } from 'react';
 import { CardsContext } from '../../context/CardsContext';
 import SearchFilter from '../Search/SearchFilter';
+import { confirmDeleteWithPassword } from '../../utils/passwordProtection';
 import './DeckList.css';
 
 const DeckList = ({ onSelectDeck, onStudyDeck }) => {
@@ -260,7 +261,7 @@ const DeckList = ({ onSelectDeck, onStudyDeck }) => {
                             <button
                                 className="btn btn-danger deck-action-btn deck-delete-btn"
                                 onClick={() => {
-                                    if (window.confirm(`Are you sure you want to delete "${deck.title}"? This action cannot be undone.`)) {
+                                    if (confirmDeleteWithPassword('المجموعة', deck.title)) {
                                         deleteDeck(deck.id);
                                     }
                                 }}

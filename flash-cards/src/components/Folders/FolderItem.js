@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { confirmDeleteWithPassword } from '../../utils/passwordProtection';
 import './FolderItem.css';
 
 const FolderItem = ({ folder, onSelectFolder, onEditFolder, onDeleteFolder, onMoveFolder, onDrop, onOpenFolder, level = 0 }) => {
@@ -30,7 +31,7 @@ const FolderItem = ({ folder, onSelectFolder, onEditFolder, onDeleteFolder, onMo
     const handleDelete = (e) => {
         e.stopPropagation();
         setShowMenu(false);
-        if (window.confirm(`Are you sure you want to delete "${folder.name}"? All decks and subfolders will be moved to parent level.`)) {
+        if (confirmDeleteWithPassword('المجلد', folder.name)) {
             onDeleteFolder(folder.id);
         }
     };

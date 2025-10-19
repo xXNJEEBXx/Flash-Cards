@@ -1,6 +1,7 @@
 import React, { useContext, useMemo } from 'react';
 import { CardsContext } from '../../context/CardsContext';
 import { FoldersContext } from '../../context/FoldersContext';
+import { confirmDeleteWithPassword } from '../../utils/passwordProtection';
 import './FolderView.css';
 
 const FolderView = ({ folderId, onBack, onSelectDeck, onStudyDeck }) => {
@@ -247,7 +248,7 @@ const FolderView = ({ folderId, onBack, onSelectDeck, onStudyDeck }) => {
                                     <button
                                         className="btn btn-danger deck-action-btn deck-delete-btn"
                                         onClick={() => {
-                                            if (window.confirm(`Are you sure you want to delete "${deck.title}"? This action cannot be undone.`)) {
+                                            if (confirmDeleteWithPassword('المجموعة', deck.title)) {
                                                 deleteDeck(deck.id);
                                             }
                                         }}

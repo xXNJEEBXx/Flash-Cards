@@ -40,7 +40,7 @@
   backface-visibility: hidden;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start; /* allow footer/hint to sit at the bottom */
   align-items: center;
   padding: 30px;
   box-sizing: border-box;
@@ -88,9 +88,12 @@
 }
 
 .card-hint {
-  position: absolute;
-  bottom: 10px;
+  /* place the hint at the bottom without overlapping the text */
+  position: static;
+  margin-top: auto; /* push to bottom within flex column */
+  padding-top: 8px;
   color: #6c757d;
+  pointer-events: none; /* keep card clickable */
 }
 
 .card-actions {
@@ -101,8 +104,8 @@
 .card.smart-mode-active::before {
   content: "🧠";
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: 8px;
+  right: 8px; /* move to top-right to reduce overlap risk */
   font-size: 24px;
   z-index: 100;
   pointer-events: none; /* don't block clicks */
@@ -111,8 +114,8 @@
 .card.high-priority::before {
   content: "⚠️";
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: 8px;
+  right: 8px;
   font-size: 24px;
   z-index: 100;
   pointer-events: none;
@@ -121,8 +124,8 @@
 .card.review-mode::before {
   content: "🔄";
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: 8px;
+  right: 8px;
   font-size: 24px;
   z-index: 100;
   pointer-events: none;
@@ -141,6 +144,19 @@
 .card.review-mode .card-front {
   background: linear-gradient(135deg, #f8f9fa 25%, #f6ffed 100%);
   border-left: 5px solid #52c41a;
+}
+
+/* Reserve safe space at the top when a status badge is shown */
+.card.smart-mode-active .card-front,
+.card.high-priority .card-front,
+.card.review-mode .card-front {
+  padding-top: 56px; /* avoid header overlap with badge */
+}
+
+.card.smart-mode-active .card-back,
+.card.high-priority .card-back,
+.card.review-mode .card-back {
+  padding-top: 56px;
 }
 
 .btn-toggle-known {
@@ -184,6 +200,15 @@
   .card-front,
   .card-back {
     padding: 20px;
+  }
+  /* Slightly reduce reserved top space on small screens */
+  .card.smart-mode-active .card-front,
+  .card.high-priority .card-front,
+  .card.review-mode .card-front,
+  .card.smart-mode-active .card-back,
+  .card.high-priority .card-back,
+  .card.review-mode .card-back {
+    padding-top: 44px;
   }
 }
 

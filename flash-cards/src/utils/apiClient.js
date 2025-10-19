@@ -43,18 +43,18 @@ const tryApi = async (fn, fallback) => {
 
 export const api = {
     listDecks: () => tryApi(
-        () => fetch(`${API_URL}/api/decks`).then(json),
+        () => fetch(`${API_URL}/api/decks`).then(json).then(r => Array.isArray(r?.data) ? r.data : (Array.isArray(r) ? r : [])),
         () => {
             const raw = localStorage.getItem('flashcards-decks');
             return raw ? JSON.parse(raw) : [];
         }
     ),
     createDeck: (data) => tryApi(
-        () => fetch(`${API_URL}/api/decks`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(json),
+        () => fetch(`${API_URL}/api/decks`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(data) }).then(json).then(r => r?.data ?? r),
         () => null
     ),
     updateDeck: (id, data) => tryApi(
-        () => fetch(`${API_URL}/api/decks/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(json),
+        () => fetch(`${API_URL}/api/decks/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(data) }).then(json).then(r => r?.data ?? r),
         () => null
     ),
     deleteDeck: (id) => tryApi(
@@ -62,30 +62,30 @@ export const api = {
         () => null
     ),
     resetDeck: (id) => tryApi(
-        () => fetch(`${API_URL}/api/decks/${id}/reset`, { method: 'POST' }).then(json),
+        () => fetch(`${API_URL}/api/decks/${id}/reset`, { method: 'POST', headers: { 'Accept': 'application/json' } }).then(json).then(r => r?.data ?? r),
         () => null
     ),
     addCard: (deckId, data) => tryApi(
         () => fetch(`${API_URL}/api/decks/${deckId}/cards`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({
                 question: data.front || data.question,
                 answer: data.back || data.answer
             })
-        }).then(json),
+        }).then(json).then(r => r?.data ?? r),
         () => null
     ),
     updateCard: (deckId, cardId, data) => tryApi(
         () => fetch(`${API_URL}/api/decks/${deckId}/cards/${cardId}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({
                 question: data.front || data.question,
                 answer: data.back || data.answer,
                 known: data.known
             })
-        }).then(json),
+        }).then(json).then(r => r?.data ?? r),
         () => null
     ),
     deleteCard: (deckId, cardId) => tryApi(
@@ -95,10 +95,11 @@ export const api = {
     toggleKnown: (deckId, cardId) => tryApi(
         async () => {
             console.log(`Toggling known state for card ${cardId} in deck ${deckId}`);
-            const response = await fetch(`${API_URL}/api/decks/${deckId}/cards/${cardId}/toggle-known`, { method: 'POST' });
+            const response = await fetch(`${API_URL}/api/decks/${deckId}/cards/${cardId}/toggle-known`, { method: 'POST', headers: { 'Accept': 'application/json' } });
             const result = await json(response);
-            console.log('Toggle known result:', result);
-            return result;
+            const data = result?.data ?? result;
+            console.log('Toggle known result:', data);
+            return data;
         },
         () => {
             console.log('Toggle known fallback - no API available');

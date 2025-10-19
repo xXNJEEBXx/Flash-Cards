@@ -6,7 +6,7 @@ import './StudyMode.css';
 import './smart-mode.css';
 
 const StudyMode = ({ deckId, onBack }) => {
-    const { decks, toggleCardKnown, resetDeckProgress, undoLastKnownCard, hasRecentlyKnownCards } = useContext(CardsContext);
+    const { decks, toggleCardKnown, resetDeckProgress, undoLastKnownCard, hasRecentlyKnownCards, editCard } = useContext(CardsContext);
     const [currentDeck, setCurrentDeck] = useState(null);
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
     const [shuffleMode, setShuffleMode] = useState(false);
@@ -21,6 +21,11 @@ const StudyMode = ({ deckId, onBack }) => {
     const [hideMasteredCards, setHideMasteredCards] = useState(false);
     const [showSettingsPanel, setShowSettingsPanel] = useState(false);
     const [settingsLoaded, setSettingsLoaded] = useState(false); // تتبع تحميل الإعدادات
+
+    // نموذج التعديل السريع
+    const [isEditing, setIsEditing] = useState(false);
+    const [editQuestion, setEditQuestion] = useState('');
+    const [editAnswer, setEditAnswer] = useState('');
 
     const UNMASTERED_LIMIT = 6;
     // مرجع لمؤقت الحفظ لتطبيق debounce وتجنب كثرة الطلبات
@@ -643,6 +648,47 @@ const StudyMode = ({ deckId, onBack }) => {
         setShowSettingsPanel(prev => !prev);
     };
 
+    // فتح نموذج التعديل السريع
+    const handleStartEdit = () => {
+        if (currentCard) {
+            setEditQuestion(currentCard.question);
+            setEditAnswer(currentCard.answer);
+            setIsEditing(true);
+        }
+    };
+
+    // إلغاء التعديل
+    const handleCancelEdit = () => {
+        setIsEditing(false);
+        setEditQuestion('');
+        setEditAnswer('');
+    };
+
+    // حفظ التعديلات والعودة لنفس البطاقة
+    const handleSaveEdit = async () => {
+        if (!currentCard || !editQuestion.trim() || !editAnswer.trim()) {
+            alert('الرجاء ملء السؤال والإجابة');
+            return;
+        }
+
+        try {
+            // حفظ البطاقة المحدثة
+            await editCard(currentDeck.id, {
+                ...currentCard,
+                question: editQuestion.trim(),
+                answer: editAnswer.trim()
+            });
+
+            // إغلاق النموذج والبقاء في نفس الموضع
+            setIsEditing(false);
+            setEditQuestion('');
+            setEditAnswer('');
+        } catch (error) {
+            console.error('Failed to update card:', error);
+            alert('فشل حفظ التعديلات');
+        }
+    };
+
     return (
         <div className="study-mode">
             <div className="study-header">
@@ -726,6 +772,16 @@ const StudyMode = ({ deckId, onBack }) => {
                 </button>
 
                 <button
+                    className="btn btn-edit"
+                    onClick={handleStartEdit}
+                    title="تعديل سريع للبطاقة"
+                    disabled={!currentCard}
+                >
+                    <span className="btn-icon">✏️</span>
+                    <span className="btn-text">تعديل</span>
+                </button>
+
+                <button
                     className={`btn btn-settings ${showSettingsPanel ? 'active' : ''}`}
                     onClick={toggleSettingsPanel}
                     title="إعدادات الدراسة"
@@ -745,6 +801,50 @@ const StudyMode = ({ deckId, onBack }) => {
                     </button>
                 )}
             </div>
+
+            {/* نموذج التعديل السريع */}
+            {isEditing && (
+                <div className="edit-overlay">
+                    <div className="edit-form">
+                        <h3>✏️ تعديل البطاقة</h3>
+                        
+                        <div className="form-group">
+                            <label>السؤال:</label>
+                            <textarea
+                                value={editQuestion}
+                                onChange={(e) => setEditQuestion(e.target.value)}
+                                rows="4"
+                                placeholder="أدخل السؤال"
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>الإجابة:</label>
+                            <textarea
+                                value={editAnswer}
+                                onChange={(e) => setEditAnswer(e.target.value)}
+                                rows="4"
+                                placeholder="أدخل الإجابة"
+                            />
+                        </div>
+
+                        <div className="edit-actions">
+                            <button
+                                className="btn btn-success"
+                                onClick={handleSaveEdit}
+                            >
+                                ✓ حفظ
+                            </button>
+                            <button
+                                className="btn btn-secondary"
+                                onClick={handleCancelEdit}
+                            >
+                                ✕ إلغاء
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* لوحة الإعدادات */}
             {showSettingsPanel && (

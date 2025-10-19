@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import { FoldersContext } from '../../context/FoldersContext';
 import FolderItem from '../Folders/FolderItem';
 import FolderForm from '../Folders/FolderForm';
+import { confirmDeleteWithPassword } from '../../utils/passwordProtection';
 import './FoldersView.css';
 
 const FoldersView = ({ onSelectDeck, onStudyDeck, decks }) => {
@@ -45,6 +46,13 @@ const FoldersView = ({ onSelectDeck, onStudyDeck, decks }) => {
     };
 
     const handleDeleteFolder = async (folderId) => {
+        const folder = folders.find(f => f.id === folderId);
+        const folderName = folder ? folder.name : '';
+        
+        if (!confirmDeleteWithPassword('المجلد', folderName)) {
+            return;
+        }
+        
         try {
             await deleteFolder(folderId);
         } catch (error) {

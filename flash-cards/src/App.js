@@ -9,6 +9,7 @@ import FolderView from './components/Folders/FolderView';
 import DeckForm from './components/Forms/DeckForm';
 import CardForm from './components/Forms/CardForm';
 import StudyMode from './components/StudyMode/StudyMode';
+import { confirmDeleteWithPassword } from './utils/passwordProtection';
 // Removed debug components for clean production interface
 import './App.css';
 
@@ -339,7 +340,7 @@ const CardList = ({ deckId, onEditCard }) => {
             <button
               className="btn btn-danger btn-sm"
               onClick={() => {
-                if (window.confirm('Are you sure you want to delete this card?')) {
+                if (confirmDeleteWithPassword('البطاقة', card.question.substring(0, 30) + '...')) {
                   deleteCard(deckId, card.id);
                 }
               }}
