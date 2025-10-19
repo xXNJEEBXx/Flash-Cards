@@ -1,275 +1,275 @@
 .folder-item {
-    margin-bottom: 8px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    transition: all 0.2s ease;
+  margin-bottom: 8px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  transition: all 0.2s ease;
 }
 
 .folder-item:hover {
-    background: #e9ecef;
+  background: #e9ecef;
 }
 
 .folder-item.drag-over {
-    background: #e8f4f8;
-    border: 2px dashed #3498db;
-    box-shadow: 0 0 10px rgba(52, 152, 219, 0.3);
+  background: #e8f4f8;
+  border: 2px dashed #3498db;
+  box-shadow: 0 0 10px rgba(52, 152, 219, 0.3);
 }
 
 .folder-header {
-    display: flex;
-    align-items: center;
-    padding: 12px;
-    cursor: pointer;
-    gap: 12px;
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  cursor: pointer;
+  gap: 12px;
 }
 
 .folder-toggle {
-    background: none;
-    border: none;
-    font-size: 20px;
-    cursor: pointer;
-    padding: 4px;
-    transition: transform 0.2s ease;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  transition: transform 0.2s ease;
 }
 
 .folder-toggle:hover {
-    transform: scale(1.1);
+  transform: scale(1.1);
 }
 
 .folder-info {
-    flex: 1;
-    min-width: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .folder-name {
-    font-weight: 600;
-    font-size: 16px;
-    color: #2c3e50;
-    display: block;
-    margin-bottom: 4px;
+  font-weight: 600;
+  font-size: 16px;
+  color: #2c3e50;
+  display: block;
+  margin-bottom: 4px;
 }
 
 .folder-description {
-    font-size: 13px;
-    color: #7f8c8d;
-    display: block;
-    margin-bottom: 8px;
+  font-size: 13px;
+  color: #7f8c8d;
+  display: block;
+  margin-bottom: 8px;
 }
 
 .folder-stats {
-    display: flex;
-    gap: 16px;
-    font-size: 12px;
-    color: #95a5a6;
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: #95a5a6;
 }
 
 .folder-stat {
-    display: flex;
-    align-items: center;
-    gap: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .folder-link-hint {
-    color: #667eea;
-    font-weight: 600;
-    font-size: 11px;
-    margin-left: auto;
+  color: #667eea;
+  font-weight: 600;
+  font-size: 11px;
+  margin-left: auto;
 }
 
 .folder-decks-summary {
-    padding: 8px 12px;
-    background: #e8f4f8;
-    border-radius: 6px;
-    margin-bottom: 4px;
-    font-size: 13px;
-    color: #3498db;
-    font-weight: 500;
-    text-align: center;
+  padding: 8px 12px;
+  background: #e8f4f8;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: #3498db;
+  font-weight: 500;
+  text-align: center;
 }
 
 .folder-actions {
-    position: relative;
+  position: relative;
 }
 
 .folder-menu-btn {
-    background: none;
-    border: none;
-    font-size: 20px;
-    cursor: pointer;
-    padding: 4px 8px;
-    color: #7f8c8d;
-    border-radius: 4px;
-    transition: all 0.2s ease;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  color: #7f8c8d;
+  border-radius: 4px;
+  transition: all 0.2s ease;
 }
 
 .folder-menu-btn:hover {
-    background: #dee2e6;
-    color: #2c3e50;
+  background: #dee2e6;
+  color: #2c3e50;
 }
 
 .folder-menu {
-    position: absolute;
-    right: 0;
-    top: 100%;
-    background: white;
-    border: 1px solid #dee2e6;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    min-width: 160px;
-    z-index: 1000;
-    overflow: hidden;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 160px;
+  z-index: 1000;
+  overflow: hidden;
 }
 
 .folder-menu button {
-    width: 100%;
-    padding: 10px 16px;
-    border: none;
-    background: white;
-    text-align: left;
-    cursor: pointer;
-    font-size: 14px;
-    color: #2c3e50;
-    transition: background 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  background: white;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  color: #2c3e50;
+  transition: background 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .folder-menu button:hover {
-    background: #f8f9fa;
+  background: #f8f9fa;
 }
 
 .folder-menu button.danger {
-    color: #e74c3c;
+  color: #e74c3c;
 }
 
 .folder-menu button.danger:hover {
-    background: #fee;
+  background: #fee;
 }
 
 .folder-content {
-    padding-left: 20px;
+  padding-left: 20px;
 }
 
 .folder-deck-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px;
-    background: white;
-    border-radius: 8px;
-    margin-bottom: 6px;
-    transition: all 0.2s ease;
-    border: 1px solid #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  transition: all 0.2s ease;
+  border: 1px solid #e9ecef;
 }
 
 .folder-deck-item:hover {
-    background: #f8f9fa;
-    transform: translateX(4px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border-color: #dee2e6;
+  background: #f8f9fa;
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-color: #dee2e6;
 }
 
 .folder-deck-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex: 1;
-    min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
 }
 
 .deck-icon {
-    font-size: 18px;
-    flex-shrink: 0;
+  font-size: 18px;
+  flex-shrink: 0;
 }
 
 .deck-details {
-    flex: 1;
-    min-width: 0;
+  flex: 1;
+  min-width: 0;
 }
 
 .deck-name {
-    font-size: 14px;
-    color: #2c3e50;
-    font-weight: 600;
-    display: block;
-    margin-bottom: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  font-size: 14px;
+  color: #2c3e50;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .deck-mini-stats {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
 }
 
 .deck-cards,
 .deck-progress-text {
-    color: #7f8c8d;
+  color: #7f8c8d;
 }
 
 .deck-progress-percent {
-    color: #27ae60;
-    font-weight: 700;
+  color: #27ae60;
+  font-weight: 700;
 }
 
 .folder-deck-actions {
-    display: flex;
-    gap: 6px;
-    flex-shrink: 0;
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .btn-icon-small {
-    background: none;
-    border: none;
-    font-size: 18px;
-    cursor: pointer;
-    padding: 6px 10px;
-    border-radius: 6px;
-    transition: all 0.2s ease;
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
 }
 
 .btn-icon-small:hover {
-    background: #e9ecef;
-    transform: scale(1.1);
+  background: #e9ecef;
+  transform: scale(1.1);
 }
 
 .btn-icon-small:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .btn-icon-small:disabled:hover {
-    background: none;
-    transform: none;
+  background: none;
+  transform: none;
 }
 
 .study-btn:hover:not(:disabled) {
-    background: #e8f5e9;
+  background: #e8f5e9;
 }
 
 .edit-btn:hover {
-    background: #fff3e0;
+  background: #fff3e0;
 }
 
 /* Old deck-cards class for backward compatibility */
 
 /* Animation for expanding/collapsing */
 .folder-content {
-    animation: slideDown 0.2s ease;
+  animation: slideDown 0.2s ease;
 }
 
 @keyframes slideDown {
-    from {
-        opacity: 0;
-        max-height: 0;
-    }
-    to {
-        opacity: 1;
-        max-height: 1000px;
-    }
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 1000px;
+  }
 }

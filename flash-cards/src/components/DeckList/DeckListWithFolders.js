@@ -36,21 +36,21 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
     // Combine folders and decks into unified items
     const unifiedItems = useMemo(() => {
         const items = [];
-        
+
         // Add folders based on view mode
         if (viewMode === 'both' || viewMode === 'folders') {
             folders.forEach(folder => {
                 items.push({ type: 'folder', data: folder, order: 0 });
             });
         }
-        
+
         // Add decks based on view mode
         if (viewMode === 'both' || viewMode === 'decks') {
             rootDecks.forEach(deck => {
                 items.push({ type: 'deck', data: deck, order: 1 });
             });
         }
-        
+
         return items;
     }, [folders, rootDecks, viewMode]);
 
@@ -314,14 +314,14 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
                         // Apply search filter
                         const matchesSearch = deck.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             deck.description.toLowerCase().includes(searchTerm.toLowerCase());
-                        
+
                         if (!matchesSearch) return null;
-                        
+
                         // Apply deck filter
                         const learnedRatio = deck.cards.length > 0
                             ? deck.cards.filter(card => card.known).length / deck.cards.length
                             : 0;
-                        
+
                         let passesFilter = true;
                         switch (filterType) {
                             case 'new':
@@ -334,9 +334,9 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
                                 passesFilter = learnedRatio >= 0.8;
                                 break;
                         }
-                        
+
                         if (!passesFilter) return null;
-                        
+
                         return (
                             <div
                                 key={`deck-${deck.id}`}

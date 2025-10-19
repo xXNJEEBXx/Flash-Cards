@@ -177,6 +177,27 @@
 				"$eslint - stylish"
 			],
 			"group": "serve"
+		},
+		{
+			"label": "Activate MCP Folders Support",
+			"type": "shell",
+			"command": ".\\activate-mcp-folders.ps1",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Build MCP Folders",
+			"type": "shell",
+			"command": ".\\activate-mcp-folders.ps1",
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Build MCP Simple",
+			"type": "shell",
+			"command": ".\\build-mcp-simple.ps1",
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }

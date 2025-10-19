@@ -9,7 +9,7 @@ const FolderItem = ({ folder, onSelectFolder, onEditFolder, onDeleteFolder, onMo
     const hasSubfolders = folder.subfolders && folder.subfolders.length > 0;
     const hasDecks = folder.decks && folder.decks.length > 0;
     const totalCards = folder.decks?.reduce((sum, deck) => sum + (deck.cards?.length || 0), 0) || 0;
-    const learnedCards = folder.decks?.reduce((sum, deck) => 
+    const learnedCards = folder.decks?.reduce((sum, deck) =>
         sum + (deck.cards?.filter(card => card.known).length || 0), 0) || 0;
 
     const toggleExpand = () => {
@@ -63,21 +63,21 @@ const FolderItem = ({ folder, onSelectFolder, onEditFolder, onDeleteFolder, onMo
     };
 
     return (
-        <div 
-            className={`folder-item ${isDragOver ? 'drag-over' : ''}`} 
+        <div
+            className={`folder-item ${isDragOver ? 'drag-over' : ''}`}
             style={{ marginLeft: `${level * 20}px` }}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
         >
             <div className="folder-header">
-                <button 
+                <button
                     className="folder-toggle"
                     onClick={toggleExpand}
                 >
                     {hasSubfolders || hasDecks ? (isExpanded ? '📂' : '📁') : '📁'}
                 </button>
-                
+
                 <div className="folder-info" onClick={() => onOpenFolder && onOpenFolder(folder.id)}>
                     <span className="folder-name">{folder.name}</span>
                     {folder.description && (
@@ -97,7 +97,7 @@ const FolderItem = ({ folder, onSelectFolder, onEditFolder, onDeleteFolder, onMo
                 </div>
 
                 <div className="folder-actions">
-                    <button 
+                    <button
                         className="folder-menu-btn"
                         onClick={handleMenuClick}
                     >
@@ -129,7 +129,7 @@ const FolderItem = ({ folder, onSelectFolder, onEditFolder, onDeleteFolder, onMo
                             level={level + 1}
                         />
                     ))}
-                    
+
                     {/* Show deck count only */}
                     {hasDecks && (
                         <div className="folder-decks-summary" style={{ marginLeft: `${(level + 1) * 20}px` }}>

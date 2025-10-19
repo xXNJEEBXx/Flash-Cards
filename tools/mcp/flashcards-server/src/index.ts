@@ -258,8 +258,14 @@ async function main() {
             required: ["name"],
             properties: {
               name: { type: "string", description: "Folder name" },
-              description: { type: "string", description: "Folder description" },
-              parent_folder_id: { type: "number", description: "Parent folder ID for nested folders" },
+              description: {
+                type: "string",
+                description: "Folder description",
+              },
+              parent_folder_id: {
+                type: "number",
+                description: "Parent folder ID for nested folders",
+              },
             },
           },
         },
@@ -278,7 +284,8 @@ async function main() {
         },
         {
           name: "deleteFolder",
-          description: "Delete a folder (decks and subfolders will be moved to parent level)",
+          description:
+            "Delete a folder (decks and subfolders will be moved to parent level)",
           inputSchema: {
             type: "object",
             required: ["folderId"],
@@ -304,7 +311,10 @@ async function main() {
             type: "object",
             required: ["deckId"],
             properties: {
-              deckId: { type: "number", description: "Deck ID to remove from folder" },
+              deckId: {
+                type: "number",
+                description: "Deck ID to remove from folder",
+              },
             },
           },
         },
@@ -425,7 +435,8 @@ async function main() {
         // ===== Folder Handlers =====
         case "listFolders": {
           const res = await client.call<any>("GET", `/folders`);
-          const folders = z.array(FolderSchema).parse(res);
+          const foldersData = res.data || res;
+          const folders = z.array(FolderSchema).parse(foldersData);
           return okJson(folders);
         }
 
@@ -435,7 +446,9 @@ async function main() {
           if (description) body.description = description;
           if (parent_folder_id) body.parent_folder_id = parent_folder_id;
           const res = await client.call<any>("POST", `/folders`, body);
-          return okJson(FolderSchema.parse(res));
+          // Extract data from Laravel response wrapper
+          const folderData = res.data || res;
+          return okJson(FolderSchema.parse(folderData));
         }
 
         case "updateFolder": {
@@ -443,8 +456,14 @@ async function main() {
           const body: any = {};
           if (name) body.name = name;
           if (description !== undefined) body.description = description;
-          const res = await client.call<any>("PUT", `/folders/${folderId}`, body);
-          return okJson(FolderSchema.parse(res));
+          const res = await client.call<any>(
+            "PUT",
+            `/folders/${folderId}`,
+            body
+          );
+          // Extract data from Laravel response wrapper
+          const folderData = res.data || res;
+          return okJson(FolderSchema.parse(folderData));
         }
 
         case "deleteFolder": {
@@ -455,10 +474,15 @@ async function main() {
 
         case "moveDeckToFolder": {
           const { folderId, deckId } = args as any;
-          const res = await client.call<any>("POST", `/folders/${folderId}/move-deck`, {
-            deck_id: deckId,
-          });
-          return okJson(res);
+          const res = await client.call<any>(
+            "POST",
+            `/folders/${folderId}/move-deck`,
+            {
+              deck_id: deckId,
+            }
+          );
+          const responseData = res.data || res;
+          return okJson(responseData);
         }
 
         case "removeDeckFromFolder": {
@@ -466,7 +490,8 @@ async function main() {
           const res = await client.call<any>("POST", `/folders/remove-deck`, {
             deck_id: deckId,
           });
-          return okJson(res);
+          const responseData = res.data || res;
+          return okJson(responseData);
         }
 
         default:

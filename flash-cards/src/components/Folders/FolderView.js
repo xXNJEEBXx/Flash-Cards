@@ -63,7 +63,7 @@ const FolderView = ({ folderId, onBack, onSelectDeck, onStudyDeck }) => {
     }
 
     const totalCards = folderDecks.reduce((sum, deck) => sum + deck.cards.length, 0);
-    const learnedCards = folderDecks.reduce((sum, deck) => 
+    const learnedCards = folderDecks.reduce((sum, deck) =>
         sum + deck.cards.filter(card => card.known).length, 0);
     const progress = totalCards > 0 ? Math.round((learnedCards / totalCards) * 100) : 0;
 

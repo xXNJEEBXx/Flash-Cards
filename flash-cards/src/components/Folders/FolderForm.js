@@ -33,7 +33,7 @@ const FolderForm = ({ folder, parentFolderId, onSubmit, onCancel }) => {
                     <h2>{folder ? 'Edit Folder' : 'Create New Folder'}</h2>
                     <button className="close-btn" onClick={onCancel}>×</button>
                 </div>
-                
+
                 <form onSubmit={handleSubmit} className="folder-form">
                     <div className="form-group">
                         <label htmlFor="folder-name">

@@ -3,6 +3,7 @@
 ## ✨ ما تم إنجازه:
 
 تم تحديث **MCP Server** ليدعم جميع عمليات المجلدات! الآن يمكن للـ AI:
+
 - ✅ عرض جميع المجلدات
 - ✅ إنشاء مجلدات جديدة (عادية ومتداخلة)
 - ✅ تحديث المجلدات
@@ -15,6 +16,7 @@
 ## 📦 الملفات المحدثة:
 
 ### 1. **schemas.ts** ✅
+
 ```typescript
 // أضيف FolderSchema كامل
 export const FolderSchema = z.object({
@@ -29,19 +31,21 @@ export const FolderSchema = z.object({
 ```
 
 ### 2. **index.ts** ✅
+
 ```typescript
 // أضيف 6 tools جديدة:
-- listFolders
-- createFolder
-- updateFolder
-- deleteFolder
-- moveDeckToFolder
-- removeDeckFromFolder
+-listFolders -
+  createFolder -
+  updateFolder -
+  deleteFolder -
+  moveDeckToFolder -
+  removeDeckFromFolder;
 
 // مع handlers كاملة لكل tool
 ```
 
 ### 3. **package.json** ✅
+
 ```json
 {
   "version": "0.2.0",
@@ -54,17 +58,20 @@ export const FolderSchema = z.object({
 ## 🚀 كيفية البناء والاستخدام:
 
 ### الطريقة 1: استخدام السكريبت (الأسهل)
+
 ```powershell
 .\build-mcp-folders.ps1
 ```
 
 ### الطريقة 2: يدوياً
+
 ```bash
 cd tools/mcp/flashcards-server
 npm run build
 ```
 
 ### بعد البناء:
+
 1. **أعد تشغيل VS Code** أو **Claude Desktop**
 2. **جرب الأوامر الجديدة** مع AI
 
@@ -73,6 +80,7 @@ npm run build
 ## 💬 أمثلة على الأوامر:
 
 ### أساسيات:
+
 ```
 🗣 "عرض جميع المجلدات"
 🗣 "أنشئ مجلد باسم البرمجة"
@@ -81,6 +89,7 @@ npm run build
 ```
 
 ### متقدم:
+
 ```
 🗣 "نظم بطاقاتي في مجلدات حسب الموضوع"
 🗣 "انقل جميع بطاقات الأمن السيبراني إلى مجلد Security"
@@ -89,6 +98,7 @@ npm run build
 ```
 
 ### ذكي:
+
 ```
 🗣 "أنشئ هيكل مجلدات لدراسة البرمجة"
    → AI ينشئ: Programming/
@@ -118,6 +128,7 @@ POST   /api/folders/remove-deck  → removeDeckFromFolder
 ## 🧪 اختبار شامل:
 
 ### Test 1: إنشاء مجلد
+
 ```javascript
 // AI Command
 "أنشئ مجلد باسم Test"
@@ -137,15 +148,16 @@ createFolder({ name: "Test" })
 ```
 
 ### Test 2: مجلد متداخل
+
 ```javascript
 // AI Command
 "أنشئ مجلد React داخل مجلد Programming"
 
 // MCP Calls
 listFolders() // للحصول على ID مجلد Programming
-createFolder({ 
-  name: "React", 
-  parent_folder_id: 3 
+createFolder({
+  name: "React",
+  parent_folder_id: 3
 })
 
 // Expected Result
@@ -157,6 +169,7 @@ createFolder({
 ```
 
 ### Test 3: نقل بطاقة
+
 ```javascript
 // AI Command
 "انقل البطاقة Cybersecurity Basics إلى مجلد Security"
@@ -175,6 +188,7 @@ moveDeckToFolder({ folderId: 2, deckId: 10 })
 ## 🎯 سيناريوهات واقعية:
 
 ### السيناريو 1: تنظيم تلقائي
+
 ```
 User: "نظم بطاقاتي في مجلدات"
 
@@ -188,6 +202,7 @@ Result: ✅ مجلدات منظمة حسب الموضوع
 ```
 
 ### السيناريو 2: هيكل دراسي
+
 ```
 User: "أنشئ هيكل مجلدات لدراسة علوم الحاسب"
 
@@ -204,6 +219,7 @@ Result: ✅ هيكل جاهز للاستخدام
 ```
 
 ### السيناريو 3: إعادة التنظيم
+
 ```
 User: "انقل كل بطاقات JavaScript من General إلى Programming"
 
@@ -222,6 +238,7 @@ Result: ✅ إعادة تنظيم كاملة
 ## 🔍 Troubleshooting:
 
 ### مشكلة: "Tool not found"
+
 ```
 الحل:
 1. تأكد من البناء: npm run build
@@ -230,6 +247,7 @@ Result: ✅ إعادة تنظيم كاملة
 ```
 
 ### مشكلة: "Backend connection failed"
+
 ```
 الحل:
 1. تأكد أن Backend يعمل: php artisan serve
@@ -238,6 +256,7 @@ Result: ✅ إعادة تنظيم كاملة
 ```
 
 ### مشكلة: "Folder not found"
+
 ```
 الحل:
 1. استخدم listFolders() للحصول على IDs الصحيحة
@@ -258,11 +277,13 @@ Result: ✅ إعادة تنظيم كاملة
 ## 🎉 النتيجة النهائية:
 
 ### قبل التحديث:
+
 ```
 MCP Tools: 14 tools (Decks + Cards only)
 ```
 
 ### بعد التحديث:
+
 ```
 MCP Tools: 20 tools
 ├─ Decks (5 tools)
@@ -275,6 +296,7 @@ MCP Tools: 20 tools
 ## 🚀 خطوات التفعيل:
 
 1. **ابنِ المشروع:**
+
    ```powershell
    .\build-mcp-folders.ps1
    ```
@@ -282,6 +304,7 @@ MCP Tools: 20 tools
 2. **أعد تشغيل VS Code/Claude Desktop**
 
 3. **جرب أول أمر:**
+
    ```
    "عرض جميع المجلدات"
    ```

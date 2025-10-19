@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Folder;
@@ -17,7 +18,7 @@ class FolderController extends Controller
             $folders = Folder::whereNull('parent_folder_id')
                 ->orderBy('order')
                 ->get();
-            
+
             return response()->json([
                 'success' => true,
                 'data' => $folders
@@ -38,7 +39,7 @@ class FolderController extends Controller
     {
         try {
             $folder = Folder::findOrFail($id);
-            
+
             return response()->json([
                 'success' => true,
                 'data' => $folder
@@ -74,7 +75,7 @@ class FolderController extends Controller
 
         try {
             $folder = Folder::create($request->all());
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Folder created successfully',
@@ -111,7 +112,7 @@ class FolderController extends Controller
 
         try {
             $folder = Folder::findOrFail($id);
-            
+
             // Prevent circular reference
             if ($request->has('parent_folder_id') && $request->parent_folder_id !== null) {
                 $parentFolder = Folder::find($request->parent_folder_id);
@@ -122,9 +123,9 @@ class FolderController extends Controller
                     ], 422);
                 }
             }
-            
+
             $folder->update($request->all());
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Folder updated successfully',
@@ -146,15 +147,15 @@ class FolderController extends Controller
     {
         try {
             $folder = Folder::findOrFail($id);
-            
+
             // Move decks to parent folder or root level
             $folder->decks()->update(['folder_id' => $folder->parent_folder_id]);
-            
+
             // Move subfolders to parent folder or root level
             $folder->subfolders()->update(['parent_folder_id' => $folder->parent_folder_id]);
-            
+
             $folder->delete();
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Folder deleted successfully'
@@ -189,12 +190,12 @@ class FolderController extends Controller
         try {
             $folder = Folder::findOrFail($id);
             $deck = \App\Models\Deck::findOrFail($request->deck_id);
-            
+
             $deck->update([
                 'folder_id' => $folder->id,
                 'order' => $request->order ?? 0
             ]);
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Deck moved successfully',
@@ -229,7 +230,7 @@ class FolderController extends Controller
         try {
             $deck = \App\Models\Deck::findOrFail($request->deck_id);
             $deck->update(['folder_id' => null]);
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Deck moved to root',
@@ -244,4 +245,3 @@ class FolderController extends Controller
         }
     }
 }
-?>
