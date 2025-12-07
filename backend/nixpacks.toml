@@ -1,13 +1,16 @@
 [phases.setup]
-# Include PHP 8.2, Composer, DB extensions, and CA certificates
+# Include PHP 8.2, Composer, and DB extensions
+# Note: CA certificates are handled by the base image
 nixPkgs = [
     "php82",
     "php82Packages.composer",
-    "php82Extensions.sqlite3",
-    "php82Extensions.pdo_sqlite",
-    "php82Extensions.pdo_mysql"
+    "php82Extensions.pdo_mysql",
+    "php82Extensions.pdo_pgsql",
+    "php82Extensions.mbstring",
+    "php82Extensions.xml",
+    "php82Extensions.curl",
+    "php82Extensions.openssl"
 ]
-aptPkgs = []
 
 [phases.install]
 cmds = ["composer install --optimize-autoloader --no-dev"]
@@ -20,9 +23,5 @@ cmds = [
 
 [start]
 cmd = "bash start.sh"
-
-[variables]
-# Expose the system CA bundle path to PHP for TLS verification to MySQL proxy
-SSL_CERT_FILE = "/etc/ssl/certs/ca-bundle.crt"
 
 # No static env here; Railway Variables provide DB_* for MySQL

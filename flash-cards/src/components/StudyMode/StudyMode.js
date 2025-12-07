@@ -807,7 +807,7 @@ const StudyMode = ({ deckId, onBack }) => {
                 <div className="edit-overlay">
                     <div className="edit-form">
                         <h3>✏️ تعديل البطاقة</h3>
-                        
+
                         <div className="form-group">
                             <label>السؤال:</label>
                             <textarea

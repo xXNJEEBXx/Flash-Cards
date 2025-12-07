@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,7 +25,7 @@
             background: white;
             border-radius: 15px;
             padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
 
         h1 {
@@ -52,7 +53,7 @@
 
         .deck-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
         .deck-title {
@@ -149,6 +150,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>🔍 فحص LocalStorage - البطاقات التعليمية</h1>
@@ -172,7 +174,7 @@
     <script>
         // Load localStorage data
         const localStorageDecks = JSON.parse(localStorage.getItem('flashcards-decks') || '[]');
-        
+
         // Display stats
         const statsContainer = document.getElementById('stats');
         const totalDecks = localStorageDecks.length;
@@ -209,7 +211,7 @@
 
         // Display decks
         const decksContainer = document.getElementById('decksContainer');
-        
+
         if (localStorageDecks.length === 0) {
             decksContainer.innerHTML = '<p>❌ لا توجد مجموعات في LocalStorage</p>';
         } else {
@@ -217,7 +219,7 @@
                 const isInApi = deck.id && typeof deck.id === 'number';
                 const cardCount = deck.cards?.length || 0;
                 const folderInfo = deck.folder_id ? `📁 المجلد: ${deck.folder_id}` : '📂 بدون مجلد';
-                
+
                 const deckCard = document.createElement('div');
                 deckCard.className = `deck-card ${isInApi ? 'in-api' : 'missing'}`;
                 deckCard.innerHTML = `
@@ -261,11 +263,12 @@
         console.log(`- إجمالي البطاقات: ${totalCards}`);
         console.log(`- مجموعات في API: ${decksWithId}`);
         console.log(`- مجموعات محلية فقط: ${decksWithoutId}`);
-        
+
         if (decksWithoutId > 0) {
             console.warn('⚠️ يوجد', decksWithoutId, 'مجموعات محلية لم يتم رفعها للـ API!');
             console.log('المجموعات المحلية:', localStorageDecks.filter(d => !d.id || typeof d.id === 'string').map(d => d.title));
         }
     </script>
 </body>
+
 </html>

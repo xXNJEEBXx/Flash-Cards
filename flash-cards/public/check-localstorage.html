@@ -1,138 +1,278 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
-  <head>
+
+<head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>🔍 فحص LocalStorage - Flash Cards (Same-Origin)</title>
     <style>
-      :root { --bg:#0f172a; --card:#111827; --muted:#94a3b8; --good:#10b981; --warn:#f59e0b; --bad:#ef4444; --accent:#3b82f6; }
-      * { box-sizing: border-box; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Kufi Arabic", Arial, sans-serif; }
-      body { margin: 0; background: linear-gradient(135deg,#0f172a,#111827); color: #e5e7eb; }
-      .container { max-width: 980px; margin: 24px auto; padding: 0 16px; }
-      .card { background: rgba(17,24,39,0.9); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
-      h1 { margin: 0 0 12px; font-size: 20px; }
-      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 12px; }
-      .stat { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 12px; text-align: center; }
-      .k { color: var(--muted); font-size: 13px; }
-      .v { font-size: 22px; font-weight: 700; margin-top: 6px; }
-      .ok { color: var(--good); }
-      .warn { color: var(--warn); }
-      .bad { color: var(--bad); }
-      .list { margin-top: 16px; display: grid; gap: 10px; }
-      .item { display: grid; gap: 6px; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); }
-      .item strong { font-size: 15px; }
-      .tag { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 11px; margin-inline-start: 8px; }
-      .tag.api { background: rgba(16,185,129,0.15); color: var(--good); border: 1px solid rgba(16,185,129,0.35); }
-      .tag.local { background: rgba(245,158,11,0.12); color: var(--warn); border: 1px solid rgba(245,158,11,0.35); }
-      .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-      .muted { color: var(--muted); font-size: 12px; }
-      .actions { margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; }
-      button { background: #1f2937; color: #e5e7eb; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 8px 12px; cursor: pointer; }
-      button:hover { background: #273245; }
-      pre { background: #0b1220; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px; overflow: auto; max-height: 360px; }
-      .note { margin-top: 12px; font-size: 12px; color: var(--muted); }
+        :root {
+            --bg: #0f172a;
+            --card: #111827;
+            --muted: #94a3b8;
+            --good: #10b981;
+            --warn: #f59e0b;
+            --bad: #ef4444;
+            --accent: #3b82f6;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, "Noto Kufi Arabic", Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: linear-gradient(135deg, #0f172a, #111827);
+            color: #e5e7eb;
+        }
+
+        .container {
+            max-width: 980px;
+            margin: 24px auto;
+            padding: 0 16px;
+        }
+
+        .card {
+            background: rgba(17, 24, 39, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        }
+
+        h1 {
+            margin: 0 0 12px;
+            font-size: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+        }
+
+        .stat {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .k {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .v {
+            font-size: 22px;
+            font-weight: 700;
+            margin-top: 6px;
+        }
+
+        .ok {
+            color: var(--good);
+        }
+
+        .warn {
+            color: var(--warn);
+        }
+
+        .bad {
+            color: var(--bad);
+        }
+
+        .list {
+            margin-top: 16px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .item {
+            display: grid;
+            gap: 6px;
+            padding: 12px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .item strong {
+            font-size: 15px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 11px;
+            margin-inline-start: 8px;
+        }
+
+        .tag.api {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--good);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+        }
+
+        .tag.local {
+            background: rgba(245, 158, 11, 0.12);
+            color: var(--warn);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+        }
+
+        .row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .actions {
+            margin-top: 14px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #1f2937;
+            color: #e5e7eb;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #273245;
+        }
+
+        pre {
+            background: #0b1220;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 12px;
+            overflow: auto;
+            max-height: 360px;
+        }
+
+        .note {
+            margin-top: 12px;
+            font-size: 12px;
+            color: var(--muted);
+        }
     </style>
-  </head>
-  <body>
+</head>
+
+<body>
     <div class="container">
-      <div class="card">
-        <h1>🔍 فحص LocalStorage — نفس الأصل (Same-Origin)</h1>
-        <div id="stats" class="grid" aria-live="polite"></div>
-        <div class="actions">
-          <button id="btn-refresh">تحديث البيانات</button>
-          <button id="btn-toggle-json">عرض/إخفاء JSON</button>
-          <button id="btn-clear" style="border-color: rgba(239,68,68,0.45); color: #fecaca;">حذف LocalStorage (حذر)</button>
+        <div class="card">
+            <h1>🔍 فحص LocalStorage — نفس الأصل (Same-Origin)</h1>
+            <div id="stats" class="grid" aria-live="polite"></div>
+            <div class="actions">
+                <button id="btn-refresh">تحديث البيانات</button>
+                <button id="btn-toggle-json">عرض/إخفاء JSON</button>
+                <button id="btn-clear" style="border-color: rgba(239,68,68,0.45); color: #fecaca;">حذف LocalStorage
+                    (حذر)</button>
+            </div>
+            <div id="list" class="list"></div>
+            <div id="json" style="display:none;margin-top:14px;">
+                <pre id="json-pre"></pre>
+            </div>
+            <div class="note">ملاحظة: هذه الصفحة تعمل من نفس الأصل <strong id="origin"></strong> لذا فهي تستخدم نفس
+                LocalStorage الخاص بالتطبيق.
+                إذا ظهر لديك فرق عن واجهة التطبيق، التقط صورة للشاشة وأرسلها لي.</div>
         </div>
-        <div id="list" class="list"></div>
-        <div id="json" style="display:none;margin-top:14px;">
-          <pre id="json-pre"></pre>
-        </div>
-        <div class="note">ملاحظة: هذه الصفحة تعمل من نفس الأصل <strong id="origin"></strong> لذا فهي تستخدم نفس LocalStorage الخاص بالتطبيق.
-          إذا ظهر لديك فرق عن واجهة التطبيق، التقط صورة للشاشة وأرسلها لي.</div>
-      </div>
     </div>
 
     <script>
-      const EL = {
-        stats: document.getElementById('stats'),
-        list: document.getElementById('list'),
-        json: document.getElementById('json'),
-        jsonPre: document.getElementById('json-pre'),
-        origin: document.getElementById('origin'),
-        btnRefresh: document.getElementById('btn-refresh'),
-        btnToggleJson: document.getElementById('btn-toggle-json'),
-        btnClear: document.getElementById('btn-clear'),
-      };
-
-      EL.origin.textContent = location.origin;
-
-      function formatSize(bytes) {
-        return (bytes / 1024).toFixed(3) + ' KB';
-      }
-
-      function readLS() {
-        const raw = localStorage.getItem('flashcards-decks');
-        let decks = [];
-        try { decks = raw ? JSON.parse(raw) : []; } catch (_) { decks = []; }
-        return decks;
-      }
-
-      async function fetchApiDecks() {
-        // Try to load API URL from the app’s config usage stored in console cache (none), fallback to Railway
-        const apiBase = 'https://flash-cards-production-e52d.up.railway.app/api';
-        try {
-          const res = await fetch(apiBase + '/decks', { headers: { 'Accept': 'application/json' } });
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          const data = await res.json();
-          return Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
-        } catch (e) {
-          console.warn('API fetch failed:', e.message);
-          return [];
-        }
-      }
-
-      async function render() {
-        const decksLS = readLS();
-        const decksAPI = await fetchApiDecks();
-        const lsMap = new Map(decksLS.map(d => [String(d.id), d]));
-        const apiMap = new Map(decksAPI.map(d => [String(d.id), d]));
-
-        // Determine status: API vs Local-only by id type or presence in API
-        const annotate = (d) => {
-          const isNumericId = typeof d.id === 'number' || /^\d+$/.test(String(d.id));
-          // If numeric id but not in API map, still treat as local-stale
-          const inApi = apiMap.has(String(d.id));
-          const isLocalOnly = !inApi; // most reliable check
-          const cardsCount = Array.isArray(d.cards) ? d.cards.length : (typeof d.cards_count === 'number' ? d.cards_count : 0);
-          return { ...d, _cardsCount: cardsCount, _isLocalOnly: isLocalOnly, _isNumeric: isNumericId };
+        const EL = {
+            stats: document.getElementById('stats'),
+            list: document.getElementById('list'),
+            json: document.getElementById('json'),
+            jsonPre: document.getElementById('json-pre'),
+            origin: document.getElementById('origin'),
+            btnRefresh: document.getElementById('btn-refresh'),
+            btnToggleJson: document.getElementById('btn-toggle-json'),
+            btnClear: document.getElementById('btn-clear'),
         };
 
-        const merged = [];
-        // Prefer union of LS and API by id; include LS items with non-matching ids as well
-        const seen = new Set();
-        for (const d of decksAPI) { merged.push(annotate(d)); seen.add(String(d.id)); }
-        for (const d of decksLS) if (!seen.has(String(d.id))) merged.push(annotate(d));
+        EL.origin.textContent = location.origin;
 
-        // Stats
-        const totalDecks = merged.length;
-        const totalCards = merged.reduce((a,b)=> a + (b._cardsCount||0), 0);
-        const apiCount = merged.filter(d => !d._isLocalOnly).length;
-        const localOnly = merged.filter(d => d._isLocalOnly).length;
-        const storageBytes = unescape(encodeURIComponent(JSON.stringify(localStorage))).length;
+        function formatSize(bytes) {
+            return (bytes / 1024).toFixed(3) + ' KB';
+        }
 
-        EL.stats.innerHTML = `
+        function readLS() {
+            const raw = localStorage.getItem('flashcards-decks');
+            let decks = [];
+            try { decks = raw ? JSON.parse(raw) : []; } catch (_) { decks = []; }
+            return decks;
+        }
+
+        async function fetchApiDecks() {
+            // Try to load API URL from the app’s config usage stored in console cache (none), fallback to Railway
+            const apiBase = 'https://flash-cards-production-e52d.up.railway.app/api';
+            try {
+                const res = await fetch(apiBase + '/decks', { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                return Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
+            } catch (e) {
+                console.warn('API fetch failed:', e.message);
+                return [];
+            }
+        }
+
+        async function render() {
+            const decksLS = readLS();
+            const decksAPI = await fetchApiDecks();
+            const lsMap = new Map(decksLS.map(d => [String(d.id), d]));
+            const apiMap = new Map(decksAPI.map(d => [String(d.id), d]));
+
+            // Determine status: API vs Local-only by id type or presence in API
+            const annotate = (d) => {
+                const isNumericId = typeof d.id === 'number' || /^\d+$/.test(String(d.id));
+                // If numeric id but not in API map, still treat as local-stale
+                const inApi = apiMap.has(String(d.id));
+                const isLocalOnly = !inApi; // most reliable check
+                const cardsCount = Array.isArray(d.cards) ? d.cards.length : (typeof d.cards_count === 'number' ? d.cards_count : 0);
+                return { ...d, _cardsCount: cardsCount, _isLocalOnly: isLocalOnly, _isNumeric: isNumericId };
+            };
+
+            const merged = [];
+            // Prefer union of LS and API by id; include LS items with non-matching ids as well
+            const seen = new Set();
+            for (const d of decksAPI) { merged.push(annotate(d)); seen.add(String(d.id)); }
+            for (const d of decksLS) if (!seen.has(String(d.id))) merged.push(annotate(d));
+
+            // Stats
+            const totalDecks = merged.length;
+            const totalCards = merged.reduce((a, b) => a + (b._cardsCount || 0), 0);
+            const apiCount = merged.filter(d => !d._isLocalOnly).length;
+            const localOnly = merged.filter(d => d._isLocalOnly).length;
+            const storageBytes = unescape(encodeURIComponent(JSON.stringify(localStorage))).length;
+
+            EL.stats.innerHTML = `
           <div class="stat"><div class="k">إجمالي المجموعات</div><div class="v">${totalDecks}</div></div>
           <div class="stat"><div class="k">إجمالي البطاقات</div><div class="v">${totalCards}</div></div>
           <div class="stat"><div class="k">مجموعات في API</div><div class="v ok">${apiCount}</div></div>
-          <div class="stat"><div class="k">مجموعات محلية فقط</div><div class="v ${localOnly>0?'warn':'ok'}">${localOnly}</div></div>
+          <div class="stat"><div class="k">مجموعات محلية فقط</div><div class="v ${localOnly > 0 ? 'warn' : 'ok'}">${localOnly}</div></div>
           <div class="stat"><div class="k">حجم LocalStorage</div><div class="v">${formatSize(storageBytes)}</div></div>
         `;
 
-        // List
-        if (merged.length === 0) {
-          EL.list.innerHTML = `<div class="muted">لا توجد مجموعات.</div>`;
-        } else {
-          EL.list.innerHTML = merged.map(d => `
+            // List
+            if (merged.length === 0) {
+                EL.list.innerHTML = `<div class="muted">لا توجد مجموعات.</div>`;
+            } else {
+                EL.list.innerHTML = merged.map(d => `
             <div class="item">
               <div class="row">
                 <strong>${d.title || '(بدون عنوان)'}
@@ -146,25 +286,26 @@
               </div>
             </div>
           `).join('');
+            }
+
+            // JSON dump
+            const dump = { origin: location.origin, when: new Date().toISOString(), localStorage: decksLS, apiDecks: decksAPI };
+            EL.jsonPre.textContent = JSON.stringify(dump, null, 2);
         }
 
-        // JSON dump
-        const dump = { origin: location.origin, when: new Date().toISOString(), localStorage: decksLS, apiDecks: decksAPI };
-        EL.jsonPre.textContent = JSON.stringify(dump, null, 2);
-      }
+        EL.btnToggleJson.addEventListener('click', () => {
+            EL.json.style.display = EL.json.style.display === 'none' ? 'block' : 'none';
+        });
+        EL.btnRefresh.addEventListener('click', render);
+        EL.btnClear.addEventListener('click', () => {
+            if (confirm('سيتم حذف flashcards-decks من LocalStorage لهذا الأصل فقط. هل أنت متأكد؟')) {
+                localStorage.removeItem('flashcards-decks');
+                render();
+            }
+        });
 
-      EL.btnToggleJson.addEventListener('click', () => {
-        EL.json.style.display = EL.json.style.display === 'none' ? 'block' : 'none';
-      });
-      EL.btnRefresh.addEventListener('click', render);
-      EL.btnClear.addEventListener('click', () => {
-        if (confirm('سيتم حذف flashcards-decks من LocalStorage لهذا الأصل فقط. هل أنت متأكد؟')) {
-          localStorage.removeItem('flashcards-decks');
-          render();
-        }
-      });
-
-      render();
+        render();
     </script>
-  </body>
-  </html>
+</body>
+
+</html>

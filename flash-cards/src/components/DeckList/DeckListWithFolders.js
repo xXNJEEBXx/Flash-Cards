@@ -148,11 +148,11 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
     const handleDeleteFolder = async (folderId) => {
         const folder = folders.find(f => f.id === folderId);
         const folderName = folder ? folder.name : '';
-        
+
         if (!confirmDeleteWithPassword('المجلد', folderName)) {
             return;
         }
-        
+
         try {
             await deleteFolder(folderId);
         } catch (error) {

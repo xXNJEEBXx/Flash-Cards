@@ -14,18 +14,18 @@ const DELETE_PASSWORD = '123123';
 export const confirmDeleteWithPassword = (itemType = 'item', itemName = '') => {
     const displayName = itemName ? ` "${itemName}"` : '';
     const message = `⚠️ تحذير: سيتم حذف ${itemType}${displayName}\n\nأدخل كلمة المرور للمتابعة:`;
-    
+
     const userPassword = prompt(message);
-    
+
     if (userPassword === null) {
         // User cancelled
         return false;
     }
-    
+
     if (userPassword === DELETE_PASSWORD) {
         return true;
     }
-    
+
     alert('❌ كلمة المرور غير صحيحة');
     return false;
 };
