@@ -241,7 +241,17 @@
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
+  .welcome-message {
+    padding: 30px 40px;
+    width: 90%;
+    max-width: 350px;
+  }
+
+  .welcome-message h2 {
+    font-size: 1.5rem;
+  }
+
   .card-area {
     gap: 10px;
   }

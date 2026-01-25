@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { CardsContext, CardsProvider } from './context/CardsContext';
 import { FoldersProvider } from './context/FoldersContext';
 import Header from './components/Layout/Header';
@@ -14,35 +15,63 @@ import { confirmDeleteWithPassword } from './utils/passwordProtection';
 import './App.css';
 
 function App() {
-  const [view, setView] = useState('decks'); // 'decks', 'folder-view', 'create-deck', 'edit-deck', 'create-card', 'edit-card', 'study'
-  const [selectedDeckId, setSelectedDeckId] = useState(null);
-  const [selectedCardId, setSelectedCardId] = useState(null);
-  const [selectedFolderId, setSelectedFolderId] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
   return (
     <CardsProvider>
       <FoldersProvider>
-        <AppContent
-          view={view}
-          setView={setView}
-          selectedDeckId={selectedDeckId}
-          setSelectedDeckId={setSelectedDeckId}
-          selectedCardId={selectedCardId}
-          setSelectedCardId={setSelectedCardId}
-          selectedFolderId={selectedFolderId}
-          setSelectedFolderId={setSelectedFolderId}
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
-        />
+        <Router>
+          <AppRoutes />
+        </Router>
       </FoldersProvider>
     </CardsProvider>
   );
 }
 
+// Routes wrapper component
+const AppRoutes = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  return (
+    <Routes>
+      <Route path="/" element={<AppContent sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
+      <Route path="/folder/:folderId" element={<AppContent sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
+      <Route path="/deck/:deckId" element={<AppContent sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
+      <Route path="/deck/:deckId/edit" element={<AppContent sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
+      <Route path="/deck/:deckId/study" element={<AppContent sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
+      <Route path="/deck/:deckId/card/new" element={<AppContent sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
+      <Route path="/deck/:deckId/card/:cardId" element={<AppContent sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
+      <Route path="/create-deck" element={<AppContent sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />} />
+    </Routes>
+  );
+};
+
 // The main app content with access to the context
-const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selectedCardId, setSelectedCardId, selectedFolderId, setSelectedFolderId, sidebarOpen, setSidebarOpen }) => {
+const AppContent = ({ sidebarOpen, setSidebarOpen }) => {
   const { addCard, editCard, decks } = React.useContext(CardsContext);
+  const navigate = useNavigate();
+  const params = useParams();
+  
+  // Determine current view from URL
+  const currentPath = window.location.pathname;
+  let view = 'decks';
+  let selectedDeckId = params.deckId ? parseInt(params.deckId) : null;
+  let selectedCardId = params.cardId ? parseInt(params.cardId) : null;
+  let selectedFolderId = params.folderId ? parseInt(params.folderId) : null;
+
+  if (currentPath === '/create-deck') {
+    view = 'create-deck';
+  } else if (currentPath.includes('/study')) {
+    view = 'study';
+  } else if (currentPath.includes('/card/new')) {
+    view = 'create-card';
+  } else if (currentPath.includes('/card/')) {
+    view = 'edit-card';
+  } else if (currentPath.includes('/edit')) {
+    view = 'edit-deck';
+  } else if (currentPath.includes('/folder/')) {
+    view = 'folder-view';
+  } else if (currentPath.includes('/deck/') && !currentPath.includes('/edit') && !currentPath.includes('/study')) {
+    view = 'edit-deck';
+  }
 
   // Calculate deck statistics
   const deckStats = React.useMemo(() => {
@@ -99,7 +128,7 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
               </div>
               <button
                 className="btn btn-primary btn-large"
-                onClick={() => setView('create-deck')}
+                onClick={() => navigate('/create-deck')}
               >
                 <span className="btn-icon">➕</span>
                 Create New Deck
@@ -107,24 +136,15 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
             </div>
 
             <QuickActions
-              onCreateDeck={() => setView('create-deck')}
+              onCreateDeck={() => navigate('/create-deck')}
               onImportDeck={() => console.log('Import deck')}
               deckStats={deckStats}
             />
 
             <DeckListWithFolders
-              onSelectDeck={(deckId) => {
-                setSelectedDeckId(deckId);
-                setView('edit-deck');
-              }}
-              onStudyDeck={(deckId) => {
-                setSelectedDeckId(deckId);
-                setView('study');
-              }}
-              onOpenFolder={(folderId) => {
-                setSelectedFolderId(folderId);
-                setView('folder-view');
-              }}
+              onSelectDeck={(deckId) => navigate(`/deck/${deckId}/edit`)}
+              onStudyDeck={(deckId) => navigate(`/deck/${deckId}/study`)}
+              onOpenFolder={(folderId) => navigate(`/folder/${folderId}`)}
             />
           </div>
         );
@@ -134,15 +154,9 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
           <div className="main-content">
             <FolderView
               folderId={selectedFolderId}
-              onBack={() => setView('decks')}
-              onSelectDeck={(deckId) => {
-                setSelectedDeckId(deckId);
-                setView('edit-deck');
-              }}
-              onStudyDeck={(deckId) => {
-                setSelectedDeckId(deckId);
-                setView('study');
-              }}
+              onBack={() => navigate('/')}
+              onSelectDeck={(deckId) => navigate(`/deck/${deckId}/edit`)}
+              onStudyDeck={(deckId) => navigate(`/deck/${deckId}/study`)}
             />
           </div>
         );
@@ -154,15 +168,15 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
               <h1>Create New Deck</h1>
               <button
                 className="btn btn-outline"
-                onClick={() => setView('decks')}
+                onClick={() => navigate('/')}
               >
                 <span className="btn-icon">🔙</span>
                 Back to Decks
               </button>
             </div>
             <DeckForm
-              onSave={() => setView('decks')}
-              onCancel={() => setView('decks')}
+              onSave={() => navigate('/')}
+              onCancel={() => navigate('/')}
             />
           </div>
         );
@@ -174,7 +188,7 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
               <h1>Edit Deck</h1>
               <button
                 className="btn btn-outline"
-                onClick={() => setView('decks')}
+                onClick={() => navigate('/')}
               >
                 <span className="btn-icon">🔙</span>
                 Back to Decks
@@ -182,8 +196,8 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
             </div>
             <DeckForm
               deckId={selectedDeckId}
-              onSave={() => setView('decks')}
-              onCancel={() => setView('decks')}
+              onSave={() => navigate('/')}
+              onCancel={() => navigate('/')}
             />
             <div className="card-management">
               <div className="card-management-header">
@@ -193,7 +207,7 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
                 </h2>
                 <button
                   className="btn btn-primary"
-                  onClick={() => setView('create-card')}
+                  onClick={() => navigate(`/deck/${selectedDeckId}/card/new`)}
                 >
                   <span className="btn-icon">➕</span>
                   Add New Card
@@ -201,10 +215,7 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
               </div>
               <CardList
                 deckId={selectedDeckId}
-                onEditCard={(cardId) => {
-                  setSelectedCardId(cardId);
-                  setView('edit-card');
-                }}
+                onEditCard={(cardId) => navigate(`/deck/${selectedDeckId}/card/${cardId}`)}
               />
             </div>
           </div>
@@ -217,7 +228,7 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
               <h1>Add New Card</h1>
               <button
                 className="btn btn-outline"
-                onClick={() => setView('edit-deck')}
+                onClick={() => navigate(`/deck/${selectedDeckId}/edit`)}
               >
                 <span className="btn-icon">🔙</span>
                 Back to Deck
@@ -228,9 +239,9 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
               onSave={(cardData) => {
                 // Add new card to selected deck
                 addCard(selectedDeckId, cardData);
-                setView('edit-deck');
+                navigate(`/deck/${selectedDeckId}/edit`);
               }}
-              onCancel={() => setView('edit-deck')}
+              onCancel={() => navigate(`/deck/${selectedDeckId}/edit`)}
             />
           </div>
         );
@@ -246,7 +257,7 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
               <h1>Edit Card</h1>
               <button
                 className="btn btn-outline"
-                onClick={() => setView('edit-deck')}
+                onClick={() => navigate(`/deck/${selectedDeckId}/edit`)}
               >
                 <span className="btn-icon">🔙</span>
                 Back to Deck
@@ -258,9 +269,9 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
               onSave={(updatedCard) => {
                 // Edit existing card
                 editCard(selectedDeckId, updatedCard);
-                setView('edit-deck');
+                navigate(`/deck/${selectedDeckId}/edit`);
               }}
-              onCancel={() => setView('edit-deck')}
+              onCancel={() => navigate(`/deck/${selectedDeckId}/edit`)}
             />
           </div>
         );
@@ -269,7 +280,7 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
         return (
           <StudyMode
             deckId={selectedDeckId}
-            onBack={() => setView('decks')}
+            onBack={() => navigate('/')}
           />
         );
 
@@ -284,13 +295,19 @@ const AppContent = ({ view, setView, selectedDeckId, setSelectedDeckId, selected
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         currentView={view}
-        onNavigate={setView}
+        onNavigate={(viewName) => {
+          if (viewName === 'decks') navigate('/');
+          else if (viewName === 'create-deck') navigate('/create-deck');
+        }}
         deckStats={deckStats}
       />
 
       <Header
         currentView={view}
-        onNavigate={setView}
+        onNavigate={(viewName) => {
+          if (viewName === 'decks') navigate('/');
+          else if (viewName === 'create-deck') navigate('/create-deck');
+        }}
         title={getViewTitle()}
       />
 
