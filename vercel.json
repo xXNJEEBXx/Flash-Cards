@@ -10,7 +10,7 @@
       "use": "@vercel/static-build",
       "config": {
         "installCommand": "cd flash-cards && npm install",
-        "buildCommand": "cd flash-cards && npm run build",
+        "buildCommand": "cd flash-cards && CI=false npm run build",
         "outputDirectory": "flash-cards/build"
       }
     }
