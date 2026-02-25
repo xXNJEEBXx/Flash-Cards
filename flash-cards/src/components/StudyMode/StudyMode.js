@@ -170,14 +170,13 @@ const StudyMode = ({ deckId, onBack }) => {
                 // إذا كانت القائمة فارغة أو تم إعادة تفعيل النظام، أعد تهيئتها
                 console.log('🔄 Smart Mode: initializing unmastered list with non-mastered cards');
 
-                // أضف بطاقات غير متقنة عشوائياً إلى قائمة unmastered
+                // أضف أول مجموعة من البطاقات غير المتقنة بالتسلسل
                 if (nonMasteredCards.length > 0) {
                     const cardsToAdd = [...nonMasteredCards]
-                        .sort(() => Math.random() - 0.5)
                         .slice(0, Math.min(UNMASTERED_LIMIT, nonMasteredCards.length))
                         .map(card => card.id);
 
-                    console.log(`🔄 Adding ${cardsToAdd.length} cards to unmastered list`);
+                    console.log(`🔄 Adding ${cardsToAdd.length} sequential cards to unmastered list`);
 
                     // تحديث قائمة unmastered محلياً
                     setUnmastered(cardsToAdd);
@@ -318,10 +317,11 @@ const StudyMode = ({ deckId, onBack }) => {
                     return 0;
                 }
 
-                // إعادة ضبط الفهرس إلى 0 إذا كان هناك تغيير كبير في القائمة
-                if (shouldResetIndex) {
-                    console.log('🔄 Significant change in card list - resetting index to 0');
-                    return 0;
+                // إعادة ضبط الفهرس إلى 0 فقط إذا كان الفهرس الحالي أكبر من عدد البطاقات المعروضة
+                // هذا يمنع إعادة تعيين الموضع عند إتقان بطاقة واستبدالها لتبقى القائمة بنفس الطول
+                if (prev >= cardsToDisplay.length && cardsToDisplay.length > 0) {
+                    console.log(`🔄 Index ${prev} is out of bounds for ${cardsToDisplay.length} cards, resetting to last card`);
+                    return Math.max(0, cardsToDisplay.length - 1);
                 }
 
                 // التأكد من أن الفهرس في نطاق صحيح
@@ -419,8 +419,9 @@ const StudyMode = ({ deckId, onBack }) => {
                         );
 
                         if (remainingCards.length > 0) {
-                            const randomCard = remainingCards[Math.floor(Math.random() * remainingCards.length)];
-                            return [...newList, randomCard.id];
+                            // اختر البطاقة التالية بالتسلسل وليس عشوائياً
+                            const nextCard = remainingCards[0];
+                            return [...newList, nextCard.id];
                         }
                     }
                 }
@@ -501,17 +502,11 @@ const StudyMode = ({ deckId, onBack }) => {
                 }
             }
 
-            if (smartModeEnabled && reviewMode) {
-                if (unmastered.length <= 1) {
-                    setReviewMode(false);
-                    setCurrentCardIndex(0);
-                }
-            } else {
-                if (currentCardIndex < totalCards - 1) {
-                    setCurrentCardIndex(prev => prev + 1);
-                } else if (currentCardIndex > 0) {
-                    setCurrentCardIndex(prev => prev - 1);
-                }
+            // النظام الذكي: لا نغيّر الفهرس لأن البطاقة الحالية حُذفت،
+            // وبالتالي البطاقة التي كانت في (فهرس + 1) جاءت مكان البطاقة الحالية
+            // فقط نتأكد أن الفهرس لا يتجاوز الحد المسموح
+            if (currentCardIndex >= totalCards - 1 && currentCardIndex > 0) {
+                setCurrentCardIndex(prev => prev - 1);
             }
         } catch (error) {
             console.error('Failed to mark card as known:', error);
@@ -606,9 +601,8 @@ const StudyMode = ({ deckId, onBack }) => {
                 const nonMasteredCards = currentDeck.cards.filter(card => !card.known);
 
                 if (nonMasteredCards.length > 0) {
-                    // اختر مجموعة من البطاقات غير المتقنة عشوائياً
+                    // اختر أول مجموعة من البطاقات غير المتقنة بالتسلسل
                     const cardsToAdd = [...nonMasteredCards]
-                        .sort(() => Math.random() - 0.5)
                         .slice(0, Math.min(UNMASTERED_LIMIT, nonMasteredCards.length))
                         .map(card => card.id);
 
