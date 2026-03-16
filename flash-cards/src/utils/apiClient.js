@@ -10,7 +10,7 @@ console.log('⚠️ API Client initialized with URL:', API_URL);
 // helper: fetch with timeout
 const fetchWithTimeout = async (url, options = {}) => {
     // 15 seconds timeout to allow for potential cold-starts on Railway backend
-    const timeout = options.timeout || 15000; 
+    const timeout = options.timeout || 15000;
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
     try {

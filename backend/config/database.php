@@ -68,9 +68,12 @@ return [
                 => env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT') !== null
                     ? filter_var(env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT'), FILTER_VALIDATE_BOOLEAN)
                     : null,
-                // Connection timeout in seconds (avoid hanging healthchecks)
-                PDO::ATTR_TIMEOUT => env('DB_CONNECT_TIMEOUT', 5),
-            ]) : [],
+            ]) + [
+                // Railway/Serverless MySQL Drop Fixes:
+                PDO::ATTR_TIMEOUT => env('DB_CONNECT_TIMEOUT', 30),
+                PDO::ATTR_EMULATE_PREPARES => true,
+                PDO::ATTR_PERSISTENT => false,
+            ] : [],
         ],
 
         'mariadb' => [
