@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Folder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 
 class FolderController extends Controller
@@ -13,23 +15,38 @@ class FolderController extends Controller
      */
     public function index()
     {
-        try {
-            // Get only root folders (folders with no parent)
-            $folders = Folder::whereNull('parent_folder_id')
-                ->orderBy('order')
-                ->get();
+        $maxAttempts = 3;
+        $lastError = null;
 
-            return response()->json([
-                'success' => true,
-                'data' => $folders
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to fetch folders',
-                'error' => $e->getMessage()
-            ], 500);
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                // Get only root folders (folders with no parent)
+                $folders = Folder::whereNull('parent_folder_id')
+                    ->orderBy('order')
+                    ->get();
+
+                return response()->json([
+                    'success' => true,
+                    'data' => $folders
+                ]);
+            } catch (\Exception $e) {
+                $lastError = $e;
+
+                $isGoneAway = Str::contains(Str::lower($e->getMessage()), 'server has gone away');
+                if (!$isGoneAway || $attempt === $maxAttempts) {
+                    break;
+                }
+
+                DB::disconnect('mysql');
+                usleep(300000 * $attempt);
+            }
         }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to fetch folders',
+            'error' => $lastError ? $lastError->getMessage() : 'Unknown error'
+        ], 500);
     }
 
     /**

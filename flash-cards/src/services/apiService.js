@@ -37,6 +37,27 @@ const fetchWithTimeout = async (url, options = {}) => {
     }
 };
 
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+const fetchWithRetry = async (url, options = {}, retries = 3, baseDelay = 700) => {
+    let lastError;
+
+    for (let attempt = 1; attempt <= retries; attempt += 1) {
+        try {
+            return await fetchWithTimeout(url, options);
+        } catch (error) {
+            lastError = error;
+            if (attempt === retries) {
+                break;
+            }
+            // Exponential backoff to give the backend/proxy time to recover
+            await sleep(baseDelay * attempt);
+        }
+    }
+
+    throw lastError;
+};
+
 export const settingsAPI = {
     // جلب الإعدادات
     async getSettings() {
@@ -218,9 +239,9 @@ export const foldersAPI = {
     // Get all folders
     async getFolders() {
         try {
-            const response = await fetchWithTimeout(`${API_BASE_URL}/folders`, {
+            const response = await fetchWithRetry(`${API_BASE_URL}/folders`, {
                 headers: getHeaders()
-            });
+            }, 4, 800);
 
             if (!response.ok) throw new Error('Failed to fetch folders');
 
@@ -235,9 +256,9 @@ export const foldersAPI = {
     // Get a specific folder
     async getFolder(folderId) {
         try {
-            const response = await fetchWithTimeout(`${API_BASE_URL}/folders/${folderId}`, {
+            const response = await fetchWithRetry(`${API_BASE_URL}/folders/${folderId}`, {
                 headers: getHeaders()
-            });
+            }, 3, 600);
 
             if (!response.ok) throw new Error('Failed to fetch folder');
 
