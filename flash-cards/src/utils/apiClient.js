@@ -7,7 +7,21 @@ const API_URL = API_CONFIG.getApiUrl();
 // Log the API URL being used for debugging
 console.log('⚠️ API Client initialized with URL:', API_URL);
 
-console.log('API Client initializing with URL:', API_URL);
+// helper: fetch with timeout
+const fetchWithTimeout = async (url, options = {}) => {
+    // 15 seconds timeout to allow for potential cold-starts on Railway backend
+    const timeout = options.timeout || 15000; 
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(id);
+        return response;
+    } catch (error) {
+        clearTimeout(id);
+        throw error;
+    }
+};
 
 const json = async (res) => {
     if (!res.ok) {
@@ -43,30 +57,35 @@ const tryApi = async (fn, fallback) => {
 
 export const api = {
     listDecks: () => tryApi(
-        () => fetch(`${API_URL}/api/decks`).then(json).then(r => Array.isArray(r?.data) ? r.data : (Array.isArray(r) ? r : [])),
+        () => fetchWithTimeout(`${API_URL}/api/decks`).then(json).then(r => Array.isArray(r?.data) ? r.data : (Array.isArray(r) ? r : [])),
         () => {
-            const raw = localStorage.getItem('flashcards-decks');
-            return raw ? JSON.parse(raw) : [];
+            try {
+                const raw = localStorage.getItem('flashcards-decks');
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                console.error('Error parsing localStorage backup:', e);
+                return [];
+            }
         }
     ),
     createDeck: (data) => tryApi(
-        () => fetch(`${API_URL}/api/decks`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(data) }).then(json).then(r => r?.data ?? r),
+        () => fetchWithTimeout(`${API_URL}/api/decks`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(data) }).then(json).then(r => r?.data ?? r),
         () => null
     ),
     updateDeck: (id, data) => tryApi(
-        () => fetch(`${API_URL}/api/decks/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(data) }).then(json).then(r => r?.data ?? r),
+        () => fetchWithTimeout(`${API_URL}/api/decks/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(data) }).then(json).then(r => r?.data ?? r),
         () => null
     ),
     deleteDeck: (id) => tryApi(
-        () => fetch(`${API_URL}/api/decks/${id}`, { method: 'DELETE' }).then(() => true),
+        () => fetchWithTimeout(`${API_URL}/api/decks/${id}`, { method: 'DELETE' }).then(() => true),
         () => null
     ),
     resetDeck: (id) => tryApi(
-        () => fetch(`${API_URL}/api/decks/${id}/reset`, { method: 'POST', headers: { 'Accept': 'application/json' } }).then(json).then(r => r?.data ?? r),
+        () => fetchWithTimeout(`${API_URL}/api/decks/${id}/reset`, { method: 'POST', headers: { 'Accept': 'application/json' } }).then(json).then(r => r?.data ?? r),
         () => null
     ),
     addCard: (deckId, data) => tryApi(
-        () => fetch(`${API_URL}/api/decks/${deckId}/cards`, {
+        () => fetchWithTimeout(`${API_URL}/api/decks/${deckId}/cards`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({
@@ -77,7 +96,7 @@ export const api = {
         () => null
     ),
     updateCard: (deckId, cardId, data) => tryApi(
-        () => fetch(`${API_URL}/api/decks/${deckId}/cards/${cardId}`, {
+        () => fetchWithTimeout(`${API_URL}/api/decks/${deckId}/cards/${cardId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
             body: JSON.stringify({
@@ -89,13 +108,13 @@ export const api = {
         () => null
     ),
     deleteCard: (deckId, cardId) => tryApi(
-        () => fetch(`${API_URL}/api/decks/${deckId}/cards/${cardId}`, { method: 'DELETE' }).then(() => true),
+        () => fetchWithTimeout(`${API_URL}/api/decks/${deckId}/cards/${cardId}`, { method: 'DELETE' }).then(() => true),
         () => null
     ),
     toggleKnown: (deckId, cardId) => tryApi(
         async () => {
             console.log(`Toggling known state for card ${cardId} in deck ${deckId}`);
-            const response = await fetch(`${API_URL}/api/decks/${deckId}/cards/${cardId}/toggle-known`, { method: 'POST', headers: { 'Accept': 'application/json' } });
+            const response = await fetchWithTimeout(`${API_URL}/api/decks/${deckId}/cards/${cardId}/toggle-known`, { method: 'POST', headers: { 'Accept': 'application/json' } });
             const result = await json(response);
             const data = result?.data ?? result;
             console.log('Toggle known result:', data);

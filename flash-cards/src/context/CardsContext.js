@@ -48,13 +48,18 @@ export const CardsProvider = ({ children }) => {
             }
 
             async function loadFromLocalStorageOrCreateDefault() {
-                const storedDecks = localStorage.getItem('flashcards-decks');
-                if (storedDecks) {
-                    const parsedDecks = JSON.parse(storedDecks);
-                    console.log('📂 Loaded from localStorage:', parsedDecks.length, 'decks');
-                    setDecks(parsedDecks);
-                } else {
-                    console.log('🗃️ No localStorage decks found; using empty state');
+                try {
+                    const storedDecks = localStorage.getItem('flashcards-decks');
+                    if (storedDecks) {
+                        const parsedDecks = JSON.parse(storedDecks);
+                        console.log('📂 Loaded from localStorage:', parsedDecks.length, 'decks');
+                        setDecks(parsedDecks);
+                    } else {
+                        console.log('🗃️ No localStorage decks found; using empty state');
+                        setDecks([]);
+                    }
+                } catch (err) {
+                    console.error('Error parsing localStorage backup:', err);
                     setDecks([]);
                 }
             }

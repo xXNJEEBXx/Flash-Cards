@@ -21,12 +21,28 @@ const getHeaders = () => ({
     'Accept': 'application/json'
 });
 
+// helper: fetch with timeout
+const fetchWithTimeout = async (url, options = {}) => {
+    // 15 seconds timeout to allow for potential cold-starts on Railway backend
+    const timeout = options.timeout || 15000;
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(id);
+        return response;
+    } catch (error) {
+        clearTimeout(id);
+        throw error;
+    }
+};
+
 export const settingsAPI = {
     // جلب الإعدادات
     async getSettings() {
         try {
             console.log('Fetching settings with token:', getSessionToken());
-            const response = await fetch(`${API_BASE_URL}/settings`, {
+            const response = await fetchWithTimeout(`${API_BASE_URL}/settings`, {
                 headers: getHeaders()
             });
 
@@ -53,7 +69,7 @@ export const settingsAPI = {
     async updateSettings(settings) {
         try {
             console.log('Updating settings:', settings);
-            const response = await fetch(`${API_BASE_URL}/settings`, {
+            const response = await fetchWithTimeout(`${API_BASE_URL}/settings`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify(settings)
@@ -73,7 +89,7 @@ export const settingsAPI = {
     // إضافة بطاقة لقائمة غير المتقنة
     async addUnmasteredCard(cardId) {
         try {
-            const response = await fetch(`${API_BASE_URL}/settings/unmastered/add`, {
+            const response = await fetchWithTimeout(`${API_BASE_URL}/settings/unmastered/add`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({ card_id: cardId })
@@ -92,7 +108,7 @@ export const settingsAPI = {
     // إزالة بطاقة من قائمة غير المتقنة
     async removeUnmasteredCard(cardId) {
         try {
-            const response = await fetch(`${API_BASE_URL}/settings/unmastered/remove`, {
+            const response = await fetchWithTimeout(`${API_BASE_URL}/settings/unmastered/remove`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({ card_id: cardId })
@@ -111,7 +127,7 @@ export const settingsAPI = {
     // إعادة تعيين الإعدادات
     async resetSettings() {
         try {
-            const response = await fetch(`${API_BASE_URL}/settings/reset`, {
+            const response = await fetchWithTimeout(`${API_BASE_URL}/settings/reset`, {
                 method: 'POST',
                 headers: getHeaders()
             });
@@ -131,7 +147,7 @@ export const cardsAPI = {
     // تسجيل عرض البطاقة
     async markCardAsSeen(deckId, cardId) {
         try {
-            const response = await fetch(`${API_BASE_URL}/decks/${deckId}/cards/${cardId}/mark-seen`, {
+            const response = await fetchWithTimeout(`${API_BASE_URL}/decks/${deckId}/cards/${cardId}/mark-seen`, {
                 method: 'POST',
                 headers: getHeaders()
             });
@@ -148,7 +164,7 @@ export const cardsAPI = {
     // تحديد البطاقة كصعبة
     async markCardAsDifficult(deckId, cardId) {
         try {
-            const response = await fetch(`${API_BASE_URL}/decks/${deckId}/cards/${cardId}/mark-difficult`, {
+            const response = await fetchWithTimeout(`${API_BASE_URL}/decks/${deckId}/cards/${cardId}/mark-difficult`, {
                 method: 'POST',
                 headers: getHeaders()
             });
@@ -165,7 +181,7 @@ export const cardsAPI = {
     // جلب إحصائيات البطاقة
     async getCardStats(deckId, cardId) {
         try {
-            const response = await fetch(`${API_BASE_URL}/decks/${deckId}/cards/${cardId}/stats`, {
+            const response = await fetchWithTimeout(`${API_BASE_URL}/decks/${deckId}/cards/${cardId}/stats`, {
                 headers: getHeaders()
             });
 
@@ -182,7 +198,7 @@ export const cardsAPI = {
     // تحديث حالة إتقان البطاقة
     async toggleCardKnown(deckId, cardId) {
         try {
-            const response = await fetch(`${API_BASE_URL}/decks/${deckId}/cards/${cardId}/toggle-known`, {
+            const response = await fetchWithTimeout(`${API_BASE_URL}/decks/${deckId}/cards/${cardId}/toggle-known`, {
                 method: 'POST',
                 headers: getHeaders()
             });
@@ -202,7 +218,7 @@ export const foldersAPI = {
     // Get all folders
     async getFolders() {
         try {
-            const response = await fetch(`${API_BASE_URL}/folders`, {
+            const response = await fetchWithTimeout(`${API_BASE_URL}/folders`, {
                 headers: getHeaders()
             });
 
@@ -219,7 +235,7 @@ export const foldersAPI = {
     // Get a specific folder
     async getFolder(folderId) {
         try {
-            const response = await fetch(`${API_BASE_URL}/folders/${folderId}`, {
+            const response = await fetchWithTimeout(`${API_BASE_URL}/folders/${folderId}`, {
                 headers: getHeaders()
             });
 
@@ -236,7 +252,7 @@ export const foldersAPI = {
     // Create a new folder
     async createFolder(folderData) {
         try {
-            const response = await fetch(`${API_BASE_URL}/folders`, {
+            const response = await fetchWithTimeout(`${API_BASE_URL}/folders`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify(folderData)
@@ -255,7 +271,7 @@ export const foldersAPI = {
     // Update a folder
     async updateFolder(folderId, folderData) {
         try {
-            const response = await fetch(`${API_BASE_URL}/folders/${folderId}`, {
+            const response = await fetchWithTimeout(`${API_BASE_URL}/folders/${folderId}`, {
                 method: 'PUT',
                 headers: getHeaders(),
                 body: JSON.stringify(folderData)
@@ -274,7 +290,7 @@ export const foldersAPI = {
     // Delete a folder
     async deleteFolder(folderId) {
         try {
-            const response = await fetch(`${API_BASE_URL}/folders/${folderId}`, {
+            const response = await fetchWithTimeout(`${API_BASE_URL}/folders/${folderId}`, {
                 method: 'DELETE',
                 headers: getHeaders()
             });
@@ -292,7 +308,7 @@ export const foldersAPI = {
     // Move a deck to a folder
     async moveDeckToFolder(folderId, deckId, order = 0) {
         try {
-            const response = await fetch(`${API_BASE_URL}/folders/${folderId}/move-deck`, {
+            const response = await fetchWithTimeout(`${API_BASE_URL}/folders/${folderId}/move-deck`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({ deck_id: deckId, order })
@@ -311,7 +327,7 @@ export const foldersAPI = {
     // Remove deck from folder (move to root)
     async removeDeckFromFolder(deckId) {
         try {
-            const response = await fetch(`${API_BASE_URL}/folders/remove-deck`, {
+            const response = await fetchWithTimeout(`${API_BASE_URL}/folders/remove-deck`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({ deck_id: deckId })
