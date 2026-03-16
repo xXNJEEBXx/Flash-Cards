@@ -70,6 +70,7 @@ return [
                     : null,
             ]) + [
                 // Railway/Serverless MySQL Drop Fixes:
+                PDO::MYSQL_ATTR_INIT_COMMAND => "SET SESSION wait_timeout=28800",
                 PDO::ATTR_TIMEOUT => env('DB_CONNECT_TIMEOUT', 30),
                 PDO::ATTR_EMULATE_PREPARES => true,
                 PDO::ATTR_PERSISTENT => false,
