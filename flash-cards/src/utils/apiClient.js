@@ -24,10 +24,12 @@ const fetchWithTimeout = async (url, options = {}) => {
             const response = await fetch(url, { ...options, signal: controller.signal });
             clearTimeout(id);
 
-            // إن كان الخطأ 500 أو أعلى من السيرفر كأن تكون قاعدة البيانات في وضع السبات
-            if (!response.ok && response.status >= 500) {
-                const errText = await response.clone().text().catch(() => '');
-                throw new Error(`Server Error ${response.status}: ${errText}`);
+            const text = await response.clone().text().catch(() => "");
+            const isServerError = !response.ok && response.status >= 500;
+            const isMySQLGone = text.includes("MySQL server has gone away") || text.includes("SQLSTATE[HY000] [2006]") || text.includes("Connection refused") || text.includes("Failed to fetch folders");
+
+            if (isServerError || isMySQLGone) {
+                throw new Error("Server Error or MySQL Asleep");
             }
 
             return response;
@@ -35,7 +37,7 @@ const fetchWithTimeout = async (url, options = {}) => {
             clearTimeout(id);
             lastError = error;
             console.warn(`[API Retry] Attempt ${attempt}/${retries} failed for ${url}. Waiting before retry...`);
-            
+
             if (attempt === retries) {
                 break;
             }
@@ -43,7 +45,7 @@ const fetchWithTimeout = async (url, options = {}) => {
             await sleep(baseDelay * Math.min(attempt, 5));
         }
     }
-    
+
     throw lastError;
 };
 
@@ -150,3 +152,5 @@ export const api = {
         }
     ),
 };
+
+

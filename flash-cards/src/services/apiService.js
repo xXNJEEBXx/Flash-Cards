@@ -46,19 +46,19 @@ const fetchWithRetry = async (url, options = {}, retries = 10, baseDelay = 1000)
         try {
             const response = await fetchWithTimeout(url, options);
 
-            // إذا كان الخطأ 500 أو أعلى (مثل سيرفر MySQL نائم)، نعتبره خطأ لنكرر المحاولة
-            if (!response.ok && response.status >= 500) {
-                const clone = response.clone();
-                const errText = await clone.text().catch(() => '');
-                throw new Error(`Server returned ${response.status}: ${errText}`);
+            const text = await response.clone().text().catch(() => "");
+            const isServerError = !response.ok && response.status >= 500;
+            const isMySQLGone = text.includes("MySQL server has gone away") || text.includes("SQLSTATE[HY000] [2006]") || text.includes("Connection refused") || text.includes("Failed to fetch folders");
+
+            if (isServerError || isMySQLGone) {
+                throw new Error("Server Error or MySQL Asleep");
             }
 
-            // في حالة النجاح، أو أخطاء المستخدم المستقرة 4xx (لا علاقة لها بالسيرفر النائم)، تُرجع النتيجة كما هي
             return response;
         } catch (error) {
             lastError = error;
             console.warn(`[API Retry] Attempt ${attempt}/${retries} failed for ${url}. Waiting before retry...`);
-            
+
             if (attempt === retries) {
                 break;
             }
@@ -385,3 +385,4 @@ export default {
     cards: cardsAPI,
     folders: foldersAPI
 };
+
