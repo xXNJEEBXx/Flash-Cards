@@ -23,19 +23,35 @@ export const CardsProvider = ({ children }) => {
             try {
                 console.log('🔄 Loading decks from Laravel API...');
 
-                // Load decks from Laravel API
-                const apiDecks = await api.listDecks();
+                // Load decks from Laravel API مع نظام إعادة محاولة في حال ظهور 0 مجموعات
+                let apiDecks = await api.listDecks();
+                let emptyRetries = 0;
+                
+                // إذا كانت المجموعات فارغة تماماً، قد يكون السيرفر أرجع استجابة خالية بالخطأ بسبب نهوضه من السبات
+                while (Array.isArray(apiDecks) && apiDecks.length === 0 && emptyRetries < 5) {
+                    console.log(`⚠️ API returned 0 decks (attempt ${emptyRetries + 1}/5). Retrying in 2 seconds...`);
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    apiDecks = await api.listDecks();
+                    emptyRetries++;
+                }
 
                 if (!mounted) return;
 
                 if (Array.isArray(apiDecks)) {
                     console.log(`✅ API returned ${apiDecks.length} decks`);
-                    setDecks(apiDecks);
-                    // Only overwrite localStorage if API has data; avoid erasing local drafts
-                    if (apiDecks.length > 0) {
-                        localStorage.setItem('flashcards-decks', JSON.stringify(apiDecks));
+                    
+                    // لا تقم بمسح الواجهة بمجموعات فارغة إذا كان لدينا شيء مخزن محلياً كمسودة
+                    const localDecksRaw = localStorage.getItem('flashcards-decks');
+                    const localDecks = localDecksRaw ? JSON.parse(localDecksRaw) : [];
+                    
+                    if (apiDecks.length === 0 && localDecks.length > 0) {
+                        console.log('⚠️ API is consistently returning 0 decks, falling back to non-empty localStorage data');
+                        setDecks(localDecks);
                     } else {
-                        console.log('API empty, keeping existing localStorage');
+                        setDecks(apiDecks);
+                        if (apiDecks.length > 0) {
+                            localStorage.setItem('flashcards-decks', JSON.stringify(apiDecks));
+                        }
                     }
                 } else {
                     console.log('⚠️ Unexpected API response, falling back to localStorage');
