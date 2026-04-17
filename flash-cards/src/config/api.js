@@ -21,13 +21,25 @@ const testConnection = async () => {
         const apiUrl = API_CONFIG.getApiUrl();
         console.log('Testing API:', apiUrl);
 
-        const response = await fetch(`${apiUrl}/api/health`);
+        let response;
+        for (let i = 1; i <= 10; i++) {
+            try {
+                response = await fetch(`${apiUrl}/api/health`);
+                if (response.ok) break;
+                if (!response.ok && response.status >= 500) throw new Error("Server sleeping");
+            } catch (err) {
+                console.warn(`Health check attempt ${i} failed. Retrying...`);
+                if (i === 10) throw err;
+                await new Promise(r => setTimeout(r, 1000 * Math.min(i, 3)));
+            }
+        }
+
         const data = await response.json();
 
-        console.log('✅ API Connection Success:', data);
+        console.log('API Connection Success:', data);
         return true;
     } catch (error) {
-        console.error('❌ API Connection Failed:', error);
+        console.error('API Connection Failed:', error);
         return false;
     }
 };

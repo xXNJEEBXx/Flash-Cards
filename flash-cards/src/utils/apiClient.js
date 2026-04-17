@@ -7,20 +7,44 @@ const API_URL = API_CONFIG.getApiUrl();
 // Log the API URL being used for debugging
 console.log('⚠️ API Client initialized with URL:', API_URL);
 
-// helper: fetch with timeout
+// helper: sleep
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// helper: fetch with timeout and smart retry for 5xx errors (e.g. MySQL sleep)
 const fetchWithTimeout = async (url, options = {}) => {
-    // 15 seconds timeout to allow for potential cold-starts on Railway backend
     const timeout = options.timeout || 15000;
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeout);
-    try {
-        const response = await fetch(url, { ...options, signal: controller.signal });
-        clearTimeout(id);
-        return response;
-    } catch (error) {
-        clearTimeout(id);
-        throw error;
+    const retries = 10;
+    const baseDelay = 1000;
+    let lastError;
+
+    for (let attempt = 1; attempt <= retries; attempt += 1) {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeout);
+        try {
+            const response = await fetch(url, { ...options, signal: controller.signal });
+            clearTimeout(id);
+
+            // إن كان الخطأ 500 أو أعلى من السيرفر كأن تكون قاعدة البيانات في وضع السبات
+            if (!response.ok && response.status >= 500) {
+                const errText = await response.clone().text().catch(() => '');
+                throw new Error(`Server Error ${response.status}: ${errText}`);
+            }
+
+            return response;
+        } catch (error) {
+            clearTimeout(id);
+            lastError = error;
+            console.warn(`[API Retry] Attempt ${attempt}/${retries} failed for ${url}. Waiting before retry...`);
+            
+            if (attempt === retries) {
+                break;
+            }
+            // التدرج في الانتظار ليتعافى السيرفر
+            await sleep(baseDelay * Math.min(attempt, 5));
+        }
     }
+    
+    throw lastError;
 };
 
 const json = async (res) => {

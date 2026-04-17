@@ -39,19 +39,31 @@ const fetchWithTimeout = async (url, options = {}) => {
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-const fetchWithRetry = async (url, options = {}, retries = 3, baseDelay = 700) => {
+const fetchWithRetry = async (url, options = {}, retries = 10, baseDelay = 1000) => {
     let lastError;
 
     for (let attempt = 1; attempt <= retries; attempt += 1) {
         try {
-            return await fetchWithTimeout(url, options);
+            const response = await fetchWithTimeout(url, options);
+
+            // إذا كان الخطأ 500 أو أعلى (مثل سيرفر MySQL نائم)، نعتبره خطأ لنكرر المحاولة
+            if (!response.ok && response.status >= 500) {
+                const clone = response.clone();
+                const errText = await clone.text().catch(() => '');
+                throw new Error(`Server returned ${response.status}: ${errText}`);
+            }
+
+            // في حالة النجاح، أو أخطاء المستخدم المستقرة 4xx (لا علاقة لها بالسيرفر النائم)، تُرجع النتيجة كما هي
+            return response;
         } catch (error) {
             lastError = error;
+            console.warn(`[API Retry] Attempt ${attempt}/${retries} failed for ${url}. Waiting before retry...`);
+            
             if (attempt === retries) {
                 break;
             }
-            // Exponential backoff to give the backend/proxy time to recover
-            await sleep(baseDelay * attempt);
+            // زيادة التأخير برفق في المحاولات اللاحقة (1 ثانية، 2 ثانية، 3 ثواني...) لتجنب إغراق السيرفر وهو يستيقظ
+            await sleep(baseDelay * Math.min(attempt, 5));
         }
     }
 
@@ -63,7 +75,7 @@ export const settingsAPI = {
     async getSettings() {
         try {
             console.log('Fetching settings with token:', getSessionToken());
-            const response = await fetchWithTimeout(`${API_BASE_URL}/settings`, {
+            const response = await fetchWithRetry(`${API_BASE_URL}/settings`, {
                 headers: getHeaders()
             });
 
@@ -90,7 +102,7 @@ export const settingsAPI = {
     async updateSettings(settings) {
         try {
             console.log('Updating settings:', settings);
-            const response = await fetchWithTimeout(`${API_BASE_URL}/settings`, {
+            const response = await fetchWithRetry(`${API_BASE_URL}/settings`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify(settings)
@@ -110,7 +122,7 @@ export const settingsAPI = {
     // إضافة بطاقة لقائمة غير المتقنة
     async addUnmasteredCard(cardId) {
         try {
-            const response = await fetchWithTimeout(`${API_BASE_URL}/settings/unmastered/add`, {
+            const response = await fetchWithRetry(`${API_BASE_URL}/settings/unmastered/add`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({ card_id: cardId })
@@ -129,7 +141,7 @@ export const settingsAPI = {
     // إزالة بطاقة من قائمة غير المتقنة
     async removeUnmasteredCard(cardId) {
         try {
-            const response = await fetchWithTimeout(`${API_BASE_URL}/settings/unmastered/remove`, {
+            const response = await fetchWithRetry(`${API_BASE_URL}/settings/unmastered/remove`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({ card_id: cardId })
@@ -148,7 +160,7 @@ export const settingsAPI = {
     // إعادة تعيين الإعدادات
     async resetSettings() {
         try {
-            const response = await fetchWithTimeout(`${API_BASE_URL}/settings/reset`, {
+            const response = await fetchWithRetry(`${API_BASE_URL}/settings/reset`, {
                 method: 'POST',
                 headers: getHeaders()
             });
@@ -168,7 +180,7 @@ export const cardsAPI = {
     // تسجيل عرض البطاقة
     async markCardAsSeen(deckId, cardId) {
         try {
-            const response = await fetchWithTimeout(`${API_BASE_URL}/decks/${deckId}/cards/${cardId}/mark-seen`, {
+            const response = await fetchWithRetry(`${API_BASE_URL}/decks/${deckId}/cards/${cardId}/mark-seen`, {
                 method: 'POST',
                 headers: getHeaders()
             });
@@ -185,7 +197,7 @@ export const cardsAPI = {
     // تحديد البطاقة كصعبة
     async markCardAsDifficult(deckId, cardId) {
         try {
-            const response = await fetchWithTimeout(`${API_BASE_URL}/decks/${deckId}/cards/${cardId}/mark-difficult`, {
+            const response = await fetchWithRetry(`${API_BASE_URL}/decks/${deckId}/cards/${cardId}/mark-difficult`, {
                 method: 'POST',
                 headers: getHeaders()
             });
@@ -202,7 +214,7 @@ export const cardsAPI = {
     // جلب إحصائيات البطاقة
     async getCardStats(deckId, cardId) {
         try {
-            const response = await fetchWithTimeout(`${API_BASE_URL}/decks/${deckId}/cards/${cardId}/stats`, {
+            const response = await fetchWithRetry(`${API_BASE_URL}/decks/${deckId}/cards/${cardId}/stats`, {
                 headers: getHeaders()
             });
 
@@ -219,7 +231,7 @@ export const cardsAPI = {
     // تحديث حالة إتقان البطاقة
     async toggleCardKnown(deckId, cardId) {
         try {
-            const response = await fetchWithTimeout(`${API_BASE_URL}/decks/${deckId}/cards/${cardId}/toggle-known`, {
+            const response = await fetchWithRetry(`${API_BASE_URL}/decks/${deckId}/cards/${cardId}/toggle-known`, {
                 method: 'POST',
                 headers: getHeaders()
             });
@@ -273,7 +285,7 @@ export const foldersAPI = {
     // Create a new folder
     async createFolder(folderData) {
         try {
-            const response = await fetchWithTimeout(`${API_BASE_URL}/folders`, {
+            const response = await fetchWithRetry(`${API_BASE_URL}/folders`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify(folderData)
@@ -292,7 +304,7 @@ export const foldersAPI = {
     // Update a folder
     async updateFolder(folderId, folderData) {
         try {
-            const response = await fetchWithTimeout(`${API_BASE_URL}/folders/${folderId}`, {
+            const response = await fetchWithRetry(`${API_BASE_URL}/folders/${folderId}`, {
                 method: 'PUT',
                 headers: getHeaders(),
                 body: JSON.stringify(folderData)
@@ -311,7 +323,7 @@ export const foldersAPI = {
     // Delete a folder
     async deleteFolder(folderId) {
         try {
-            const response = await fetchWithTimeout(`${API_BASE_URL}/folders/${folderId}`, {
+            const response = await fetchWithRetry(`${API_BASE_URL}/folders/${folderId}`, {
                 method: 'DELETE',
                 headers: getHeaders()
             });
@@ -329,7 +341,7 @@ export const foldersAPI = {
     // Move a deck to a folder
     async moveDeckToFolder(folderId, deckId, order = 0) {
         try {
-            const response = await fetchWithTimeout(`${API_BASE_URL}/folders/${folderId}/move-deck`, {
+            const response = await fetchWithRetry(`${API_BASE_URL}/folders/${folderId}/move-deck`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({ deck_id: deckId, order })
@@ -348,7 +360,7 @@ export const foldersAPI = {
     // Remove deck from folder (move to root)
     async removeDeckFromFolder(deckId) {
         try {
-            const response = await fetchWithTimeout(`${API_BASE_URL}/folders/remove-deck`, {
+            const response = await fetchWithRetry(`${API_BASE_URL}/folders/remove-deck`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({ deck_id: deckId })
