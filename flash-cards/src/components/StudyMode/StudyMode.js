@@ -170,10 +170,9 @@ const StudyMode = ({ deckId, onBack }) => {
                 // إذا كانت القائمة فارغة أو تم إعادة تفعيل النظام، أعد تهيئتها
                 console.log('🔄 Smart Mode: initializing unmastered list with non-mastered cards');
 
-                // أضف بطاقات غير متقنة عشوائياً إلى قائمة unmastered
+                // أضف بطاقات غير متقنة بالترتيب الأصلي إلى قائمة unmastered
                 if (nonMasteredCards.length > 0) {
                     const cardsToAdd = [...nonMasteredCards]
-                        .sort(() => Math.random() - 0.5)
                         .slice(0, Math.min(UNMASTERED_LIMIT, nonMasteredCards.length))
                         .map(card => card.id);
 
@@ -308,7 +307,10 @@ const StudyMode = ({ deckId, onBack }) => {
             }
 
             // إذا كان لدينا تغيير كبير في قائمة البطاقات، يمكن أن نعيد ضبط الفهرس إلى 0
-            const shouldResetIndex = Math.abs((cards.length || 0) - cardsToDisplay.length) > 5;
+            // التعديل: لا نعيد ضبط المؤشر إلى 0 إذا كنا في وضع النظام الذكي (المراجعة)
+            // لضمان استمرارية تجربة الاستخدام عند تبديل البطاقة
+            const isSmartReviewActive = smartModeEnabled && reviewMode;
+            const shouldResetIndex = !isSmartReviewActive && (Math.abs((cards.length || 0) - cardsToDisplay.length) > 5);
 
             // حدّث قائمة العرض مع الحفاظ على الفهرس الحالي قدر الإمكان
             setCards(cardsToDisplay);
@@ -325,7 +327,8 @@ const StudyMode = ({ deckId, onBack }) => {
                 }
 
                 // التأكد من أن الفهرس في نطاق صحيح
-                const maxIndex = cardsToDisplay.length - 1;
+                const maxIndex = Math.max(0, cardsToDisplay.length - 1);
+                // إذا كنا في وضع المراجعة ونحن عند الفهرس، نبقيه كما هو (ينزلق المؤشر ليقرأ البطاقة التالية التي تحل محل البطاقة المحذوفة)
                 const validIndex = Math.min(prev, maxIndex);
                 if (validIndex !== prev) {
                     console.log(`🔄 Adjusting index from ${prev} to ${validIndex}`);
@@ -415,12 +418,12 @@ const StudyMode = ({ deckId, onBack }) => {
                         setReviewMode(false);
                     } else if (reviewMode && newList.length < UNMASTERED_LIMIT) {
                         const remainingCards = currentDeck.cards.filter(card =>
-                            !newList.includes(card.id) && !card.known
+                            !newList.includes(card.id) && !card.known && card.id !== cardId
                         );
 
                         if (remainingCards.length > 0) {
-                            const randomCard = remainingCards[Math.floor(Math.random() * remainingCards.length)];
-                            return [...newList, randomCard.id];
+                            // إضافة أول بطاقة غير متقنة متوفرة بالترتيب الأصلي
+                            return [...newList, remainingCards[0].id];
                         }
                     }
                 }
@@ -502,9 +505,17 @@ const StudyMode = ({ deckId, onBack }) => {
             }
 
             if (smartModeEnabled && reviewMode) {
-                if (unmastered.length <= 1) {
+                // في وضع المراجعة، إذا تبقى بطاقات، يجب أن نظل في وضع المراجعة
+                // لا نحتاج إلى تغيير المؤشر هنا، لأن useEffect التابع للـ cards 
+                // سيعيد حساب البطاقات المعروضة وسيحافظ على نفس المؤشر
+                if (unmastered.length <= 1) { // 1 لأن البطاقة الحالية لا تزال في state حتى تحدث الدورة القادمة
                     setReviewMode(false);
                     setCurrentCardIndex(0);
+                } else {
+                    // إذا كان المؤشر خارج نطاق البطاقات المتبقية بناءً على الطول الجديد
+                    if (currentCardIndex >= totalCards - 1) {
+                        setCurrentCardIndex(Math.max(0, totalCards - 2));
+                    }
                 }
             } else {
                 if (currentCardIndex < totalCards - 1) {
@@ -606,9 +617,8 @@ const StudyMode = ({ deckId, onBack }) => {
                 const nonMasteredCards = currentDeck.cards.filter(card => !card.known);
 
                 if (nonMasteredCards.length > 0) {
-                    // اختر مجموعة من البطاقات غير المتقنة عشوائياً
+                    // اختر أول مجموعة من البطاقات غير المتقنة
                     const cardsToAdd = [...nonMasteredCards]
-                        .sort(() => Math.random() - 0.5)
                         .slice(0, Math.min(UNMASTERED_LIMIT, nonMasteredCards.length))
                         .map(card => card.id);
 

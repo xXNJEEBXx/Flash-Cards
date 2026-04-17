@@ -1,0 +1,8 @@
+{
+  "chat.tools.terminal.autoApprove": {
+    "/^Get-Content -Path \"c:\\\\Users\\\\xXNJEEBXx\\\\AppData\\\\Roaming\\\\Code\\\\User\\\\workspaceStorage\\\\15f45112e83435916e4f02d9f55ea542\\\\GitHub\\.copilot-chat\\\\chat-session-resources\\\\88540692-12f5-415c-962c-3c8a87f535ab\\\\call_MHxEdTYwcTY3NGJ6ZGQwUmFEN0Y__vscode-1776275219161\\\\content\\.json\" \\| ConvertFrom-Json \\| Select-Object id, name$/": {
+      "approve": true,
+      "matchCommandLine": true
+    }
+  }
+}

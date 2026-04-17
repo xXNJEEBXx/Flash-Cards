@@ -62,6 +62,7 @@
   text-align: center;
   word-break: break-word;
   hyphens: auto;
+  white-space: pre-wrap;
 }
 
 .card-back {
@@ -76,6 +77,7 @@
   text-align: center;
   word-break: break-word;
   hyphens: auto;
+  white-space: pre-wrap;
 }
 
 .card.known .card-front {

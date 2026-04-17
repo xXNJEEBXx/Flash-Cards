@@ -49,7 +49,7 @@ const AppContent = ({ sidebarOpen, setSidebarOpen }) => {
   const { addCard, editCard, decks } = React.useContext(CardsContext);
   const navigate = useNavigate();
   const params = useParams();
-  
+
   // Determine current view from URL
   const currentPath = window.location.pathname;
   let view = 'decks';
