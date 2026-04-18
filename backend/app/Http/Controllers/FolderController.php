@@ -15,7 +15,7 @@ class FolderController extends Controller
      */
     public function index()
     {
-        $maxAttempts = 3;
+        $maxAttempts = 5;
         $lastError = null;
 
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
@@ -32,13 +32,17 @@ class FolderController extends Controller
             } catch (\Exception $e) {
                 $lastError = $e;
 
-                $isGoneAway = Str::contains(Str::lower($e->getMessage()), 'server has gone away');
-                if (!$isGoneAway || $attempt === $maxAttempts) {
+                $errorMessage = Str::lower($e->getMessage());
+                $isConnectionError = Str::contains($errorMessage, 'server has gone away') || 
+                                     Str::contains($errorMessage, 'connection refused') ||
+                                     Str::contains($errorMessage, '[2002]');
+
+                if (!$isConnectionError || $attempt === $maxAttempts) {
                     break;
                 }
 
                 DB::disconnect('mysql');
-                usleep(300000 * $attempt);
+                sleep(1); // Wait 1 second before next try to let Database wake up
             }
         }
 

@@ -53,7 +53,25 @@ class UserSettingsController extends Controller
             ], 400);
         }
 
-        $settings = $this->findSettingsByKey($key);
+        $settings = null;
+        $maxAttempts = 5;
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                $settings = $this->findSettingsByKey($key);
+                break;
+            } catch (\Exception $e) {
+                // Check if MySQL is sleeping
+                $errorMsg = \Illuminate\Support\Str::lower($e->getMessage());
+                if (!\Illuminate\Support\Str::contains($errorMsg, 'server has gone away') && 
+                    !\Illuminate\Support\Str::contains($errorMsg, 'connection refused') && 
+                    !\Illuminate\Support\Str::contains($errorMsg, '[2002]')) {
+                    if ($attempt === $maxAttempts) throw $e;
+                }
+                if ($attempt === $maxAttempts) throw $e;
+                \Illuminate\Support\Facades\DB::disconnect('mysql');
+                sleep(1);
+            }
+        }
 
         if (!$settings) {
             // إنشاء إعدادات افتراضية
@@ -214,3 +232,4 @@ class UserSettingsController extends Controller
         ]);
     }
 }
+
