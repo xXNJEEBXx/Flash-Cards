@@ -489,6 +489,8 @@ const StudyMode = ({ deckId, onBack }) => {
                         addToUnmastered(currentCard);
                         if (currentCardIndex < totalCards - 1) {
                             setCurrentCardIndex(prev => prev + 1);
+                        } else {
+                            setCurrentCardIndex(0);
                         }
                     }
                 }
@@ -497,6 +499,8 @@ const StudyMode = ({ deckId, onBack }) => {
                 addToUnmastered(currentCard);
                 if (currentCardIndex < totalCards - 1) {
                     setCurrentCardIndex(prev => prev + 1);
+                } else {
+                    setCurrentCardIndex(0);
                 }
             }
         } catch (error) {
@@ -553,8 +557,17 @@ const StudyMode = ({ deckId, onBack }) => {
         try {
             // تسجيل عرض البطاقة (خلفية)
             cardsAPI.markCardAsSeen(currentDeck.id, cardId)?.catch(() => { });
+            const card = currentDeck.cards.find(c => c.id === cardId);
+            const willBeKnown = card ? !card.known : true;
+
             // تبديل حالة البطاقة فوراً
             toggleCardKnown(currentDeck.id, cardId);
+
+            if (willBeKnown) {
+                removeFromUnmastered(cardId);
+            } else if (card) {
+                addToUnmastered(card);
+            }
 
             // عند تبديل حالة البطاقة، إذا كانت unmastered فارغة ونحن في وضع المراجعة، فاخرج من وضع المراجعة
             if (reviewMode && unmastered.length === 0) {
@@ -733,12 +746,12 @@ const StudyMode = ({ deckId, onBack }) => {
                 onUndo={handleUndoLastKnown}
                 canUndo={hasRecentlyKnownCards}
                 smartModeEnabled={smartModeEnabled}
-                onToggleSmartMode={() => setSmartModeEnabled(prev => !prev)}
+                onToggleSmartMode={toggleSmartMode}
                 reviewMode={reviewMode}
                 unmasteredCount={unmastered.length}
                 unmasteredLimit={UNMASTERED_LIMIT}
                 shuffleMode={shuffleMode}
-                onToggleShuffle={() => setShuffleMode(prev => !prev)}
+                onToggleShuffle={handleToggleShuffle}
                 onResetProgress={() => resetDeckProgress(currentDeck.id)}
             />
         );

@@ -59,15 +59,30 @@ const StealthStudyMode = ({
     }
   };
 
+  // حماية في حال تغير عدد البطاقات المعروضة
+  useEffect(() => {
+    if (cards.length > 0 && currentIndex >= cards.length) {
+      onIndexChange(cards.length - 1);
+    }
+  }, [cards.length, currentIndex, onIndexChange]);
+
   const handlePrevCard = useCallback(() => {
+    if (cards.length === 0) return;
     if (currentIndex > 0) {
       onIndexChange(currentIndex - 1);
+    } else {
+      // الالتفاف إلى آخر بطاقة في المجموعة
+      onIndexChange(cards.length - 1);
     }
-  }, [currentIndex, onIndexChange]);
+  }, [currentIndex, cards.length, onIndexChange]);
 
   const handleNextCard = useCallback(() => {
+    if (cards.length === 0) return;
     if (currentIndex < cards.length - 1) {
       onIndexChange(currentIndex + 1);
+    } else {
+      // عند الوصول لآخر بطاقة في المجموعة (مثلاً البطاقة 6)، نلف راجعين للبطاقة الأولى رقم 1
+      onIndexChange(0);
     }
   }, [currentIndex, cards.length, onIndexChange]);
 
@@ -466,7 +481,8 @@ const StealthStudyMode = ({
               className="note-action-btn"
               style={{ flex: 'none', padding: '4px 12px' }}
               onClick={handlePrevCard}
-              disabled={currentIndex === 0}
+              disabled={cards.length <= 1}
+              title="البطاقة السابقة (ArrowLeft)"
             >
               ◀ السابق
             </button>
@@ -480,7 +496,8 @@ const StealthStudyMode = ({
               className="note-action-btn"
               style={{ flex: 'none', padding: '4px 12px' }}
               onClick={handleNextCard}
-              disabled={currentIndex === cards.length - 1}
+              disabled={cards.length <= 1}
+              title="البطاقة التالية (ArrowRight)"
             >
               التالي ▶
             </button>
