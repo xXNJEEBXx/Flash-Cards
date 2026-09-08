@@ -1,7 +1,9 @@
 import React from 'react';
+import { useTheme } from '../../context/ThemeContext';
 import './Header.css';
 
 const Header = ({ currentView, onNavigate, title }) => {
+    const { isDark, toggleTheme } = useTheme();
     const navigationItems = [
         { id: 'decks', label: 'My Decks', icon: '📚' },
         { id: 'create-deck', label: 'New Deck', icon: '➕' },
@@ -32,6 +34,16 @@ const Header = ({ currentView, onNavigate, title }) => {
                 </nav>
 
                 <div className="header-actions">
+                    <button
+                        className="theme-toggle-btn"
+                        onClick={toggleTheme}
+                        title={isDark ? "تفعيل الوضع النهاري" : "تفعيل الوضع الليلي"}
+                        aria-label="Toggle Dark Mode"
+                    >
+                        <span className="theme-toggle-icon">{isDark ? '☀️' : '🌙'}</span>
+                        <span className="theme-toggle-label">{isDark ? 'Light' : 'Dark'}</span>
+                    </button>
+
                     {currentView !== 'decks' && (
                         <button
                             className="btn btn-outline back-btn"

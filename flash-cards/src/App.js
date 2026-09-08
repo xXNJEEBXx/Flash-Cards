@@ -12,17 +12,21 @@ import CardForm from './components/Forms/CardForm';
 import StudyMode from './components/StudyMode/StudyMode';
 import { confirmDeleteWithPassword } from './utils/passwordProtection';
 // Removed debug components for clean production interface
+import { ThemeProvider } from './context/ThemeContext';
 import './App.css';
+import './dark-mode.css';
 
 function App() {
   return (
-    <CardsProvider>
-      <FoldersProvider>
-        <Router>
-          <AppRoutes />
-        </Router>
-      </FoldersProvider>
-    </CardsProvider>
+    <ThemeProvider>
+      <CardsProvider>
+        <FoldersProvider>
+          <Router>
+            <AppRoutes />
+          </Router>
+        </FoldersProvider>
+      </CardsProvider>
+    </ThemeProvider>
   );
 }
 

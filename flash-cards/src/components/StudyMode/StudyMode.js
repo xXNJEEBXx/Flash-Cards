@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect, useRef } from 'react';
 import { CardsContext } from '../../context/CardsContext';
 import Card from '../Card/Card';
+import StealthStudyMode from './StealthStudyMode';
 import { settingsAPI, cardsAPI } from '../../services/apiService';
 import './StudyMode.css';
 import './smart-mode.css';
@@ -11,6 +12,25 @@ const StudyMode = ({ deckId, onBack }) => {
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
     const [shuffleMode, setShuffleMode] = useState(false);
     const [cards, setCards] = useState([]);
+
+    // وضع الدراسة: عادي (بطاقات 3D) أو وضع المحاضرة (متخفي / Slides)
+    const [studyStyle, setStudyStyle] = useState(() => {
+        try {
+            return localStorage.getItem('study_style_preference') || 'standard';
+        } catch {
+            return 'standard';
+        }
+    });
+
+    const handleToggleStudyStyle = () => {
+        setStudyStyle(prev => {
+            const next = prev === 'standard' ? 'stealth' : 'standard';
+            try {
+                localStorage.setItem('study_style_preference', next);
+            } catch {}
+            return next;
+        });
+    };
 
     // نظام البطاقات غير المتقنة البسيط
     const [unmastered, setUnmastered] = useState([]);
@@ -699,10 +719,46 @@ const StudyMode = ({ deckId, onBack }) => {
         }
     };
 
+    // إذا كان المستخدم يفضل وضع المحاضرة (المتخفي)
+    if (studyStyle === 'stealth' && currentDeck) {
+        return (
+            <StealthStudyMode
+                deck={currentDeck}
+                cards={cards}
+                currentIndex={currentCardIndex}
+                onIndexChange={setCurrentCardIndex}
+                onToggleKnown={handleToggleKnown}
+                onToggleStyle={handleToggleStudyStyle}
+                onBack={onBack}
+                onUndo={handleUndoLastKnown}
+                canUndo={hasRecentlyKnownCards}
+                smartModeEnabled={smartModeEnabled}
+                onToggleSmartMode={() => setSmartModeEnabled(prev => !prev)}
+                reviewMode={reviewMode}
+                unmasteredCount={unmastered.length}
+                unmasteredLimit={UNMASTERED_LIMIT}
+                shuffleMode={shuffleMode}
+                onToggleShuffle={() => setShuffleMode(prev => !prev)}
+                onResetProgress={() => resetDeckProgress(currentDeck.id)}
+            />
+        );
+    }
+
     return (
         <div className="study-mode">
             <div className="study-header">
-                <h2>Studying: {currentDeck.title}</h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
+                    <h2 style={{ margin: 0 }}>Studying: {currentDeck.title}</h2>
+                    <button
+                        className="btn btn-sm btn-outline"
+                        onClick={handleToggleStudyStyle}
+                        title="التحويل إلى وضع المحاضرة (عرض كأنه ملف سلايدات PDF للتمويه أثناء المحاضرات)"
+                        style={{ borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                        <span>📑</span>
+                        <span>وضع المحاضرة (متخفي / Slides)</span>
+                    </button>
+                </div>
 
                 {/* إخفاء عداد النظام الذكي بناءً على الطلب */}
 

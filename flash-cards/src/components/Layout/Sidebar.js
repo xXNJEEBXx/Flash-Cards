@@ -1,7 +1,9 @@
 import React from 'react';
+import { useTheme } from '../../context/ThemeContext';
 import './Sidebar.css';
 
 const Sidebar = ({ isOpen, onClose, currentView, onNavigate, deckStats }) => {
+    const { isDark, toggleTheme } = useTheme();
     const menuItems = [
         {
             id: 'decks',
@@ -86,6 +88,17 @@ const Sidebar = ({ isOpen, onClose, currentView, onNavigate, deckStats }) => {
                 </div>
 
                 <div className="sidebar-footer">
+                    <div className="sidebar-theme-toggle">
+                        <button
+                            className="sidebar-theme-btn"
+                            onClick={toggleTheme}
+                            aria-label="Toggle Dark Mode"
+                        >
+                            <span className="theme-icon">{isDark ? "☀️" : "🌙"}</span>
+                            <span>{isDark ? "الوضع النهاري (Light)" : "الوضع الليلي (Dark)"}</span>
+                        </button>
+                    </div>
+
                     <div className="progress-summary">
                         <h4>Learning Progress</h4>
                         <div className="progress-bar-container">
