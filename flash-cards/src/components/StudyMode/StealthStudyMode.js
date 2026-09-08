@@ -117,13 +117,19 @@ const StealthStudyMode = ({
       if (e.key === ' ') {
         e.preventDefault();
         setIsRevealed((prev) => !prev);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setIsRevealed(true);
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setIsRevealed(false);
       } else if (e.key === 'Enter' || e.key === '2') {
         e.preventDefault();
         handleToggleKnown();
-      } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      } else if (e.key === 'ArrowRight') {
         e.preventDefault();
         handleNextCard();
-      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
         handlePrevCard();
       }
@@ -430,7 +436,7 @@ const StealthStudyMode = ({
                   >
                     <span>Explanation & Solution</span>
                     <span style={{ color: '#6366f1' }}>
-                      {isRevealed ? 'إخفاء' : 'عرض (Space)'}
+                      {isRevealed ? 'إخفاء (▼)' : 'عرض (▲)'}
                     </span>
                   </div>
 
@@ -441,7 +447,7 @@ const StealthStudyMode = ({
                       className="reply-hidden-placeholder"
                       onClick={() => setIsRevealed(true)}
                     >
-                      اضغط هنا أو زر Space لعرض الشرح...
+                      اضغط هنا أو زر ▲ لعرض الشرح...
                     </div>
                   )}
                 </div>
@@ -488,8 +494,9 @@ const StealthStudyMode = ({
             </button>
 
             <span className="nav-hint-text">
-              <span className="nav-hint-kbd">Space</span> كشف &bull;{' '}
-              <span className="nav-hint-kbd">Esc</span> تمويه
+              <span className="nav-hint-kbd">▲</span> كشف &bull;{' '}
+              <span className="nav-hint-kbd">▼</span> إخفاء &bull;{' '}
+              <span className="nav-hint-kbd">Space</span> تبديل
             </span>
 
             <button
