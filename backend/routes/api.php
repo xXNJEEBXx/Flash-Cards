@@ -23,7 +23,49 @@ Route::get('/debug-env', function () {
         'db_port' => env('DB_PORT'),
         'db_database' => env('DB_DATABASE'),
         'socket_timeout' => ini_get('default_socket_timeout'),
+        'has_mysql_private' => !empty(env('MYSQL_PRIVATE_URL')),
+        'has_database_url' => !empty(env('DATABASE_URL')),
+        'has_mysql_url' => !empty(env('MYSQL_URL')),
+        'mysql_host_env' => env('MYSQLHOST'),
+        'mysql_port_env' => env('MYSQLPORT'),
     ]);
+});
+
+Route::get('/check-all-db', function () {
+    $results = [];
+
+    // Check SQLite
+    try {
+        $sqliteDecks = DB::connection('sqlite')->table('decks')->count();
+        $results['sqlite'] = ['status' => 'connected', 'decks' => $sqliteDecks];
+    } catch (\Throwable $e) {
+        $results['sqlite'] = ['status' => 'error', 'error' => $e->getMessage()];
+    }
+
+    // Check MySQL as configured
+    try {
+        $pdo = DB::connection('mysql')->getPdo();
+        $mysqlDecks = DB::connection('mysql')->table('decks')->count();
+        $results['mysql_current'] = ['status' => 'connected', 'decks' => $mysqlDecks];
+    } catch (\Throwable $e) {
+        $results['mysql_current'] = ['status' => 'error', 'error' => $e->getMessage()];
+    }
+
+    // Check MySQL via internal Railway host if available
+    $internalHost = env('MYSQLHOST') ?: 'mysql.railway.internal';
+    $internalPort = env('MYSQLPORT') ?: 3306;
+    try {
+        $dsn = "mysql:host={$internalHost};port={$internalPort};dbname=" . env('DB_DATABASE', 'railway');
+        $user = env('DB_USERNAME', 'root');
+        $pass = env('DB_PASSWORD', '');
+        $testPdo = new \PDO($dsn, $user, $pass, [\PDO::ATTR_TIMEOUT => 2]);
+        $stmt = $testPdo->query("SELECT COUNT(*) FROM decks");
+        $results['mysql_internal'] = ['status' => 'connected', 'host' => $internalHost, 'decks' => (int) $stmt->fetchColumn()];
+    } catch (\Throwable $e) {
+        $results['mysql_internal'] = ['status' => 'error', 'host' => $internalHost, 'error' => $e->getMessage()];
+    }
+
+    return response()->json($results);
 });
 
 // Detailed database status check
