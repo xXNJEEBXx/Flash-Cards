@@ -15,6 +15,15 @@ Route::get('/health', function () {
     ], 200);
 });
 
+Route::get('/debug-env', function () {
+    return response()->json([
+        'default_connection' => config('database.default'),
+        'db_connection' => env('DB_CONNECTION'),
+        'db_host' => env('DB_HOST'),
+        'db_database' => env('DB_DATABASE'),
+    ]);
+});
+
 // Detailed database status check
 Route::get('/db-status', function () {
     try {
