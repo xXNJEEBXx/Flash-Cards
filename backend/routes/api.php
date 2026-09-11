@@ -19,50 +19,81 @@ Route::get('/debug-env', function () {
     return response()->json([
         'default_connection' => config('database.default'),
         'db_connection' => env('DB_CONNECTION'),
-        'db_host' => env('DB_HOST'),
-        'db_port' => env('DB_PORT'),
-        'db_database' => env('DB_DATABASE'),
-        'socket_timeout' => ini_get('default_socket_timeout'),
-        'has_mysql_private' => !empty(env('MYSQL_PRIVATE_URL')),
+        'db_host' => env('DB_HOST') ?: env('MYSQLHOST'),
+        'db_port' => env('DB_PORT') ?: env('MYSQLPORT'),
+        'db_database' => env('DB_DATABASE') ?: env('MYSQLDATABASE'),
+        'db_username' => env('DB_USERNAME') ?: env('MYSQLUSER'),
+        'has_db_password' => !empty(env('DB_PASSWORD')),
+        'has_mysql_password' => !empty(env('MYSQLPASSWORD')),
+        'has_mysql_private_url' => !empty(env('MYSQL_PRIVATE_URL')),
         'has_database_url' => !empty(env('DATABASE_URL')),
         'has_mysql_url' => !empty(env('MYSQL_URL')),
-        'mysql_host_env' => env('MYSQLHOST'),
-        'mysql_port_env' => env('MYSQLPORT'),
     ]);
 });
 
 Route::get('/check-all-db', function () {
     $results = [];
 
-    // Check SQLite
+    // 1. Check SQLite
     try {
-        $sqliteDecks = DB::connection('sqlite')->table('decks')->count();
-        $results['sqlite'] = ['status' => 'connected', 'decks' => $sqliteDecks];
+        $sqliteDecks = DB::connection('sqlite')->table('decks')->pluck('title');
+        $results['sqlite'] = ['status' => 'connected', 'count' => $sqliteDecks->count(), 'titles' => $sqliteDecks];
     } catch (\Throwable $e) {
         $results['sqlite'] = ['status' => 'error', 'error' => $e->getMessage()];
     }
 
-    // Check MySQL as configured
+    // 2. Check MySQL via Railway variables
+    $host = env('DB_HOST') ?: env('MYSQLHOST');
+    $port = env('DB_PORT') ?: env('MYSQLPORT') ?: 3306;
+    $db   = env('DB_DATABASE') ?: env('MYSQLDATABASE') ?: 'railway';
+    $user = env('DB_USERNAME') ?: env('MYSQLUSER') ?: 'root';
+    $pass = env('DB_PASSWORD') ?: env('MYSQLPASSWORD') ?: '';
+
     try {
-        $pdo = DB::connection('mysql')->getPdo();
-        $mysqlDecks = DB::connection('mysql')->table('decks')->count();
-        $results['mysql_current'] = ['status' => 'connected', 'decks' => $mysqlDecks];
+        $dsn = "mysql:host={$host};port={$port};dbname={$db};charset=utf8mb4";
+        $pdo = new \PDO($dsn, $user, $pass, [
+            \PDO::ATTR_TIMEOUT => 3,
+            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION
+        ]);
+        $stmt = $pdo->query("SELECT id, title FROM decks");
+        $decks = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $results['mysql_railway_vars'] = [
+            'status' => 'connected',
+            'host' => $host,
+            'port' => $port,
+            'user' => $user,
+            'count' => count($decks),
+            'decks' => $decks
+        ];
     } catch (\Throwable $e) {
-        $results['mysql_current'] = ['status' => 'error', 'error' => $e->getMessage()];
+        $results['mysql_railway_vars'] = [
+            'status' => 'error',
+            'host' => $host,
+            'port' => $port,
+            'user' => $user,
+            'error' => $e->getMessage()
+        ];
     }
 
-    // Check MySQL via internal Railway host if available
-    $internalHost = env('MYSQLHOST') ?: 'mysql.railway.internal';
-    $internalPort = env('MYSQLPORT') ?: 3306;
-    try {
-        $dsn = "mysql:host={$internalHost};port={$internalPort};dbname=" . env('DB_DATABASE', 'railway');
-        $user = env('DB_USERNAME', 'root');
-        $pass = env('DB_PASSWORD', '');
-        $testPdo = new \PDO($dsn, $user, $pass, [\PDO::ATTR_TIMEOUT => 2]);
-        $stmt = $testPdo->query("SELECT COUNT(*) FROM decks");
-        $results['mysql_internal'] = ['status' => 'connected', 'host' => $internalHost, 'decks' => (int) $stmt->fetchColumn()];
-    } catch (\Throwable $e) {
-        $results['mysql_internal'] = ['status' => 'error', 'host' => $internalHost, 'error' => $e->getMessage()];
+    // 3. Check DATABASE_URL / MYSQL_URL / MYSQL_PRIVATE_URL
+    foreach (['DATABASE_URL', 'MYSQL_URL', 'MYSQL_PRIVATE_URL'] as $urlVar) {
+        $url = env($urlVar);
+        if ($url) {
+            try {
+                $parsed = parse_url($url);
+                $pHost = $parsed['host'] ?? 'localhost';
+                $pPort = $parsed['port'] ?? 3306;
+                $pUser = $parsed['user'] ?? 'root';
+                $pPass = $parsed['pass'] ?? '';
+                $pDb   = ltrim($parsed['path'] ?? '/railway', '/');
+                $dsn = "mysql:host={$pHost};port={$pPort};dbname={$pDb};charset=utf8mb4";
+                $pdo = new \PDO($dsn, $pUser, $pPass, [\PDO::ATTR_TIMEOUT => 3]);
+                $stmt = $pdo->query("SELECT id, title FROM decks");
+                $results[$urlVar] = ['status' => 'connected', 'count' => count($stmt->fetchAll())];
+            } catch (\Throwable $e) {
+                $results[$urlVar] = ['status' => 'error', 'error' => $e->getMessage()];
+            }
+        }
     }
 
     return response()->json($results);
