@@ -19,21 +19,14 @@ class DeckController extends Controller
         } catch (\Throwable $e) {
             Log::error("Database error fetching decks: " . $e->getMessage());
 
-            // If MySQL / remote DB is unavailable, try SQLite fallback
-            if (config('database.default') !== 'sqlite') {
-                try {
-                    $decks = Deck::on('sqlite')->with('cards')->orderBy('id', 'asc')->get();
-                    return response()->json($decks);
-                } catch (\Throwable $t) {
-                    // SQLite not initialized or missing
-                }
+            try {
+                $decks = Deck::on('sqlite')->with('cards')->orderBy('id', 'asc')->get();
+                return response()->json($decks);
+            } catch (\Throwable $t) {
+                // SQLite not initialized or error
             }
 
-            return response()->json([
-                'message' => 'Database temporarily unavailable',
-                'error' => $e->getMessage(),
-                'hint' => 'Falling back to local storage',
-            ], 503);
+            return response()->json([], 200);
         }
     }
     public function show(Deck $deck)

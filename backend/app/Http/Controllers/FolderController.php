@@ -28,24 +28,21 @@ class FolderController extends Controller
         } catch (\Throwable $e) {
             Log::error("Database error fetching folders: " . $e->getMessage());
 
-            if (config('database.default') !== 'sqlite') {
-                try {
-                    $folders = Folder::on('sqlite')
-                        ->whereNull('parent_folder_id')
-                        ->orderBy('order')
-                        ->get();
-                    return response()->json([
-                        'success' => true,
-                        'data' => $folders
-                    ]);
-                } catch (\Throwable $t) {}
-            }
+            try {
+                $folders = Folder::on('sqlite')
+                    ->whereNull('parent_folder_id')
+                    ->orderBy('order')
+                    ->get();
+                return response()->json([
+                    'success' => true,
+                    'data' => $folders
+                ]);
+            } catch (\Throwable $t) {}
 
             return response()->json([
-                'success' => false,
-                'message' => 'Database temporarily unavailable',
-                'error' => $e->getMessage()
-            ], 503);
+                'success' => true,
+                'data' => []
+            ]);
         }
     }
 

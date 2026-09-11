@@ -3,6 +3,11 @@ echo "🚀 Starting Flash Cards Backend..."
 
 export PHP_CLI_SERVER_WORKERS=4
 
+# Default to SQLite unless MySQL is explicitly enabled
+if [ "$MYSQL_ENABLED" != "true" ]; then
+    export DB_CONNECTION=sqlite
+fi
+
 # Ensure storage and database directories exist
 mkdir -p storage/framework/views storage/framework/cache storage/framework/sessions storage/logs database 2>/dev/null || true
 touch database/database.sqlite 2>/dev/null || true

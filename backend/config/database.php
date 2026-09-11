@@ -16,7 +16,8 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    // Default to SQLite unless MySQL is explicitly verified and enabled via MYSQL_ENABLED=true
+    'default' => (env('DB_CONNECTION') === 'mysql' && !env('MYSQL_ENABLED')) ? 'sqlite' : env('DB_CONNECTION', 'sqlite'),
 
     /*
     |--------------------------------------------------------------------------
