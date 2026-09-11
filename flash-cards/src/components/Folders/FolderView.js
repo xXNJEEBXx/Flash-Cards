@@ -2,6 +2,7 @@ import React, { useContext, useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CardsContext } from '../../context/CardsContext';
 import { FoldersContext } from '../../context/FoldersContext';
+import { foldersAPI } from '../../services/apiService';
 import MoveFolderModal from './MoveFolderModal';
 import MoveDeckModal from './MoveDeckModal';
 import { confirmDeleteWithPassword } from '../../utils/passwordProtection';
@@ -10,20 +11,54 @@ import './FolderView.css';
 const FolderView = ({ folderId, onBack, onSelectDeck, onStudyDeck }) => {
     const navigate = useNavigate();
     const { decks, deleteDeck, updateDeckFolder } = useContext(CardsContext);
-    const { folders, removeDeckFromFolder, moveDeckToFolder, moveFolder } = useContext(FoldersContext);
+    const { folders, loading: foldersLoading, removeDeckFromFolder, moveDeckToFolder, moveFolder, findFolderById } = useContext(FoldersContext);
+    const [fetchedFolder, setFetchedFolder] = useState(null);
+    const [isFetchingDirect, setIsFetchingDirect] = useState(false);
     const [folderToMove, setFolderToMove] = useState(null);
     const [deckToMove, setDeckToMove] = useState(null);
     const [openDeckMenuId, setOpenDeckMenuId] = useState(null);
 
-    // Find the current folder
-    const folder = useMemo(() => {
-        return folders.find(f => f.id === folderId);
-    }, [folders, folderId]);
+    // Find the current folder (support deep nested folders)
+    const contextFolder = useMemo(() => {
+        if (!folderId) return null;
+        if (findFolderById) {
+            return findFolderById(folderId);
+        }
+        return folders.find(f => Number(f.id) === Number(folderId));
+    }, [folders, folderId, findFolderById]);
+
+    const folder = contextFolder || fetchedFolder;
+
+    // Direct fetch fallback if not found in loaded tree
+    useEffect(() => {
+        if (!contextFolder && folderId) {
+            setIsFetchingDirect(true);
+            foldersAPI.getFolder(folderId)
+                .then(data => {
+                    if (data) setFetchedFolder(data);
+                })
+                .catch(err => {
+                    console.error('Error fetching folder directly:', err);
+                })
+                .finally(() => {
+                    setIsFetchingDirect(false);
+                });
+        }
+    }, [contextFolder, folderId]);
 
     // Get decks in this folder
     const folderDecks = useMemo(() => {
         if (!folder) return [];
-        return decks.filter(deck => deck.folder_id === folderId);
+        // Match from global decks (ignoring test decks)
+        const matched = decks
+            .filter(d => !d.title?.includes('تجريبية'))
+            .filter(d => Number(d.folder_id) === Number(folderId));
+        if (matched.length > 0) return matched;
+        // Fallback to decks embedded in folder object
+        if (folder.decks && Array.isArray(folder.decks)) {
+            return folder.decks.filter(d => !d.title?.includes('تجريبية'));
+        }
+        return [];
     }, [decks, folderId, folder]);
 
     // Get subfolders
@@ -87,6 +122,15 @@ const FolderView = ({ folderId, onBack, onSelectDeck, onStudyDeck }) => {
         if (learnedRatio < 0.7) return '#f39c12';
         return '#27ae60';
     };
+
+    if ((foldersLoading || isFetchingDirect) && !folder) {
+        return (
+            <div className="folder-view-loading" style={{ textAlign: 'center', padding: '60px 20px' }}>
+                <div style={{ fontSize: '32px', marginBottom: '16px' }}>⏳</div>
+                <p style={{ fontSize: '18px', color: '#6b7280' }}>جاري تحميل محتويات المجلد...</p>
+            </div>
+        );
+    }
 
     if (!folder) {
         return (

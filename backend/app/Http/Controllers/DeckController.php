@@ -13,39 +13,16 @@ class DeckController extends Controller
 {
     public function index()
     {
-        // Try primary connection first
         try {
             $decks = Deck::with('cards')->orderBy('id', 'asc')->get();
-            if ($decks->isNotEmpty()) {
-                return response()->json($decks);
-            }
+            return response()->json($decks);
         } catch (\Throwable $e) {
-            Log::error("Primary database error fetching decks: " . $e->getMessage());
+            Log::error("Database error fetching decks: " . $e->getMessage());
+            return response()->json([
+                'error' => 'Database connection error',
+                'message' => $e->getMessage()
+            ], 500);
         }
-
-        // If primary has 0 decks or failed, try mysql if it wasn't primary
-        if (config('database.default') !== 'mysql') {
-            try {
-                $mysqlDecks = Deck::on('mysql')->with('cards')->orderBy('id', 'asc')->get();
-                if ($mysqlDecks->isNotEmpty()) {
-                    return response()->json($mysqlDecks);
-                }
-            } catch (\Throwable $t) {
-                // MySQL unavailable
-            }
-        }
-
-        // If mysql failed or empty, try sqlite if it wasn't primary
-        if (config('database.default') !== 'sqlite') {
-            try {
-                $sqliteDecks = Deck::on('sqlite')->with('cards')->orderBy('id', 'asc')->get();
-                if ($sqliteDecks->isNotEmpty()) {
-                    return response()->json($sqliteDecks);
-                }
-            } catch (\Throwable $t) {}
-        }
-
-        return response()->json([], 200);
     }
     public function show(Deck $deck)
     {

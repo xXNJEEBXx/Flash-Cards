@@ -23,38 +23,53 @@ export const CardsProvider = ({ children }) => {
             try {
                 console.log('🔄 Loading decks from Laravel API...');
 
-                // Load decks from Laravel API مع نظام إعادة محاولة في حال ظهور 0 مجموعات
+                const cleanDecks = (list) => {
+                    if (!Array.isArray(list)) return [];
+                    return list.filter(d => d && !d.title?.includes('تجريبية'));
+                };
+
+                // Sanitize any existing localStorage test decks immediately
+                try {
+                    const rawStored = localStorage.getItem('flashcards-decks');
+                    if (rawStored) {
+                        const parsed = JSON.parse(rawStored);
+                        const sanitized = cleanDecks(parsed);
+                        if (sanitized.length !== parsed.length) {
+                            localStorage.setItem('flashcards-decks', JSON.stringify(sanitized));
+                        }
+                    }
+                } catch (e) {}
+
+                // Load decks from Laravel API
                 let apiDecks = await api.listDecks();
                 let emptyRetries = 0;
                 
-                // إذا كانت المجموعات فارغة تماماً، قد يكون السيرفر أرجع استجابة خالية بالخطأ بسبب نهوضه من السبات
-                while (Array.isArray(apiDecks) && apiDecks.length === 0 && emptyRetries < 5) {
-                    console.log(`⚠️ API returned 0 decks (attempt ${emptyRetries + 1}/5). Retrying in 2 seconds...`);
-                    await new Promise(resolve => setTimeout(resolve, 2000));
+                while (Array.isArray(apiDecks) && apiDecks.length === 0 && emptyRetries < 3) {
+                    console.log(`⚠️ API returned 0 decks (attempt ${emptyRetries + 1}/3). Retrying in 1.5 seconds...`);
+                    await new Promise(resolve => setTimeout(resolve, 1500));
                     apiDecks = await api.listDecks();
                     emptyRetries++;
                 }
 
                 if (!mounted) return;
 
-                if (Array.isArray(apiDecks)) {
-                    console.log(`✅ API returned ${apiDecks.length} decks`);
-                    
-                    // لا تقم بمسح الواجهة بمجموعات فارغة إذا كان لدينا شيء مخزن محلياً كمسودة
+                const validApiDecks = cleanDecks(apiDecks);
+
+                if (Array.isArray(apiDecks) && validApiDecks.length > 0) {
+                    console.log(`✅ API returned ${validApiDecks.length} valid decks`);
+                    setDecks(validApiDecks);
+                    localStorage.setItem('flashcards-decks', JSON.stringify(validApiDecks));
+                } else if (Array.isArray(apiDecks) && validApiDecks.length === 0) {
+                    // Check if non-empty backup in localStorage
                     const localDecksRaw = localStorage.getItem('flashcards-decks');
-                    const localDecks = localDecksRaw ? JSON.parse(localDecksRaw) : [];
-                    
-                    if (apiDecks.length === 0 && localDecks.length > 0) {
-                        console.log('⚠️ API is consistently returning 0 decks, falling back to non-empty localStorage data');
+                    const localDecks = cleanDecks(localDecksRaw ? JSON.parse(localDecksRaw) : []);
+                    if (localDecks.length > 0) {
                         setDecks(localDecks);
                     } else {
-                        setDecks(apiDecks);
-                        if (apiDecks.length > 0) {
-                            localStorage.setItem('flashcards-decks', JSON.stringify(apiDecks));
-                        }
+                        setDecks([]);
                     }
                 } else {
-                    console.log('⚠️ Unexpected API response, falling back to localStorage');
+                    console.log('⚠️ Unexpected API response, checking localStorage');
                     await loadFromLocalStorageOrCreateDefault();
                 }
             } catch (error) {
@@ -67,11 +82,10 @@ export const CardsProvider = ({ children }) => {
                 try {
                     const storedDecks = localStorage.getItem('flashcards-decks');
                     if (storedDecks) {
-                        const parsedDecks = JSON.parse(storedDecks);
+                        const parsedDecks = JSON.parse(storedDecks).filter(d => d && !d.title?.includes('تجريبية'));
                         console.log('📂 Loaded from localStorage:', parsedDecks.length, 'decks');
                         setDecks(parsedDecks);
                     } else {
-                        console.log('🗃️ No localStorage decks found; using empty state');
                         setDecks([]);
                     }
                 } catch (err) {

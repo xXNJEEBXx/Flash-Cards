@@ -16,33 +16,19 @@ class FolderController extends Controller
     public function index()
     {
         try {
-            $folders = Folder::whereNull('parent_folder_id')->orderBy('order')->get();
-            if ($folders->isNotEmpty()) {
-                return response()->json(['success' => true, 'data' => $folders]);
-            }
+            $folders = Folder::whereNull('parent_folder_id')
+                ->with(['subfolders.decks.cards', 'decks.cards'])
+                ->orderBy('order')
+                ->get();
+            return response()->json(['success' => true, 'data' => $folders]);
         } catch (\Throwable $e) {
-            Log::error("Primary database error fetching folders: " . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error("Database error fetching folders: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Database connection error',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        if (config('database.default') !== 'mysql') {
-            try {
-                $mysqlFolders = Folder::on('mysql')->whereNull('parent_folder_id')->orderBy('order')->get();
-                if ($mysqlFolders->isNotEmpty()) {
-                    return response()->json(['success' => true, 'data' => $mysqlFolders]);
-                }
-            } catch (\Throwable $t) {}
-        }
-
-        if (config('database.default') !== 'sqlite') {
-            try {
-                $sqliteFolders = Folder::on('sqlite')->whereNull('parent_folder_id')->orderBy('order')->get();
-                if ($sqliteFolders->isNotEmpty()) {
-                    return response()->json(['success' => true, 'data' => $sqliteFolders]);
-                }
-            } catch (\Throwable $t) {}
-        }
-
-        return response()->json(['success' => true, 'data' => []]);
     }
 
     /**
@@ -51,7 +37,7 @@ class FolderController extends Controller
     public function show($id)
     {
         try {
-            $folder = Folder::findOrFail($id);
+            $folder = Folder::with(['subfolders.decks.cards', 'decks.cards'])->findOrFail($id);
 
             return response()->json([
                 'success' => true,

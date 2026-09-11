@@ -102,12 +102,13 @@ export const FoldersProvider = ({ children }) => {
 
     // Find a folder by ID (including nested folders)
     const findFolderById = useCallback((folderId, foldersList = folders) => {
+        const targetId = Number(folderId);
         for (const folder of foldersList) {
-            if (folder.id === folderId) {
+            if (Number(folder.id) === targetId) {
                 return folder;
             }
             if (folder.subfolders && folder.subfolders.length > 0) {
-                const found = findFolderById(folderId, folder.subfolders);
+                const found = findFolderById(targetId, folder.subfolders);
                 if (found) return found;
             }
         }
