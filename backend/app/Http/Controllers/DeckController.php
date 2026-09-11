@@ -60,13 +60,27 @@ class DeckController extends Controller
     }
     public function store(Request $request)
     {
-        $data = $request->validate(['title' => 'required|string|max:255', 'description' => 'nullable|string']);
+        if ($request->has('folder_id') && ($request->folder_id === 'null' || $request->folder_id === '' || $request->folder_id === 0 || $request->folder_id === '0')) {
+            $request->merge(['folder_id' => null]);
+        }
+        $data = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'folder_id' => 'nullable|exists:folders,id'
+        ]);
         $deck = Deck::create($data);
         return response()->json($deck, 201);
     }
     public function update(Request $request, Deck $deck)
     {
-        $data = $request->validate(['title' => 'required|string|max:255', 'description' => 'nullable|string']);
+        if ($request->has('folder_id') && ($request->folder_id === 'null' || $request->folder_id === '' || $request->folder_id === 0 || $request->folder_id === '0')) {
+            $request->merge(['folder_id' => null]);
+        }
+        $data = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'folder_id' => 'nullable|exists:folders,id'
+        ]);
         $deck->update($data);
         return $deck;
     }

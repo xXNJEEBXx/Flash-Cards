@@ -98,10 +98,10 @@ export const CardsProvider = ({ children }) => {
     }, [decks]);
 
     // Add a new deck (Laravel API first, fallback local)
-    const addDeck = async ({ title, description }) => {
+    const addDeck = async ({ title, description, folder_id = null }) => {
         try {
-            console.log('➕ Creating new deck:', title);
-            const created = await api.createDeck({ title, description });
+            console.log('➕ Creating new deck:', title, 'in folder:', folder_id);
+            const created = await api.createDeck({ title, description, folder_id });
             if (created && created.id) {
                 console.log('✅ Deck created in Laravel API:', created.id);
                 setDecks(prev => {
@@ -121,10 +121,14 @@ export const CardsProvider = ({ children }) => {
     };
 
     // Edit an existing deck
-    const editDeck = async ({ id, title, description }) => {
+    const editDeck = async ({ id, title, description, folder_id }) => {
         try {
-            console.log('✏️ Updating deck:', id);
-            const updated = await api.updateDeck(id, { title, description });
+            console.log('✏️ Updating deck:', id, 'folder_id:', folder_id);
+            const payload = { title, description };
+            if (folder_id !== undefined) {
+                payload.folder_id = folder_id;
+            }
+            const updated = await api.updateDeck(id, payload);
             if (updated && updated.id) {
                 console.log('✅ Deck updated in Laravel API:', updated.id);
                 setDecks(prev => prev.map(d => d.id === updated.id ? { ...d, ...updated } : d));
@@ -139,7 +143,18 @@ export const CardsProvider = ({ children }) => {
         }
 
         // Fallback to local only
-        setDecks(prev => prev.map(d => d.id === id ? { ...d, title, description } : d));
+        setDecks(prev => prev.map(d => d.id === id ? { ...d, title, description, ...(folder_id !== undefined ? { folder_id } : {}) } : d));
+    };
+
+    // Directly update a deck's folder_id in local state
+    const updateDeckFolder = (deckId, folderId) => {
+        setDecks(prev => {
+            const next = prev.map(d => d.id === deckId ? { ...d, folder_id: folderId } : d);
+            try {
+                localStorage.setItem('flashcards-decks', JSON.stringify(next));
+            } catch {}
+            return next;
+        });
     };
 
     // Delete a deck
@@ -387,6 +402,7 @@ export const CardsProvider = ({ children }) => {
                 toggleCardKnown,
                 resetDeckProgress,
                 undoLastKnownCard,
+                updateDeckFolder,
                 hasRecentlyKnownCards: recentlyKnownCards.length > 0,
             }}
         >

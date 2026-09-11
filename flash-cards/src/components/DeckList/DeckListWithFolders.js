@@ -1,16 +1,17 @@
-import React, { useContext, useState, useMemo } from 'react';
+import React, { useContext, useState, useMemo, useEffect } from 'react';
 import { CardsContext } from '../../context/CardsContext';
 import { FoldersContext } from '../../context/FoldersContext';
 import SearchFilter from '../Search/SearchFilter';
 import FolderItem from '../Folders/FolderItem';
 import FolderForm from '../Folders/FolderForm';
 import MoveFolderModal from '../Folders/MoveFolderModal';
+import MoveDeckModal from '../Folders/MoveDeckModal';
 import { confirmDeleteWithPassword } from '../../utils/passwordProtection';
 import './DeckList.css';
 import '../Folders/FoldersView.css';
 
 const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
-    const { decks, deleteDeck } = useContext(CardsContext);
+    const { decks, deleteDeck, updateDeckFolder } = useContext(CardsContext);
     const {
         folders,
         loading: foldersLoading,
@@ -29,6 +30,8 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
     const [editingFolder, setEditingFolder] = useState(null);
     const [parentFolderId, setParentFolderId] = useState(null);
     const [folderToMove, setFolderToMove] = useState(null);
+    const [deckToMove, setDeckToMove] = useState(null);
+    const [openDeckMenuId, setOpenDeckMenuId] = useState(null);
     const [draggedDeck, setDraggedDeck] = useState(null);
     const [draggedFolder, setDraggedFolder] = useState(null);
     const [viewMode, setViewMode] = useState('both'); // 'both', 'folders', 'decks'
@@ -184,6 +187,31 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
         }
     };
 
+    useEffect(() => {
+        const handleClickOutside = () => {
+            setOpenDeckMenuId(null);
+        };
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, []);
+
+    const handleMoveDeck = async (deckId, targetFolderId) => {
+        try {
+            if (targetFolderId === null || targetFolderId === '' || targetFolderId === '0') {
+                await removeDeckFromFolder(deckId);
+            } else {
+                await moveDeckToFolder(targetFolderId, deckId);
+            }
+            if (updateDeckFolder) {
+                updateDeckFolder(deckId, targetFolderId);
+            }
+        } catch (error) {
+            console.error('Failed to move deck:', error);
+            alert('فشل نقل المجموعة: ' + error.message);
+            throw error;
+        }
+    };
+
     const handleDragStart = (deck) => {
         setDraggedDeck(deck);
     };
@@ -192,6 +220,9 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
         if (draggedDeck) {
             try {
                 await moveDeckToFolder(targetFolderId, draggedDeck.id);
+                if (updateDeckFolder) {
+                    updateDeckFolder(draggedDeck.id, targetFolderId);
+                }
                 setDraggedDeck(null);
             } catch (error) {
                 alert('فشل نقل المجموعة: ' + error.message);
@@ -409,7 +440,63 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
                                         style={{ backgroundColor: getDifficultyColor(deck.cards) }}>
                                         {getDifficultyLabel(deck.cards)}
                                     </div>
-                                    <div className="deck-menu">⋮</div>
+                                    <div className="deck-menu-container">
+                                        <button
+                                            type="button"
+                                            className="deck-menu-btn"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setOpenDeckMenuId(openDeckMenuId === deck.id ? null : deck.id);
+                                            }}
+                                            title="خيارات المجموعة"
+                                        >
+                                            ⋮
+                                        </button>
+                                        {openDeckMenuId === deck.id && (
+                                            <div className="deck-dropdown-menu" onClick={(e) => e.stopPropagation()}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setOpenDeckMenuId(null);
+                                                        onStudyDeck(deck.id);
+                                                    }}
+                                                    disabled={deck.cards.length === 0}
+                                                >
+                                                    🎓 دراسة (Study)
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setOpenDeckMenuId(null);
+                                                        onSelectDeck(deck.id);
+                                                    }}
+                                                >
+                                                    ✏️ تعديل (Edit)
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setOpenDeckMenuId(null);
+                                                        setDeckToMove(deck);
+                                                    }}
+                                                >
+                                                    📦 نقل المجموعة (Move Deck)
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="danger"
+                                                    onClick={() => {
+                                                        setOpenDeckMenuId(null);
+                                                        if (confirmDeleteWithPassword('المجموعة', deck.title)) {
+                                                            deleteDeck(deck.id);
+                                                        }
+                                                    }}
+                                                >
+                                                    🗑️ حذف (Delete)
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div className="deck-card-content">
@@ -474,6 +561,14 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
                                         Edit
                                     </button>
                                     <button
+                                        className="btn btn-secondary deck-action-btn deck-move-btn"
+                                        onClick={() => setDeckToMove(deck)}
+                                        title="نقل المجموعة لمجلد آخر"
+                                    >
+                                        <span className="btn-icon">📦</span>
+                                        Move
+                                    </button>
+                                    <button
                                         className="btn btn-danger deck-action-btn deck-delete-btn"
                                         onClick={() => {
                                             if (confirmDeleteWithPassword('المجموعة', deck.title)) {
@@ -512,6 +607,16 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
                     folders={folders}
                     onMove={moveFolder}
                     onClose={() => setFolderToMove(null)}
+                />
+            )}
+
+            {/* Move Deck Modal */}
+            {deckToMove && (
+                <MoveDeckModal
+                    deck={deckToMove}
+                    folders={folders}
+                    onMove={handleMoveDeck}
+                    onClose={() => setDeckToMove(null)}
                 />
             )}
         </div>

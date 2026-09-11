@@ -212,21 +212,86 @@
   letter-spacing: 0.5px;
 }
 
-.deck-menu {
-  width: 30px;
-  height: 30px;
+.deck-menu-container {
+  position: relative;
+}
+
+.deck-menu-btn {
+  background: none;
+  border: none;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   color: #a0aec0;
   cursor: pointer;
-  transition: all 0.3s ease;
+  font-size: 20px;
+  transition: all 0.2s ease;
 }
 
-.deck-menu:hover {
-  background: rgba(102, 126, 234, 0.1);
+.deck-menu-btn:hover {
+  background: rgba(102, 126, 234, 0.12);
   color: #667eea;
+}
+
+.deck-dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  min-width: 180px;
+  z-index: 1000;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.deck-dropdown-menu button {
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: #ffffff;
+  text-align: right;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #2d3748;
+  transition: background 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.deck-dropdown-menu button:hover {
+  background: #f7fafc;
+}
+
+.deck-dropdown-menu button.danger {
+  color: #e53e3e;
+}
+
+.deck-dropdown-menu button.danger:hover {
+  background: #fff5f5;
+}
+
+.deck-dropdown-menu button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.deck-move-btn {
+  background: #edf2f7;
+  color: #4a5568;
+}
+
+.deck-move-btn:hover {
+  background: #e2e8f0;
+  color: #2d3748;
 }
 
 /* Card Content */
