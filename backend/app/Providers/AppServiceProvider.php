@@ -23,27 +23,43 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Add a heartbeat ping before executing any query to prevent "MySQL server has gone away"
-        // in environments like Railway where the TCP proxy might drop idle connections.
+        // Auto-detect if remote MySQL is reachable; if not, immediately switch to SQLite
+        // to avoid 60s Linux TCP timeout that freezes PHP server workers
+        $defaultConn = config('database.default');
+        if ($defaultConn === 'mysql') {
+            $host = config('database.connections.mysql.host');
+            $port = (int) (config('database.connections.mysql.port') ?: 3306);
+            if ($host && !in_array($host, ['127.0.0.1', 'localhost'])) {
+                $fp = @fsockopen($host, $port, $errno, $errstr, 1.0);
+                if (!$fp) {
+                    // Remote MySQL unreachable! Fall back to SQLite immediately!
+                    config(['database.default' => 'sqlite']);
+                } else {
+                    fclose($fp);
+                }
+            }
+        }
+
+        // Add a heartbeat ping before executing queries on live MySQL
         DB::beforeExecuting(function (string $query, array $bindings, Connection $connection) {
-            // Do not attempt heartbeat/reconnect if inside an active transaction.
+            if ($connection->getDriverName() !== 'mysql') {
+                return;
+            }
+
             if ($connection->transactionLevel() > 0) {
                 return;
             }
 
-            // Skip if this is the heartbeat query itself
             if ($query === 'SELECT 1') {
                 return;
             }
 
             try {
-                // Ping the database using the raw PDO instance
                 if ($pdo = $connection->getPdo()) {
                     $pdo->query('SELECT 1');
                 }
             } catch (PDOException $e) {
                 $message = $e->getMessage();
-                // Check for CR_SERVER_GONE_ERROR (2006) or CR_SERVER_LOST (2013)
                 if (Str::contains($message, ['server has gone away', 'Lost connection', '2006', '2013'])) {
                     $connection->reconnect();
                 } else {

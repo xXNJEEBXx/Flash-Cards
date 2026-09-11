@@ -8,7 +8,10 @@ mkdir -p storage/framework/views storage/framework/cache storage/framework/sessi
 touch database/database.sqlite 2>/dev/null || true
 chmod -R 775 storage database 2>/dev/null || true
 
-# Run migrations in background so server starts immediately for healthcheck
+# Pre-migrate SQLite database always so fallback is guaranteed ready
+php artisan migrate --database=sqlite --force >/dev/null 2>&1 || true
+
+# Run main migrations in background
 (php artisan migrate --force >/dev/null 2>&1 || true) &
 
 # Start Laravel server immediately
