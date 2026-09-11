@@ -394,7 +394,7 @@ class PDFStudyToolGUI:
 
         self.provider_var = tk.StringVar(value=self.config.get("provider", "gemini"))
 
-        for val, label in [("gemini", "Google Gemini"), ("openai", "OpenAI")]:
+        for val, label in [("gemini", "Google Gemini"), ("openai", "OpenAI"), ("openrouter", "OpenRouter")]:
             rb = tk.Radiobutton(
                 provider_frame, text=label, variable=self.provider_var, value=val,
                 font=("Segoe UI", 10),
@@ -472,6 +472,39 @@ class PDFStudyToolGUI:
         )
         self.openai_model_entry.pack(fill="x", pady=(2, 0))
         self.openai_model_entry.insert(0, self.config.get("openai_model", "gpt-4o-mini"))
+
+        # ── OpenRouter ──
+        self._settings_section(inner, "🌐 OpenRouter")
+
+        openrouter_frame = tk.Frame(inner, bg=COLORS["bg_card"], padx=16, pady=10)
+        openrouter_frame.pack(fill="x", padx=8, pady=(0, 12))
+
+        tk.Label(openrouter_frame, text="API Key:", font=("Segoe UI", 9), fg=COLORS["fg_dim"], bg=COLORS["bg_card"]).pack(anchor="w")
+        self.openrouter_key_entry = tk.Entry(
+            openrouter_frame, font=("Consolas", 10), show="•",
+            fg=COLORS["fg"], bg=COLORS["bg_input"],
+            insertbackground=COLORS["accent"], relief="flat",
+        )
+        self.openrouter_key_entry.pack(fill="x", pady=(2, 8))
+        self.openrouter_key_entry.insert(0, self.config.get("openrouter_api_key", ""))
+
+        self.show_openrouter_key = tk.BooleanVar(value=False)
+        tk.Checkbutton(
+            openrouter_frame, text="إظهار المفتاح",
+            variable=self.show_openrouter_key,
+            font=("Segoe UI", 8), fg=COLORS["fg_dim"], bg=COLORS["bg_card"],
+            selectcolor=COLORS["bg_input"],
+            command=lambda: self.openrouter_key_entry.configure(show="" if self.show_openrouter_key.get() else "•"),
+        ).pack(anchor="w")
+
+        tk.Label(openrouter_frame, text="Model (مثال: google/gemini-2.0-flash-001 أو anthropic/claude-3.5-sonnet):", font=("Segoe UI", 9), fg=COLORS["fg_dim"], bg=COLORS["bg_card"]).pack(anchor="w", pady=(8, 0))
+        self.openrouter_model_entry = tk.Entry(
+            openrouter_frame, font=("Consolas", 10),
+            fg=COLORS["fg"], bg=COLORS["bg_input"],
+            insertbackground=COLORS["accent"], relief="flat",
+        )
+        self.openrouter_model_entry.pack(fill="x", pady=(2, 0))
+        self.openrouter_model_entry.insert(0, self.config.get("openrouter_model", "google/gemini-2.0-flash-001"))
 
         # ── موديل مخصص لكل Prompt ──
         self._settings_section(inner, "🎯 موديل مخصص لكل Prompt")
@@ -592,6 +625,8 @@ class PDFStudyToolGUI:
         self.config["gemini_model"] = self.gemini_model_entry.get().strip()
         self.config["openai_api_key"] = self.openai_key_entry.get().strip()
         self.config["openai_model"] = self.openai_model_entry.get().strip()
+        self.config["openrouter_api_key"] = self.openrouter_key_entry.get().strip()
+        self.config["openrouter_model"] = self.openrouter_model_entry.get().strip()
 
         # حفظ الموديل المخصص لكل prompt
         for key, entry in self.prompt_model_entries.items():
@@ -838,7 +873,7 @@ class PDFStudyToolGUI:
 
             # إنشاء معالجات إضافية حسب الحاجة
             # AIProcessor الأساسي للمزود الافتراضي
-            processors = {provider: AIProcessor(provider, api_key, model)}
+            processors = {provider: AIProcessor(provider, api_key, model, self.config)}
 
             # معالجات إضافية للمزودات الأخرى
             for key, val in model_overrides.items():
@@ -846,7 +881,7 @@ class PDFStudyToolGUI:
                 if prov not in processors:
                     prov_key = self.config.get(f"{prov}_api_key", "")
                     prov_model = self.config.get(f"{prov}_model", "")
-                    processors[prov] = AIProcessor(prov, prov_key, prov_model)
+                    processors[prov] = AIProcessor(prov, prov_key, prov_model, self.config)
 
             # نستخدم المعالج الافتراضي — process_all_three يتعامل مع model_overrides
             main_processor = processors[provider]

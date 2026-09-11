@@ -4,10 +4,11 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "cd backend && bash start.sh",
-    "healthcheckPath": "/up",
-    "healthcheckTimeout": 180,
+    "startCommand": "cd backend && sh start.sh",
+    "healthcheckPath": "/api/health",
+    "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3
   }
 }
+

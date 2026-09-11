@@ -78,12 +78,14 @@ Back (الخلف): The process of verifying an identity claimed by or for a syst
 class AIProcessor:
     """معالج الذكاء الاصطناعي - يدعم Gemini و OpenAI."""
 
-    def __init__(self, provider: str, api_key: str, model: str):
+    def __init__(self, provider: str, api_key: str, model: str, config: dict = None):
         self.provider = provider
         self.api_key = api_key
         self.model = model
+        self.config = config or {}
         self._gemini_client = None
         self._openai_client = None
+        self._openrouter_client = None
 
         if not api_key:
             raise ValueError(
@@ -102,6 +104,25 @@ class AIProcessor:
         """تهيئة عميل OpenAI."""
         from openai import OpenAI
         self._openai_client = OpenAI(api_key=self.api_key)
+
+    def _init_openrouter(self):
+        """تهيئة عميل OpenRouter عبر OpenAI SDK."""
+        from openai import OpenAI
+        openrouter_key = self.api_key if self.provider == "openrouter" else self.config.get("openrouter_api_key", "")
+        if not openrouter_key:
+            raise ValueError(
+                "مفتاح OpenRouter API غير موجود!\n"
+                "افتح ملف settings.json أو نافذة الإعدادات وأضف المفتاح:\n"
+                '  "openrouter_api_key": "sk-or-v1-..."'
+            )
+        self._openrouter_client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=openrouter_key,
+            default_headers={
+                "HTTP-Referer": "https://github.com/xXNJEEBXx/Flash-Cards",
+                "X-Title": "PDF Study Tool",
+            }
+        )
 
     def process(self, content: str, prompt: str, use_provider: str = None, use_model: str = None, images: list = None) -> str:
         """
@@ -133,6 +154,8 @@ class AIProcessor:
             return self._process_gemini(full_prompt, model, images=images)
         elif provider == "openai":
             return self._process_openai(full_prompt, model, images=images)
+        elif provider == "openrouter":
+            return self._process_openrouter(full_prompt, model, images=images)
         else:
             raise ValueError(f"مزود غير مدعوم: {provider}")
 
@@ -282,6 +305,8 @@ Content:
 
             if provider == "gemini":
                 raw = self._process_gemini(prompt, model)
+            elif provider == "openrouter":
+                raw = self._process_openrouter(prompt, model)
             else:
                 raw = self._process_openai(prompt, model)
 
@@ -393,6 +418,65 @@ Content:
                     "تم تجاوز حد الاستخدام (Rate Limit). انتظر دقيقة وحاول مرة أخرى."
                 ) from e
             raise RuntimeError(f"خطأ من OpenAI API: {error_msg}") from e
+
+    def _process_openrouter(self, prompt: str, model: str = None, images: list = None) -> str:
+        """معالجة باستخدام OpenRouter مع دعم الرؤية والنصوص لكافة النماذج."""
+        import base64
+        import io
+
+        if not self._openrouter_client:
+            self._init_openrouter()
+
+        use_model = model or self.model
+
+        if images:
+            user_content = [{"type": "text", "text": prompt}]
+            for img in images:
+                try:
+                    buf = io.BytesIO()
+                    img.save(buf, format="JPEG", quality=85)
+                    b64_str = base64.b64encode(buf.getvalue()).decode("utf-8")
+                    user_content.append({
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{b64_str}"}
+                    })
+                except Exception as img_err:
+                    print(f"⚠️ خطأ في تحويل صورة لـ OpenRouter: {img_err}")
+        else:
+            user_content = prompt
+
+        try:
+            kwargs = dict(
+                model=use_model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "أنت مساعد تعليمي متخصص في تحويل المحتوى الأكاديمي إلى مواد دراسية منظمة ومراجعة الرسوم التوضيحية والمخططات بدقة. اتبع التعليمات بدقة."
+                    },
+                    {
+                        "role": "user",
+                        "content": user_content,
+                    }
+                ],
+                temperature=0.3,
+            )
+            try:
+                kwargs["max_tokens"] = 8192
+                response = self._openrouter_client.chat.completions.create(**kwargs)
+            except Exception as e:
+                if "max_tokens" in str(e):
+                    kwargs.pop("max_tokens", None)
+                    response = self._openrouter_client.chat.completions.create(**kwargs)
+                else:
+                    raise
+            return response.choices[0].message.content
+        except Exception as e:
+            error_msg = str(e)
+            if "429" in error_msg or "rate" in error_msg.lower() or "quota" in error_msg.lower():
+                raise RuntimeError(
+                    "تم تجاوز حد الاستخدام (Rate Limit / Quota) في OpenRouter. يرجى الانتظار قليلاً أو التحقق من الرصيد."
+                ) from e
+            raise RuntimeError(f"خطأ من OpenRouter API: {error_msg}") from e
 
     def process_all_three(self, pages: list, prompts: dict = None,
                            model_overrides: dict = None,

@@ -4,6 +4,8 @@
     "gemini_model": "gemini-3.8-flash",
     "openai_api_key": "",
     "openai_model": "gpt-4o-mini",
+    "openrouter_api_key": "",
+    "openrouter_model": "google/gemini-2.0-flash-001",
     "prompt_1_model": "",
     "prompt_2_model": "",
     "prompt_3_model": "",

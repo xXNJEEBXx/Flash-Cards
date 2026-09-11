@@ -31,8 +31,14 @@ DEFAULT_CONFIG = {
     # موديل OpenAI الافتراضي
     "openai_model": "gpt-4o-mini",
 
+    # مفتاح OpenRouter API
+    "openrouter_api_key": "",
+
+    # موديل OpenRouter الافتراضي
+    "openrouter_model": "google/gemini-2.0-flash-001",
+
     # موديل مخصص لكل prompt (اختياري — اذا فاضي يستخدم الافتراضي)
-    # الصيغة: "provider:model" مثل "gemini:gemini-2.0-flash" أو "openai:gpt-4o"
+    # الصيغة: "provider:model" مثل "gemini:gemini-2.0-flash" أو "openai:gpt-4o" أو "openrouter:anthropic/claude-3.5-sonnet"
     # أو فارغ لاستخدام الافتراضي
     "prompt_1_model": "",
     "prompt_2_model": "",
@@ -82,6 +88,8 @@ def get_api_key(config: dict) -> str:
         return config.get("gemini_api_key", "")
     elif provider == "openai":
         return config.get("openai_api_key", "")
+    elif provider == "openrouter":
+        return config.get("openrouter_api_key", "")
     return ""
 
 
@@ -92,4 +100,6 @@ def get_model(config: dict) -> str:
         return config.get("gemini_model", "gemini-2.0-flash")
     elif provider == "openai":
         return config.get("openai_model", "gpt-4o-mini")
+    elif provider == "openrouter":
+        return config.get("openrouter_model", "google/gemini-2.0-flash-001")
     return ""

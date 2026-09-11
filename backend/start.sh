@@ -1,45 +1,16 @@
-#!/bin/bash
-set -e
-
+#!/bin/sh
 echo "🚀 Starting Flash Cards Backend..."
 
-# Respect Railway-provided environment variables (MySQL) by default
-# Do NOT override DB_CONNECTION/DB_DATABASE here.
-unset DATABASE_URL  # Optional: avoid unexpected DATABASE_URL precedence
+export PHP_CLI_SERVER_WORKERS=4
 
-# Initialize SQLite database only if using sqlite
-if [ "${DB_CONNECTION}" = "sqlite" ] || [ -z "${DB_CONNECTION}" ]; then
-  bash init-db.sh
-fi
+# Ensure storage and database directories exist
+mkdir -p storage/framework/views storage/framework/cache storage/framework/sessions storage/logs database 2>/dev/null || true
+touch database/database.sqlite 2>/dev/null || true
+chmod -R 775 storage database 2>/dev/null || true
 
-# Ensure .env exists (prefer production template)
-if [ ! -f .env ] && [ -f .env.production ]; then
-  echo "🔧 Creating .env from .env.production"
-  cp .env.production .env
-fi
+# Run migrations in background so server starts immediately for healthcheck
+(php artisan migrate --force >/dev/null 2>&1 || true) &
 
-# Do not force DB settings in .env; rely on Railway Variables
-
-# Ensure APP_KEY exists to avoid 500 on boot
-if ! grep -q '^APP_KEY=' .env || grep -q '^APP_KEY=$' .env; then
-  echo "🔐 Generating APP_KEY"
-  php artisan key:generate --force || true
-fi
-
-# Clear caches to avoid stale config/routes/views
-php artisan optimize:clear || true
-
-# Start Laravel server FIRST (for healthcheck)
-echo "✨ Starting Laravel server on port ${PORT:-8000}..."
-php artisan serve --host=0.0.0.0 --port="${PORT:-8000}" --no-reload &
-SERVER_PID=$!
-
-# Give server 5 seconds to start
-sleep 5
-
-# Run migrations (in background)
-echo "🔄 Running migrations..."
-php artisan migrate --force >/dev/null 2>&1 &
-
-# Wait for server process
-wait $SERVER_PID
+# Start Laravel server immediately
+echo "✨ Starting Laravel server on port ${PORT:-8000} with 4 workers..."
+exec php artisan serve --host=0.0.0.0 --port="${PORT:-8000}"

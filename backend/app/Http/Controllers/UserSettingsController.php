@@ -54,22 +54,27 @@ class UserSettingsController extends Controller
         }
 
         $settings = null;
-        $maxAttempts = 5;
+        $maxAttempts = 2;
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             try {
                 $settings = $this->findSettingsByKey($key);
                 break;
             } catch (\Exception $e) {
-                // Check if MySQL is sleeping
+                // Check if database is asleep
                 $errorMsg = \Illuminate\Support\Str::lower($e->getMessage());
-                if (!\Illuminate\Support\Str::contains($errorMsg, 'server has gone away') && 
-                    !\Illuminate\Support\Str::contains($errorMsg, 'connection refused') && 
-                    !\Illuminate\Support\Str::contains($errorMsg, '[2002]')) {
-                    if ($attempt === $maxAttempts) throw $e;
+                $isConnError = \Illuminate\Support\Str::contains($errorMsg, 'server has gone away') || 
+                               \Illuminate\Support\Str::contains($errorMsg, 'connection refused') || 
+                               \Illuminate\Support\Str::contains($errorMsg, 'connection timed out') || 
+                               \Illuminate\Support\Str::contains($errorMsg, '[2002]');
+
+                if (!$isConnError || $attempt === $maxAttempts) {
+                    throw $e;
                 }
-                if ($attempt === $maxAttempts) throw $e;
-                \Illuminate\Support\Facades\DB::disconnect('mysql');
-                sleep(1);
+
+                try {
+                    \Illuminate\Support\Facades\DB::disconnect();
+                } catch (\Throwable $t) {}
+                usleep(500000); // 0.5s
             }
         }
 
