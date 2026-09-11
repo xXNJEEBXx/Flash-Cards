@@ -1,8 +1,8 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use App\Models\Deck;
-use App\Models\Card;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -12,18 +12,21 @@ return new class extends Migration
     public function up(): void
     {
         try {
-            // Find all decks matching Cybersecurity Concepts
-            $decks = Deck::where('title', 'like', '%Cyber%Security%Concepts%')
-                ->orWhere('title', 'like', '%Cybersecurity%Concepts%')
-                ->get();
+            if (Schema::hasTable('decks')) {
+                $cyberDecks = DB::table('decks')
+                    ->where('title', 'like', '%Cyber%Security%Concepts%')
+                    ->orWhere('title', 'like', '%Cybersecurity%Concepts%')
+                    ->pluck('id');
 
-            foreach ($decks as $deck) {
-                // Delete associated cards then deck
-                $deck->cards()->delete();
-                $deck->delete();
+                if ($cyberDecks->isNotEmpty()) {
+                    if (Schema::hasTable('cards')) {
+                        DB::table('cards')->whereIn('deck_id', $cyberDecks)->delete();
+                    }
+                    DB::table('decks')->whereIn('id', $cyberDecks)->delete();
+                }
             }
-        } catch (\Exception $e) {
-            // Silently pass if tables do not exist yet
+        } catch (\Throwable $e) {
+            // Silently pass
         }
     }
 
@@ -32,6 +35,5 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // No reversal needed
     }
 };
