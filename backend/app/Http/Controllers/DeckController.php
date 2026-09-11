@@ -13,49 +13,28 @@ class DeckController extends Controller
 {
     public function index()
     {
-        $maxAttempts = 2;
-        $lastError = null;
+        try {
+            $decks = Deck::with('cards')->orderBy('id', 'asc')->get();
+            return response()->json($decks);
+        } catch (\Throwable $e) {
+            Log::error("Database error fetching decks: " . $e->getMessage());
 
-        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
-            try {
-                Log::info("Starting to fetch decks from database (Attempt $attempt)");
-                $decks = Deck::with('cards')->orderBy('id', 'asc')->get();
-                Log::info('Successfully fetched decks', [
-                    'count' => $decks->count(),
-                    'first_id' => $decks->first() ? $decks->first()->id : null
-                ]);
-                return response()->json($decks);
-            } catch (\Throwable $e) {
-                $lastError = $e;
-                Log::error("Failed to fetch decks (Attempt $attempt)", [
-                    'error' => $e->getMessage(),
-                    'code' => $e->getCode(),
-                ]);
-
-                // Check if it's a connection issue like database asleep or unreachable
-                $errorMessage = Str::lower($e->getMessage());
-                $isConnectionError = Str::contains($errorMessage, 'server has gone away') || 
-                                     Str::contains($errorMessage, 'connection refused') ||
-                                     Str::contains($errorMessage, 'connection timed out') ||
-                                     Str::contains($errorMessage, '[2002]');
-
-                if (!$isConnectionError || $attempt === $maxAttempts) {
-                    break;
-                }
-
-                // Disconnect and wait briefly before retrying
+            // If MySQL / remote DB is unavailable, try SQLite fallback
+            if (config('database.default') !== 'sqlite') {
                 try {
-                    DB::disconnect();
-                } catch (\Throwable $t) {}
-                usleep(500000); // Wait 0.5s
+                    $decks = Deck::on('sqlite')->with('cards')->orderBy('id', 'asc')->get();
+                    return response()->json($decks);
+                } catch (\Throwable $t) {
+                    // SQLite not initialized or missing
+                }
             }
-        }
 
-        return response()->json([
-            'message' => 'Server error while fetching decks',
-            'error' => $lastError ? $lastError->getMessage() : 'Unknown error',
-            'hint' => 'Check /api/health for database status',
-        ], 500);
+            return response()->json([
+                'message' => 'Database temporarily unavailable',
+                'error' => $e->getMessage(),
+                'hint' => 'Falling back to local storage',
+            ], 503);
+        }
     }
     public function show(Deck $deck)
     {

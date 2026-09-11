@@ -1,5 +1,7 @@
 <?php
 
+@ini_set('default_socket_timeout', '3');
+
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 

@@ -20,7 +20,9 @@ Route::get('/debug-env', function () {
         'default_connection' => config('database.default'),
         'db_connection' => env('DB_CONNECTION'),
         'db_host' => env('DB_HOST'),
+        'db_port' => env('DB_PORT'),
         'db_database' => env('DB_DATABASE'),
+        'socket_timeout' => ini_get('default_socket_timeout'),
     ]);
 });
 

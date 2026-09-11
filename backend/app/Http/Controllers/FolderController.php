@@ -15,45 +15,38 @@ class FolderController extends Controller
      */
     public function index()
     {
-        $maxAttempts = 2;
-        $lastError = null;
+        try {
+            // Get only root folders (folders with no parent)
+            $folders = Folder::whereNull('parent_folder_id')
+                ->orderBy('order')
+                ->get();
 
-        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
-            try {
-                // Get only root folders (folders with no parent)
-                $folders = Folder::whereNull('parent_folder_id')
-                    ->orderBy('order')
-                    ->get();
+            return response()->json([
+                'success' => true,
+                'data' => $folders
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("Database error fetching folders: " . $e->getMessage());
 
-                return response()->json([
-                    'success' => true,
-                    'data' => $folders
-                ]);
-            } catch (\Exception $e) {
-                $lastError = $e;
-
-                $errorMessage = Str::lower($e->getMessage());
-                $isConnectionError = Str::contains($errorMessage, 'server has gone away') || 
-                                     Str::contains($errorMessage, 'connection refused') ||
-                                     Str::contains($errorMessage, 'connection timed out') ||
-                                     Str::contains($errorMessage, '[2002]');
-
-                if (!$isConnectionError || $attempt === $maxAttempts) {
-                    break;
-                }
-
+            if (config('database.default') !== 'sqlite') {
                 try {
-                    DB::disconnect();
+                    $folders = Folder::on('sqlite')
+                        ->whereNull('parent_folder_id')
+                        ->orderBy('order')
+                        ->get();
+                    return response()->json([
+                        'success' => true,
+                        'data' => $folders
+                    ]);
                 } catch (\Throwable $t) {}
-                usleep(500000); // Wait 0.5s
             }
-        }
 
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to fetch folders',
-            'error' => $lastError ? $lastError->getMessage() : 'Unknown error'
-        ], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Database temporarily unavailable',
+                'error' => $e->getMessage()
+            ], 503);
+        }
     }
 
     /**

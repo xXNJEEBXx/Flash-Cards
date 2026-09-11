@@ -54,28 +54,15 @@ class UserSettingsController extends Controller
         }
 
         $settings = null;
-        $maxAttempts = 2;
-        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
-            try {
-                $settings = $this->findSettingsByKey($key);
-                break;
-            } catch (\Exception $e) {
-                // Check if database is asleep
-                $errorMsg = \Illuminate\Support\Str::lower($e->getMessage());
-                $isConnError = \Illuminate\Support\Str::contains($errorMsg, 'server has gone away') || 
-                               \Illuminate\Support\Str::contains($errorMsg, 'connection refused') || 
-                               \Illuminate\Support\Str::contains($errorMsg, 'connection timed out') || 
-                               \Illuminate\Support\Str::contains($errorMsg, '[2002]');
-
-                if (!$isConnError || $attempt === $maxAttempts) {
-                    throw $e;
-                }
-
-                try {
-                    \Illuminate\Support\Facades\DB::disconnect();
-                } catch (\Throwable $t) {}
-                usleep(500000); // 0.5s
-            }
+        try {
+            $settings = $this->findSettingsByKey($key);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("Database error fetching user settings: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Database temporarily unavailable',
+                'error' => $e->getMessage()
+            ], 503);
         }
 
         if (!$settings) {
