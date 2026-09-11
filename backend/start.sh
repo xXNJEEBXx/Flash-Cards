@@ -37,9 +37,9 @@ SERVER_PID=$!
 # Give server 5 seconds to start
 sleep 5
 
-# Run migrations and seed database (in background)
-echo "🔄 Running migrations and seeding..."
-(php artisan migrate --force && php artisan db:seed --force) >/dev/null 2>&1 &
+# Run migrations (in background)
+echo "🔄 Running migrations..."
+php artisan migrate --force >/dev/null 2>&1 &
 
 # Wait for server process
 wait $SERVER_PID

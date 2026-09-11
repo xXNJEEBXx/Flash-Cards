@@ -2,7 +2,19 @@ import React, { useState } from 'react';
 import { confirmDeleteWithPassword } from '../../utils/passwordProtection';
 import './FolderItem.css';
 
-const FolderItem = ({ folder, onSelectFolder, onEditFolder, onDeleteFolder, onMoveFolder, onDrop, onOpenFolder, level = 0 }) => {
+const FolderItem = ({
+    folder,
+    onSelectFolder,
+    onEditFolder,
+    onDeleteFolder,
+    onRequestMoveFolder,
+    onMoveFolderToRoot,
+    onMoveFolder,
+    onDrop,
+    onOpenFolder,
+    onDragStartFolder,
+    level = 0
+}) => {
     const [isExpanded, setIsExpanded] = useState(true);
     const [showMenu, setShowMenu] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
@@ -42,6 +54,29 @@ const FolderItem = ({ folder, onSelectFolder, onEditFolder, onDeleteFolder, onMo
         onSelectFolder({ action: 'create-subfolder', parentId: folder.id });
     };
 
+    const handleRequestMove = (e) => {
+        e.stopPropagation();
+        setShowMenu(false);
+        if (onRequestMoveFolder) {
+            onRequestMoveFolder(folder);
+        }
+    };
+
+    const handleMoveToRoot = (e) => {
+        e.stopPropagation();
+        setShowMenu(false);
+        if (onMoveFolderToRoot) {
+            onMoveFolderToRoot(folder.id);
+        }
+    };
+
+    const handleDragStart = (e) => {
+        e.stopPropagation();
+        if (onDragStartFolder) {
+            onDragStartFolder(folder);
+        }
+    };
+
     const handleDragOver = (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -67,6 +102,8 @@ const FolderItem = ({ folder, onSelectFolder, onEditFolder, onDeleteFolder, onMo
         <div
             className={`folder-item ${isDragOver ? 'drag-over' : ''}`}
             style={{ marginLeft: `${level * 20}px` }}
+            draggable
+            onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -101,14 +138,19 @@ const FolderItem = ({ folder, onSelectFolder, onEditFolder, onDeleteFolder, onMo
                     <button
                         className="folder-menu-btn"
                         onClick={handleMenuClick}
+                        title="خيارات المجلد"
                     >
                         ⋮
                     </button>
                     {showMenu && (
                         <div className="folder-menu">
-                            <button onClick={handleEdit}>✏️ Edit</button>
-                            <button onClick={handleCreateSubfolder}>➕ Add Subfolder</button>
-                            <button onClick={handleDelete} className="danger">🗑️ Delete</button>
+                            <button onClick={handleEdit}>✏️ تعديل</button>
+                            <button onClick={handleCreateSubfolder}>➕ مجلد فرعي</button>
+                            <button onClick={handleRequestMove}>📦 نقل المجلد</button>
+                            {folder.parent_folder_id && (
+                                <button onClick={handleMoveToRoot}>📤 إخراج للرئيسية</button>
+                            )}
+                            <button onClick={handleDelete} className="danger">🗑️ حذف</button>
                         </div>
                     )}
                 </div>
@@ -124,9 +166,12 @@ const FolderItem = ({ folder, onSelectFolder, onEditFolder, onDeleteFolder, onMo
                             onSelectFolder={onSelectFolder}
                             onEditFolder={onEditFolder}
                             onDeleteFolder={onDeleteFolder}
+                            onRequestMoveFolder={onRequestMoveFolder}
+                            onMoveFolderToRoot={onMoveFolderToRoot}
                             onMoveFolder={onMoveFolder}
                             onDrop={onDrop}
                             onOpenFolder={onOpenFolder}
+                            onDragStartFolder={onDragStartFolder}
                             level={level + 1}
                         />
                     ))}

@@ -79,6 +79,10 @@ class FolderController extends Controller
      */
     public function store(Request $request)
     {
+        if ($request->has('parent_folder_id') && ($request->parent_folder_id === 'null' || $request->parent_folder_id === '' || $request->parent_folder_id === 0 || $request->parent_folder_id === '0')) {
+            $request->merge(['parent_folder_id' => null]);
+        }
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -116,6 +120,10 @@ class FolderController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if ($request->has('parent_folder_id') && ($request->parent_folder_id === 'null' || $request->parent_folder_id === '' || $request->parent_folder_id === 0 || $request->parent_folder_id === '0')) {
+            $request->merge(['parent_folder_id' => null]);
+        }
+
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string',

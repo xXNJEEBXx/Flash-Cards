@@ -72,6 +72,23 @@ export const FoldersProvider = ({ children }) => {
         }
     };
 
+    // Move a folder to another folder or to root (targetParentFolderId = null)
+    const moveFolder = async (folderId, targetParentFolderId = null) => {
+        try {
+            const normalizedParentId = (targetParentFolderId === '' || targetParentFolderId === '0' || targetParentFolderId === 0)
+                ? null
+                : targetParentFolderId;
+            const updated = await foldersAPI.updateFolder(folderId, {
+                parent_folder_id: normalizedParentId
+            });
+            await loadFolders(); // Reload to reflect changes
+            return updated;
+        } catch (error) {
+            console.error('Error moving folder:', error);
+            throw error;
+        }
+    };
+
     // Remove a deck from folder (move to root)
     const removeDeckFromFolder = async (deckId) => {
         try {
@@ -105,6 +122,7 @@ export const FoldersProvider = ({ children }) => {
                 createFolder,
                 updateFolder,
                 deleteFolder,
+                moveFolder,
                 moveDeckToFolder,
                 removeDeckFromFolder,
                 loadFolders,

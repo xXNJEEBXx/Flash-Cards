@@ -1,12 +1,16 @@
-import React, { useContext, useMemo } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CardsContext } from '../../context/CardsContext';
 import { FoldersContext } from '../../context/FoldersContext';
+import MoveFolderModal from './MoveFolderModal';
 import { confirmDeleteWithPassword } from '../../utils/passwordProtection';
 import './FolderView.css';
 
 const FolderView = ({ folderId, onBack, onSelectDeck, onStudyDeck }) => {
+    const navigate = useNavigate();
     const { decks, deleteDeck } = useContext(CardsContext);
-    const { folders, removeDeckFromFolder } = useContext(FoldersContext);
+    const { folders, removeDeckFromFolder, moveFolder } = useContext(FoldersContext);
+    const [folderToMove, setFolderToMove] = useState(null);
 
     // Find the current folder
     const folder = useMemo(() => {
@@ -89,6 +93,36 @@ const FolderView = ({ folderId, onBack, onSelectDeck, onStudyDeck }) => {
                     {folder.description && (
                         <p className="folder-description">{folder.description}</p>
                     )}
+                    <div className="folder-header-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '12px' }}>
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => setFolderToMove(folder)}
+                            title="نقل هذا المجلد إلى مجلد آخر"
+                            style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 14px', borderRadius: '6px' }}
+                        >
+                            <span>📦</span>
+                            <span>نقل هذا المجلد</span>
+                        </button>
+                        {folder.parent_folder_id && (
+                            <button
+                                className="btn btn-outline btn-sm"
+                                onClick={async () => {
+                                    if (window.confirm(`هل تريد إخراج المجلد "${folder.name}" إلى الصفحة الرئيسية؟`)) {
+                                        try {
+                                            await moveFolder(folder.id, null);
+                                        } catch (err) {
+                                            alert('فشل إخراج المجلد: ' + err.message);
+                                        }
+                                    }
+                                }}
+                                title="إخراج هذا المجلد إلى المستوى الرئيسي"
+                                style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 14px', borderRadius: '6px' }}
+                            >
+                                <span>📤</span>
+                                <span>إخراج للرئيسية</span>
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Folder Statistics */}
@@ -136,13 +170,60 @@ const FolderView = ({ folderId, onBack, onSelectDeck, onStudyDeck }) => {
                             const subDecks = decks.filter(d => d.folder_id === subfolder.id);
                             const subCards = subDecks.reduce((sum, d) => sum + d.cards.length, 0);
                             return (
-                                <div key={subfolder.id} className="subfolder-card">
-                                    <span className="subfolder-icon">📁</span>
-                                    <h3>{subfolder.name}</h3>
-                                    <div className="subfolder-stats">
-                                        <span>{subDecks.length} decks</span>
-                                        <span>•</span>
-                                        <span>{subCards} cards</span>
+                                <div
+                                    key={subfolder.id}
+                                    className="subfolder-card"
+                                    style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+                                    onClick={() => navigate(`/folder/${subfolder.id}`)}
+                                >
+                                    <div style={{ flex: 1 }}>
+                                        <span className="subfolder-icon">📁</span>
+                                        <h3>{subfolder.name}</h3>
+                                        <div className="subfolder-stats">
+                                            <span>{subDecks.length} decks</span>
+                                            <span>•</span>
+                                            <span>{subCards} cards</span>
+                                        </div>
+                                    </div>
+                                    <div
+                                        className="subfolder-actions"
+                                        style={{
+                                            display: 'flex',
+                                            gap: '8px',
+                                            marginTop: '12px',
+                                            paddingTop: '10px',
+                                            borderTop: '1px solid rgba(0, 0, 0, 0.08)'
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <button
+                                            className="btn btn-sm btn-secondary"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setFolderToMove(subfolder);
+                                            }}
+                                            title="نقل المجلد"
+                                            style={{ flex: 1, padding: '4px 8px', fontSize: '12px' }}
+                                        >
+                                            📦 نقل
+                                        </button>
+                                        <button
+                                            className="btn btn-sm btn-outline"
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                if (window.confirm(`هل تريد إخراج المجلد "${subfolder.name}" إلى الصفحة الرئيسية؟`)) {
+                                                    try {
+                                                        await moveFolder(subfolder.id, null);
+                                                    } catch (err) {
+                                                        alert('فشل إخراج المجلد: ' + err.message);
+                                                    }
+                                                }
+                                            }}
+                                            title="إخراج للصفحة الرئيسية"
+                                            style={{ flex: 1, padding: '4px 8px', fontSize: '12px' }}
+                                        >
+                                            📤 إخراج
+                                        </button>
                                     </div>
                                 </div>
                             );
@@ -261,6 +342,15 @@ const FolderView = ({ folderId, onBack, onSelectDeck, onStudyDeck }) => {
                     </div>
                 )}
             </div>
+
+            {folderToMove && (
+                <MoveFolderModal
+                    folder={folderToMove}
+                    folders={folders}
+                    onMove={moveFolder}
+                    onClose={() => setFolderToMove(null)}
+                />
+            )}
         </div>
     );
 };

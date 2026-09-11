@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import { FoldersContext } from '../../context/FoldersContext';
 import FolderItem from '../Folders/FolderItem';
 import FolderForm from '../Folders/FolderForm';
+import MoveFolderModal from '../Folders/MoveFolderModal';
 import { confirmDeleteWithPassword } from '../../utils/passwordProtection';
 import './FoldersView.css';
 
@@ -12,6 +13,7 @@ const FoldersView = ({ onSelectDeck, onStudyDeck, decks }) => {
         createFolder,
         updateFolder,
         deleteFolder,
+        moveFolder,
         moveDeckToFolder,
         removeDeckFromFolder
     } = useContext(FoldersContext);
@@ -19,6 +21,7 @@ const FoldersView = ({ onSelectDeck, onStudyDeck, decks }) => {
     const [showFolderForm, setShowFolderForm] = useState(false);
     const [editingFolder, setEditingFolder] = useState(null);
     const [parentFolderId, setParentFolderId] = useState(null);
+    const [folderToMove, setFolderToMove] = useState(null);
     const [draggedDeck, setDraggedDeck] = useState(null);
 
     // Get decks not in any folder
@@ -152,7 +155,15 @@ const FoldersView = ({ onSelectDeck, onStudyDeck, decks }) => {
                                 onSelectFolder={handleSelectFolder}
                                 onEditFolder={handleEditFolder}
                                 onDeleteFolder={handleDeleteFolder}
-                                onMoveFolder={moveDeckToFolder}
+                                onRequestMoveFolder={(f) => setFolderToMove(f)}
+                                onMoveFolderToRoot={async (id) => {
+                                    try {
+                                        await moveFolder(id, null);
+                                    } catch (err) {
+                                        alert('فشل إخراج المجلد: ' + err.message);
+                                    }
+                                }}
+                                onMoveFolder={moveFolder}
                                 onDrop={handleDrop}
                             />
                         ))}
@@ -198,12 +209,22 @@ const FoldersView = ({ onSelectDeck, onStudyDeck, decks }) => {
                 <FolderForm
                     folder={editingFolder}
                     parentFolderId={parentFolderId}
+                    folders={folders}
                     onSubmit={editingFolder ? handleUpdateFolder : handleCreateFolder}
                     onCancel={() => {
                         setShowFolderForm(false);
                         setEditingFolder(null);
                         setParentFolderId(null);
                     }}
+                />
+            )}
+
+            {folderToMove && (
+                <MoveFolderModal
+                    folder={folderToMove}
+                    folders={folders}
+                    onMove={moveFolder}
+                    onClose={() => setFolderToMove(null)}
                 />
             )}
         </div>

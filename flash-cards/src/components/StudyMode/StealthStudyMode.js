@@ -102,6 +102,13 @@ const StealthStudyMode = ({
         return;
       }
 
+      // مفتاح Q للخروج الفوري من وضع التخفي
+      if ((e.key === 'q' || e.key === 'Q') && !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+        e.preventDefault();
+        onToggleStyle();
+        return;
+      }
+
       // اختصار التراجع (Ctrl+Z أو حرف u)
       if ((e.ctrlKey && e.key === 'z') || e.key === 'u' || e.key === 'U') {
         if (canUndo && onUndo) {
@@ -137,7 +144,7 @@ const StealthStudyMode = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showNotesSidebar, handleNextCard, handlePrevCard, handleToggleKnown, canUndo, onUndo]);
+  }, [showNotesSidebar, handleNextCard, handlePrevCard, handleToggleKnown, canUndo, onUndo, onToggleStyle]);
 
   return (
     <div className="stealth-fullscreen-container">
@@ -261,7 +268,7 @@ const StealthStudyMode = ({
           )}
         </div>
 
-        {/* اليمين: زر فتح ملف، تعليقات، تمويه، خيارات */}
+        {/* اليمين: زر فتح ملف، تعليقات، تمويه، خروج، خيارات */}
         <div className="chrome-bar-section">
           <button
             className="chrome-open-btn"
@@ -279,6 +286,25 @@ const StealthStudyMode = ({
           >
             <span>💬</span>
             <span>{showNotesSidebar ? 'إخفاء الملاحظات (Esc)' : 'الملاحظات (Space)'}</span>
+          </button>
+
+          {/* زر الخروج المباشر والواضح من وضع التخفي للعودة للبطاقات العادية */}
+          <button
+            className="chrome-exit-stealth-btn"
+            onClick={onToggleStyle}
+            title="الخروج من وضع التخفي والعودة إلى بطاقات الاستذكار العادية (مفتاح Q)"
+          >
+            <span>🎴</span>
+            <span>الخروج من التخفي</span>
+          </button>
+
+          {/* زر إغلاق وضع الدراسة والرجوع للصفحة الرئيسية */}
+          <button
+            className="chrome-icon-btn chrome-close-study-btn"
+            onClick={onBack}
+            title="إغلاق وضع الدراسة والرجوع للصفحة الرئيسية"
+          >
+            ✕
           </button>
 
           {/* قائمة الخيارات الثلاث نقاط */}
@@ -405,14 +431,30 @@ const StealthStudyMode = ({
         >
           <div className="comments-sidebar-header">
             <span>📝 Lecture Notes ({currentIndex + 1}/{cards.length})</span>
-            <button
-              className="chrome-icon-btn"
-              style={{ width: '24px', height: '24px', color: '#6b7280' }}
-              onClick={() => setShowNotesSidebar(false)}
-              title="إخفاء (Esc)"
-            >
-              ✕
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button
+                className="chrome-badge-btn"
+                style={{
+                  padding: '3px 8px',
+                  fontSize: '11px',
+                  backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                  color: '#f87171',
+                  borderColor: 'rgba(239, 68, 68, 0.3)',
+                }}
+                onClick={onToggleStyle}
+                title="الخروج من وضع التخفي (Q)"
+              >
+                🎴 خروج
+              </button>
+              <button
+                className="chrome-icon-btn"
+                style={{ width: '24px', height: '24px', color: '#6b7280' }}
+                onClick={() => setShowNotesSidebar(false)}
+                title="إخفاء (Esc)"
+              >
+                ✕
+              </button>
+            </div>
           </div>
 
           <div className="comments-sidebar-content">
@@ -496,7 +538,8 @@ const StealthStudyMode = ({
             <span className="nav-hint-text">
               <span className="nav-hint-kbd">▲</span> كشف &bull;{' '}
               <span className="nav-hint-kbd">▼</span> إخفاء &bull;{' '}
-              <span className="nav-hint-kbd">Space</span> تبديل
+              <span className="nav-hint-kbd">Space</span> تبديل &bull;{' '}
+              <span className="nav-hint-kbd">Q</span> خروج
             </span>
 
             <button

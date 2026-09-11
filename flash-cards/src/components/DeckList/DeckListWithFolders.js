@@ -4,6 +4,7 @@ import { FoldersContext } from '../../context/FoldersContext';
 import SearchFilter from '../Search/SearchFilter';
 import FolderItem from '../Folders/FolderItem';
 import FolderForm from '../Folders/FolderForm';
+import MoveFolderModal from '../Folders/MoveFolderModal';
 import { confirmDeleteWithPassword } from '../../utils/passwordProtection';
 import './DeckList.css';
 import '../Folders/FoldersView.css';
@@ -16,6 +17,7 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
         createFolder,
         updateFolder,
         deleteFolder,
+        moveFolder,
         moveDeckToFolder,
         removeDeckFromFolder
     } = useContext(FoldersContext);
@@ -26,7 +28,9 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
     const [showFolderForm, setShowFolderForm] = useState(false);
     const [editingFolder, setEditingFolder] = useState(null);
     const [parentFolderId, setParentFolderId] = useState(null);
+    const [folderToMove, setFolderToMove] = useState(null);
     const [draggedDeck, setDraggedDeck] = useState(null);
+    const [draggedFolder, setDraggedFolder] = useState(null);
     const [viewMode, setViewMode] = useState('both'); // 'both', 'folders', 'decks'
 
     // Get decks not in any folder (must be defined BEFORE unifiedItems)
@@ -172,17 +176,38 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
         setShowFolderForm(true);
     };
 
+    const handleMoveFolderToRoot = async (folderId) => {
+        try {
+            await moveFolder(folderId, null);
+        } catch (error) {
+            alert('فشل إخراج المجلد إلى الصفحة الرئيسية: ' + error.message);
+        }
+    };
+
     const handleDragStart = (deck) => {
         setDraggedDeck(deck);
     };
 
-    const handleDrop = async (folderId) => {
+    const handleDrop = async (targetFolderId) => {
         if (draggedDeck) {
             try {
-                await moveDeckToFolder(folderId, draggedDeck.id);
+                await moveDeckToFolder(targetFolderId, draggedDeck.id);
                 setDraggedDeck(null);
             } catch (error) {
-                alert('Failed to move deck: ' + error.message);
+                alert('فشل نقل المجموعة: ' + error.message);
+                setDraggedDeck(null);
+            }
+        } else if (draggedFolder) {
+            if (draggedFolder.id === targetFolderId) {
+                setDraggedFolder(null);
+                return;
+            }
+            try {
+                await moveFolder(draggedFolder.id, targetFolderId);
+                setDraggedFolder(null);
+            } catch (error) {
+                alert('فشل نقل المجلد: ' + error.message);
+                setDraggedFolder(null);
             }
         }
     };
@@ -302,6 +327,30 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
             </div>
 
             {/* Unified Section - All Items Together */}
+            {draggedFolder && draggedFolder.parent_folder_id && (
+                <div
+                    className="drag-to-root-dropzone"
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={async (e) => {
+                        e.preventDefault();
+                        await handleMoveFolderToRoot(draggedFolder.id);
+                        setDraggedFolder(null);
+                    }}
+                    style={{
+                        border: '2px dashed #3b82f6',
+                        borderRadius: '10px',
+                        padding: '14px',
+                        textAlign: 'center',
+                        backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                        color: '#2563eb',
+                        fontWeight: 600,
+                        marginBottom: '16px',
+                        cursor: 'pointer'
+                    }}
+                >
+                    🏠 أفلت هنا لإخراج المجلد "{draggedFolder.name}" إلى الصفحة الرئيسية
+                </div>
+            )}
             <div className="unified-content-section">
                 {unifiedItems.map((item, index) => {
                     if (item.type === 'folder') {
@@ -312,9 +361,12 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
                                 onSelectFolder={handleSelectFolder}
                                 onEditFolder={handleEditFolder}
                                 onDeleteFolder={handleDeleteFolder}
-                                onMoveFolder={moveDeckToFolder}
+                                onRequestMoveFolder={(f) => setFolderToMove(f)}
+                                onMoveFolderToRoot={handleMoveFolderToRoot}
+                                onMoveFolder={moveFolder}
                                 onDrop={handleDrop}
                                 onOpenFolder={onOpenFolder}
+                                onDragStartFolder={(f) => setDraggedFolder(f)}
                             />
                         );
                     } else {
@@ -443,12 +495,23 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
                 <FolderForm
                     folder={editingFolder}
                     parentFolderId={parentFolderId}
+                    folders={folders}
                     onSubmit={editingFolder ? handleUpdateFolder : handleCreateFolder}
                     onCancel={() => {
                         setShowFolderForm(false);
                         setEditingFolder(null);
                         setParentFolderId(null);
                     }}
+                />
+            )}
+
+            {/* Move Folder Modal */}
+            {folderToMove && (
+                <MoveFolderModal
+                    folder={folderToMove}
+                    folders={folders}
+                    onMove={moveFolder}
+                    onClose={() => setFolderToMove(null)}
                 />
             )}
         </div>
