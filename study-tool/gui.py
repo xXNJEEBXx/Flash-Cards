@@ -18,11 +18,15 @@ _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 if _SCRIPT_DIR not in sys.path:
     sys.path.insert(0, _SCRIPT_DIR)
 
+import webbrowser
+from tkinter import simpledialog
+
 from config import (
     load_config, save_config, get_api_key, get_model, CONFIG_FILE,
     AVAILABLE_MODELS, get_provider_display_name, detect_provider,
     clean_model_id, get_model_combobox_list, parse_model_choice,
-    resolve_effective_model, find_combobox_display_value
+    resolve_effective_model, find_combobox_display_value,
+    add_custom_model, remove_custom_model, get_custom_models
 )
 from pdf_extractor import extract_text_from_pdf, get_pdf_info
 from pptx_extractor import is_powerpoint_file, convert_pptx_to_pdf, extract_text_and_visuals_from_pptx, get_pptx_info
@@ -104,6 +108,8 @@ class PDFStudyToolGUI:
         self._build_ui()
         self._refresh_all_badges()
         self._refresh_active_models_summary()
+        for p in ["gemini", "openai", "openrouter"]:
+            self._refresh_custom_models_list_ui(p)
 
         if self.pdf_path:
             self._load_pdf_info()
@@ -306,13 +312,24 @@ class PDFStudyToolGUI:
 
             model_combo = ttk.Combobox(
                 model_bar,
-                values=get_model_combobox_list(include_default=True),
+                values=get_model_combobox_list(include_default=True, config=self.config),
                 font=("Segoe UI", 9),
-                width=38,
+                width=36,
             )
-            model_combo.pack(side="left", padx=(0, 8))
+            model_combo.pack(side="left", padx=(0, 6))
 
-            init_val = find_combobox_display_value(self.config.get(f"{key}_model", ""))
+            btn_add_p = tk.Button(
+                model_bar, text="➕ إضافة نموذج",
+                font=("Segoe UI", 8),
+                fg=COLORS["accent"], bg=COLORS["bg_input"],
+                activeforeground=COLORS["bg"], activebackground=COLORS["accent"],
+                relief="flat", padx=8, pady=2,
+                cursor="hand2",
+                command=lambda k=key: self._prompt_add_custom_model_dialog(k)
+            )
+            btn_add_p.pack(side="left", padx=(0, 8))
+
+            init_val = find_combobox_display_value(self.config.get(f"{key}_model", ""), config=self.config)
             model_combo.set(init_val)
             self.prompt_tab_combos[key] = model_combo
 
@@ -548,17 +565,198 @@ class PDFStudyToolGUI:
         else:
             prov = detect_provider(new_value)
             self.config[f"{prompt_key}_model"] = f"{prov}:{clean_id}"
+            # تسجيل النموذج كمخصص إذا لم يكن ضمن النماذج القياسية
+            standard_ids = [m["id"].lower() for m in AVAILABLE_MODELS.get(prov, [])]
+            if clean_id.lower() not in standard_ids:
+                add_custom_model(self.config, prov, clean_id)
+                self._reload_all_model_comboboxes()
 
         save_config(self.config)
         self._update_prompt_badge(prompt_key)
         self._refresh_active_models_summary()
 
         # مزامنة القائمة المنسدلة في التبويب الآخر
-        display_val = find_combobox_display_value(self.config.get(f"{prompt_key}_model", ""))
+        display_val = find_combobox_display_value(self.config.get(f"{prompt_key}_model", ""), config=self.config)
         if from_source == "prompts_tab" and prompt_key in self.settings_prompt_combos:
             self.settings_prompt_combos[prompt_key].set(display_val)
         elif from_source == "settings_tab" and prompt_key in self.prompt_tab_combos:
             self.prompt_tab_combos[prompt_key].set(display_val)
+
+    def _reload_all_model_comboboxes(self):
+        """إعادة تحميل قيم كافة القوائم المنسدلة للنماذج في كامل الواجهة."""
+        # 1. قوائم المزودات في الإعدادات
+        if hasattr(self, 'gemini_model_combo') and self.gemini_model_combo:
+            self.gemini_model_combo.configure(values=get_model_combobox_list(include_default=False, provider_filter="gemini", config=self.config))
+        if hasattr(self, 'openai_model_combo') and self.openai_model_combo:
+            self.openai_model_combo.configure(values=get_model_combobox_list(include_default=False, provider_filter="openai", config=self.config))
+        if hasattr(self, 'openrouter_model_combo') and self.openrouter_model_combo:
+            self.openrouter_model_combo.configure(values=get_model_combobox_list(include_default=False, provider_filter="openrouter", config=self.config))
+
+        # 2. قوائم المهام في الإعدادات
+        all_task_models = get_model_combobox_list(include_default=True, config=self.config)
+        for combo in self.settings_prompt_combos.values():
+            combo.configure(values=all_task_models)
+
+        # 3. قوائم المهام في تبويب Prompts
+        for combo in self.prompt_tab_combos.values():
+            combo.configure(values=all_task_models)
+
+    def _fill_custom_model_input(self, entry_widget, model_id: str):
+        """تعبئة حقل إدخال النموذج بنموذج مقترح بنقرة واحدة."""
+        entry_widget.delete(0, "end")
+        entry_widget.insert(0, model_id)
+        entry_widget.focus_set()
+
+    def _add_custom_model_action(self, provider: str, entry_widget, target_combo=None):
+        """إضافة نموذج مخصص وحفظه وتحديث القوائم المنسدلة في الواجهة فوراً."""
+        val = entry_widget.get().strip()
+        if not val:
+            messagebox.showwarning("تنبيه", "يرجى كتابة أو لصق معرّف النموذج أولاً!")
+            return
+
+        clean_id = clean_model_id(val) or val
+        add_custom_model(self.config, provider, clean_id)
+        entry_widget.delete(0, "end")
+
+        # إعادة تحميل كافة القوائم المنسدلة في الواجهة
+        self._reload_all_model_comboboxes()
+
+        # تعيين النموذج المضاف كنموذج محدد للمزود
+        if target_combo:
+            display_val = find_combobox_display_value(clean_id, include_default=False, provider_filter=provider, config=self.config)
+            target_combo.set(display_val)
+            self.config[f"{provider}_model"] = clean_id
+            save_config(self.config)
+
+        # تحديث قائمة النماذج المخصصة وشارات الواجهة
+        self._refresh_custom_models_list_ui(provider)
+        self._refresh_active_models_summary()
+        self._refresh_all_badges()
+
+        prov_name = get_provider_display_name(provider)
+        self._log(f"✨ تمت إضافة النموذج المخصص [{prov_name}] {clean_id} بنجاح")
+        messagebox.showinfo(
+            "تمت الإضافة بنجاح! ✨",
+            f"تمت إضافة النموذج '{clean_id}' إلى قائمة نماذج {prov_name} وتحديده بنجاح!\n\n"
+            f"أصبح الآن متاحاً في جميع القوائم المنسدلة ويمكنك اختباره فوراً عبر زر '⚡ فحص اتصال'."
+        )
+
+    def _delete_custom_model_action(self, provider: str, model_id: str):
+        """حذف نموذج مخصص من القائمة."""
+        if messagebox.askyesno("تأكيد الحذف", f"هل تريد بالتأكيد إزالة النموذج المخصص:\n'{model_id}' من القائمة؟"):
+            remove_custom_model(self.config, model_id)
+            self._reload_all_model_comboboxes()
+            self._refresh_custom_models_list_ui(provider)
+            self._refresh_active_models_summary()
+            self._refresh_all_badges()
+            self._log(f"🗑️ تم حذف النموذج المخصص: {model_id}")
+
+    def _set_model_as_default(self, provider: str, model_id: str):
+        """تعيين نموذج مخصص كنموذج افتراضي للمزود."""
+        self.config[f"{provider}_model"] = model_id
+        combo = getattr(self, f"{provider}_model_combo", None)
+        if combo:
+            display_val = find_combobox_display_value(model_id, include_default=False, provider_filter=provider, config=self.config)
+            combo.set(display_val)
+        save_config(self.config)
+        self._refresh_active_models_summary()
+        self._refresh_all_badges()
+        prov_name = get_provider_display_name(provider)
+        self._log(f"🎯 تم تعيين [{prov_name}] {model_id} كنموذج افتراضي")
+
+    def _refresh_custom_models_list_ui(self, provider: str):
+        """تحديث قائمة عرض النماذج المخصصة المضافة من قبل المستخدم لمزود معين."""
+        frame = getattr(self, f"{provider}_custom_list_frame", None)
+        if not frame:
+            return
+
+        for w in frame.winfo_children():
+            w.destroy()
+
+        customs = get_custom_models(self.config, provider_filter=provider)
+        if not customs:
+            return
+
+        header = tk.Frame(frame, bg=COLORS["bg_card"])
+        header.pack(fill="x", pady=(4, 2))
+        tk.Label(
+            header,
+            text=f"📋 النماذج المخصصة المضافة لـ {get_provider_display_name(provider)} ({len(customs)}):",
+            font=("Segoe UI", 8, "bold"),
+            fg=COLORS["fg_dim"], bg=COLORS["bg_card"]
+        ).pack(side="left")
+
+        for item in customs:
+            m_id = item.get("id", "")
+            row = tk.Frame(frame, bg=COLORS["bg_input"], padx=8, pady=3)
+            row.pack(fill="x", pady=2)
+
+            tk.Label(
+                row, text=f"✨ {m_id}",
+                font=("Consolas", 8, "bold"),
+                fg=COLORS["fg"], bg=COLORS["bg_input"]
+            ).pack(side="left")
+
+            btn_del = tk.Button(
+                row, text="🗑️ حذف",
+                font=("Segoe UI", 7),
+                fg=COLORS["error"], bg=COLORS["bg_card"],
+                activeforeground=COLORS["bg"], activebackground=COLORS["error"],
+                relief="flat", padx=6, pady=1, cursor="hand2",
+                command=lambda mid=m_id, p=provider: self._delete_custom_model_action(p, mid)
+            )
+            btn_del.pack(side="right")
+
+            btn_select = tk.Button(
+                row, text="تحديد كافتراضي",
+                font=("Segoe UI", 7),
+                fg=COLORS["accent"], bg=COLORS["bg_card"],
+                relief="flat", padx=6, pady=1, cursor="hand2",
+                command=lambda mid=m_id, p=provider: self._set_model_as_default(p, mid)
+            )
+            btn_select.pack(side="right", padx=(0, 4))
+
+    def _prompt_add_custom_model_dialog(self, prompt_key: str):
+        """مربع حوار سريع لإضافة نموذج مخصص وتعيينه مباشرة للمهمة الحالية."""
+        res = simpledialog.askstring(
+            "إضافة نموذج مخصص",
+            "أدخل معرّف النموذج الجديد:\n"
+            "(مثال لـ OpenRouter: meta-llama/llama-3.3-70b-instruct أو anthropic/claude-3.7-sonnet)\n"
+            "(مثال لـ OpenAI: gpt-4.5-preview أو o1)\n"
+            "(مثال لـ Gemini: gemini-2.5-pro-preview-03-25):",
+            parent=self.root
+        )
+        if not res or not res.strip():
+            return
+
+        model_id = clean_model_id(res.strip()) or res.strip()
+        prov = detect_provider(model_id)
+
+        # إضافة لقائمة النماذج المخصصة
+        add_custom_model(self.config, prov, model_id)
+
+        # تعيينه للمهمة
+        self.config[f"{prompt_key}_model"] = f"{prov}:{model_id}"
+        save_config(self.config)
+
+        # تحديث القوائم والشارات
+        self._reload_all_model_comboboxes()
+        display_val = find_combobox_display_value(f"{prov}:{model_id}", config=self.config)
+        if prompt_key in self.prompt_tab_combos:
+            self.prompt_tab_combos[prompt_key].set(display_val)
+        if prompt_key in self.settings_prompt_combos:
+            self.settings_prompt_combos[prompt_key].set(display_val)
+
+        self._update_prompt_badge(prompt_key)
+        self._refresh_active_models_summary()
+        self._refresh_custom_models_list_ui(prov)
+
+        prov_name = get_provider_display_name(prov)
+        self._log(f"✨ تم تعيين نموذج جديد للمهمة ({prompt_key}): [{prov_name}] {model_id}")
+        messagebox.showinfo(
+            "تم تعيين النموذج بنجاح! ✨",
+            f"تمت إضافة وتعيين النموذج:\n[{prov_name}] {model_id}\n\nلهذه المهمة بنجاح!"
+        )
 
     def _test_model_for_prompt(self, prompt_key: str):
         """اختبار النموذج المحدد لمهمة معينة."""
@@ -729,15 +927,33 @@ class PDFStudyToolGUI:
         btn_test_g.pack(side="right")
 
         tk.Label(gemini_frame, text="النموذج الافتراضي لـ Gemini (اختر أو اكتب):", font=("Segoe UI", 9), fg=COLORS["fg_dim"], bg=COLORS["bg_card"]).pack(anchor="w", pady=(4, 2))
-        gemini_model_opts = get_model_combobox_list(include_default=False, provider_filter="gemini")
+        gemini_model_opts = get_model_combobox_list(include_default=False, provider_filter="gemini", config=self.config)
         self.gemini_model_combo = ttk.Combobox(
             gemini_frame, values=gemini_model_opts,
             font=("Segoe UI", 9)
         )
         self.gemini_model_combo.pack(fill="x", pady=(0, 4))
-        self.gemini_model_combo.set(find_combobox_display_value(self.config.get("gemini_model", "gemini-2.0-flash"), include_default=False, provider_filter="gemini"))
+        self.gemini_model_combo.set(find_combobox_display_value(self.config.get("gemini_model", "gemini-2.0-flash"), include_default=False, provider_filter="gemini", config=self.config))
         self.gemini_model_combo.bind("<<ComboboxSelected>>", lambda e: self._refresh_active_models_summary())
         self.gemini_model_combo.bind("<KeyRelease>", lambda e: self._refresh_active_models_summary())
+
+        # إضافة نموذج مخصص لـ Gemini
+        add_box_g = tk.Frame(gemini_frame, bg=COLORS["bg_input"], padx=10, pady=8)
+        add_box_g.pack(fill="x", pady=(6, 2))
+        tk.Label(add_box_g, text="➕ إضافة نموذج جديد لـ Gemini (مثال: gemini-2.5-pro-preview-03-25):", font=("Segoe UI", 8, "bold"), fg=COLORS["accent"], bg=COLORS["bg_input"]).pack(anchor="w", pady=(0, 3))
+        row_input_g = tk.Frame(add_box_g, bg=COLORS["bg_input"])
+        row_input_g.pack(fill="x")
+        self.entry_new_gemini_model = tk.Entry(row_input_g, font=("Consolas", 9), fg=COLORS["fg"], bg=COLORS["bg_card"], insertbackground=COLORS["accent"], relief="flat")
+        self.entry_new_gemini_model.pack(side="left", fill="x", expand=True, padx=(0, 6), ipady=2)
+        tk.Button(
+            row_input_g, text="➕ إضافة للقائمة",
+            font=("Segoe UI", 8, "bold"), fg=COLORS["bg"], bg=COLORS["accent"],
+            activeforeground=COLORS["bg"], activebackground=COLORS["accent_hover"],
+            relief="flat", padx=10, pady=2, cursor="hand2",
+            command=lambda: self._add_custom_model_action("gemini", self.entry_new_gemini_model, self.gemini_model_combo)
+        ).pack(side="right")
+        self.gemini_custom_list_frame = tk.Frame(gemini_frame, bg=COLORS["bg_card"])
+        self.gemini_custom_list_frame.pack(fill="x", pady=(2, 0))
 
         # ── 5. OpenAI ──
         self._settings_section(inner, "🔑 OpenAI")
@@ -783,15 +999,33 @@ class PDFStudyToolGUI:
         btn_test_o.pack(side="right")
 
         tk.Label(openai_frame, text="النموذج الافتراضي لـ OpenAI (اختر أو اكتب):", font=("Segoe UI", 9), fg=COLORS["fg_dim"], bg=COLORS["bg_card"]).pack(anchor="w", pady=(4, 2))
-        openai_model_opts = get_model_combobox_list(include_default=False, provider_filter="openai")
+        openai_model_opts = get_model_combobox_list(include_default=False, provider_filter="openai", config=self.config)
         self.openai_model_combo = ttk.Combobox(
             openai_frame, values=openai_model_opts,
             font=("Segoe UI", 9)
         )
         self.openai_model_combo.pack(fill="x", pady=(0, 4))
-        self.openai_model_combo.set(find_combobox_display_value(self.config.get("openai_model", "gpt-4o-mini"), include_default=False, provider_filter="openai"))
+        self.openai_model_combo.set(find_combobox_display_value(self.config.get("openai_model", "gpt-4o-mini"), include_default=False, provider_filter="openai", config=self.config))
         self.openai_model_combo.bind("<<ComboboxSelected>>", lambda e: self._refresh_active_models_summary())
         self.openai_model_combo.bind("<KeyRelease>", lambda e: self._refresh_active_models_summary())
+
+        # إضافة نموذج مخصص لـ OpenAI
+        add_box_o = tk.Frame(openai_frame, bg=COLORS["bg_input"], padx=10, pady=8)
+        add_box_o.pack(fill="x", pady=(6, 2))
+        tk.Label(add_box_o, text="➕ إضافة نموذج جديد لـ OpenAI (مثال: gpt-4.5-preview أو o1):", font=("Segoe UI", 8, "bold"), fg=COLORS["accent"], bg=COLORS["bg_input"]).pack(anchor="w", pady=(0, 3))
+        row_input_o = tk.Frame(add_box_o, bg=COLORS["bg_input"])
+        row_input_o.pack(fill="x")
+        self.entry_new_openai_model = tk.Entry(row_input_o, font=("Consolas", 9), fg=COLORS["fg"], bg=COLORS["bg_card"], insertbackground=COLORS["accent"], relief="flat")
+        self.entry_new_openai_model.pack(side="left", fill="x", expand=True, padx=(0, 6), ipady=2)
+        tk.Button(
+            row_input_o, text="➕ إضافة للقائمة",
+            font=("Segoe UI", 8, "bold"), fg=COLORS["bg"], bg=COLORS["accent"],
+            activeforeground=COLORS["bg"], activebackground=COLORS["accent_hover"],
+            relief="flat", padx=10, pady=2, cursor="hand2",
+            command=lambda: self._add_custom_model_action("openai", self.entry_new_openai_model, self.openai_model_combo)
+        ).pack(side="right")
+        self.openai_custom_list_frame = tk.Frame(openai_frame, bg=COLORS["bg_card"])
+        self.openai_custom_list_frame.pack(fill="x", pady=(2, 0))
 
         # ── 6. OpenRouter ──
         self._settings_section(inner, "🌐 OpenRouter")
@@ -836,16 +1070,89 @@ class PDFStudyToolGUI:
         )
         btn_test_r.pack(side="right")
 
-        tk.Label(openrouter_frame, text="النموذج الافتراضي لـ OpenRouter (اختر أو اكتب):", font=("Segoe UI", 9), fg=COLORS["fg_dim"], bg=COLORS["bg_card"]).pack(anchor="w", pady=(4, 2))
-        openrouter_model_opts = get_model_combobox_list(include_default=False, provider_filter="openrouter")
+        tk.Label(openrouter_frame, text="النموذج الافتراضي لـ OpenRouter (اختر أو أضف نموذجك):", font=("Segoe UI", 9, "bold"), fg=COLORS["fg"], bg=COLORS["bg_card"]).pack(anchor="w", pady=(4, 2))
+        openrouter_model_opts = get_model_combobox_list(include_default=False, provider_filter="openrouter", config=self.config)
         self.openrouter_model_combo = ttk.Combobox(
             openrouter_frame, values=openrouter_model_opts,
             font=("Segoe UI", 9)
         )
-        self.openrouter_model_combo.pack(fill="x", pady=(0, 4))
-        self.openrouter_model_combo.set(find_combobox_display_value(self.config.get("openrouter_model", "google/gemini-2.0-flash-001"), include_default=False, provider_filter="openrouter"))
+        self.openrouter_model_combo.pack(fill="x", pady=(0, 6))
+        self.openrouter_model_combo.set(find_combobox_display_value(self.config.get("openrouter_model", "google/gemini-2.0-flash-001"), include_default=False, provider_filter="openrouter", config=self.config))
         self.openrouter_model_combo.bind("<<ComboboxSelected>>", lambda e: self._refresh_active_models_summary())
         self.openrouter_model_combo.bind("<KeyRelease>", lambda e: self._refresh_active_models_summary())
+
+        # ── إطار إضافة نموذج جديد لـ OpenRouter ──
+        add_box_r = tk.Frame(openrouter_frame, bg=COLORS["bg_input"], padx=12, pady=10, highlightthickness=1, highlightbackground=COLORS["border"])
+        add_box_r.pack(fill="x", pady=(6, 4))
+
+        tk.Label(
+            add_box_r,
+            text="➕ إضافة نموذج جديد لـ OpenRouter:",
+            font=("Segoe UI", 9, "bold"),
+            fg=COLORS["accent"], bg=COLORS["bg_input"]
+        ).pack(anchor="w", pady=(0, 2))
+
+        tk.Label(
+            add_box_r,
+            text="اكتب أو الصق معرّف النموذج كما هو في OpenRouter (مثل: meta-llama/llama-3.3-70b-instruct):",
+            font=("Segoe UI", 8),
+            fg=COLORS["fg_dim"], bg=COLORS["bg_input"]
+        ).pack(anchor="w", pady=(0, 4))
+
+        input_row_r = tk.Frame(add_box_r, bg=COLORS["bg_input"])
+        input_row_r.pack(fill="x", pady=(0, 6))
+
+        self.entry_new_openrouter_model = tk.Entry(
+            input_row_r, font=("Consolas", 10),
+            fg=COLORS["fg"], bg=COLORS["bg_card"],
+            insertbackground=COLORS["accent"], relief="flat"
+        )
+        self.entry_new_openrouter_model.pack(side="left", fill="x", expand=True, padx=(0, 6), ipady=3)
+
+        btn_add_r = tk.Button(
+            input_row_r, text="➕ إضافة للقائمة",
+            font=("Segoe UI", 9, "bold"),
+            fg=COLORS["bg"], bg=COLORS["accent"],
+            activeforeground=COLORS["bg"], activebackground=COLORS["accent_hover"],
+            relief="flat", padx=12, pady=3, cursor="hand2",
+            command=lambda: self._add_custom_model_action("openrouter", self.entry_new_openrouter_model, self.openrouter_model_combo)
+        )
+        btn_add_r.pack(side="right")
+
+        btn_browse_r = tk.Button(
+            input_row_r, text="🌐 تصفح الموديلات",
+            font=("Segoe UI", 9),
+            fg=COLORS["fg"], bg=COLORS["bg_secondary"],
+            relief="flat", padx=10, pady=3, cursor="hand2",
+            command=lambda: webbrowser.open("https://openrouter.ai/models")
+        )
+        btn_browse_r.pack(side="right", padx=(0, 6))
+
+        # أمثلة شائعة يمكن النقر عليها
+        chips_frame_r = tk.Frame(add_box_r, bg=COLORS["bg_input"])
+        chips_frame_r.pack(fill="x", pady=(2, 0))
+
+        tk.Label(chips_frame_r, text="💡 أمثلة شائعة:", font=("Segoe UI", 8), fg=COLORS["fg_dim"], bg=COLORS["bg_input"]).pack(side="left", padx=(0, 4))
+
+        for chip_name, chip_id in [
+            ("Llama 3.3 70B", "meta-llama/llama-3.3-70b-instruct"),
+            ("Claude 3.7 Sonnet", "anthropic/claude-3.7-sonnet"),
+            ("DeepSeek R1", "deepseek/deepseek-r1"),
+            ("Mistral Large", "mistralai/mistral-large-2411"),
+            ("Qwen 2.5 72B", "qwen/qwen-2.5-72b-instruct"),
+        ]:
+            c_btn = tk.Button(
+                chips_frame_r, text=chip_name,
+                font=("Segoe UI", 8),
+                fg=COLORS["fg"], bg=COLORS["bg_card"],
+                relief="flat", padx=6, pady=1, cursor="hand2",
+                command=lambda cid=chip_id: self._fill_custom_model_input(self.entry_new_openrouter_model, cid)
+            )
+            c_btn.pack(side="left", padx=2)
+
+        # قائمة النماذج المخصصة المضافة لـ OpenRouter
+        self.openrouter_custom_list_frame = tk.Frame(openrouter_frame, bg=COLORS["bg_card"])
+        self.openrouter_custom_list_frame.pack(fill="x", pady=(4, 0))
 
         # ── 7. أسماء الملفات ──
         self._settings_section(inner, "📁 أسماء الملفات الناتجة")
@@ -951,10 +1258,18 @@ class PDFStudyToolGUI:
         # حفظ إعدادات تصدير الفلاش كاردز
         self.config["flashcard_export_enabled"] = self.flashcard_export_var.get()
 
-        for key, entry in self.file_entries.items():
-            self.config[key] = entry.get().strip()
+        # فحص إن كانت النماذج المدخلة مخصصة لحفظها في القائمة
+        for prov, m_field in [("gemini", "gemini_model"), ("openai", "openai_model"), ("openrouter", "openrouter_model")]:
+            m_val = self.config.get(m_field, "")
+            if m_val:
+                std_ids = [m["id"].lower() for m in AVAILABLE_MODELS.get(prov, [])]
+                if m_val.lower() not in std_ids:
+                    add_custom_model(self.config, prov, m_val)
 
         save_config(self.config)
+        self._reload_all_model_comboboxes()
+        for p in ["gemini", "openai", "openrouter"]:
+            self._refresh_custom_models_list_ui(p)
         self._refresh_all_badges()
         self._refresh_active_models_summary()
         self._log("✅ تم حفظ جميع الإعدادات وتحديث النماذج بنجاح")

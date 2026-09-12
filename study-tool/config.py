@@ -29,10 +29,16 @@ AVAILABLE_MODELS = {
         {"id": "gpt-4-turbo", "name": "GPT-4 Turbo", "desc": "النموذج القوي التقليدي", "vision": True},
     ],
     "openrouter": [
-        {"id": "google/gemini-2.0-flash-001", "name": "Gemini 2.0 Flash (OpenRouter)", "desc": "عبر بوابة OpenRouter", "vision": True},
-        {"id": "anthropic/claude-3.5-sonnet", "name": "Claude 3.5 Sonnet (OpenRouter)", "desc": "أعلى جودة لغوية وتحليلية", "vision": True},
+        {"id": "google/gemini-2.0-flash-001", "name": "Gemini 2.0 Flash (OpenRouter)", "desc": "سريع جداً وبصري واقتصادي (موصى به)", "vision": True},
+        {"id": "anthropic/claude-3.7-sonnet", "name": "Claude 3.7 Sonnet (OpenRouter)", "desc": "الأحدث والأعلى ذكاءً وتحليلاً", "vision": True},
+        {"id": "anthropic/claude-3.5-sonnet", "name": "Claude 3.5 Sonnet (OpenRouter)", "desc": "أعلى جودة لغوية ومستقر", "vision": True},
+        {"id": "deepseek/deepseek-r1", "name": "DeepSeek R1 (OpenRouter)", "desc": "تفكير واستنتاج منطقي قوي", "vision": False},
+        {"id": "deepseek/deepseek-chat", "name": "DeepSeek V3 (OpenRouter)", "desc": "سريع وعالي الدقة واقتصادي جداً", "vision": False},
+        {"id": "meta-llama/llama-3.3-70b-instruct", "name": "Llama 3.3 70B (OpenRouter)", "desc": "أقوى نموذج مفتوح من Meta", "vision": False},
         {"id": "openai/gpt-4o-mini", "name": "GPT-4o Mini (OpenRouter)", "desc": "سريع واقتصادي", "vision": True},
-        {"id": "deepseek/deepseek-r1", "name": "DeepSeek R1 (OpenRouter)", "desc": "تفكير منطقي استثنائي", "vision": False},
+        {"id": "openai/gpt-4o", "name": "GPT-4o (OpenRouter)", "desc": "النموذج الرائد من OpenAI", "vision": True},
+        {"id": "qwen/qwen-2.5-72b-instruct", "name": "Qwen 2.5 72B (OpenRouter)", "desc": "متعدد اللغات وممتاز للمصطلحات", "vision": False},
+        {"id": "mistralai/mistral-large-2411", "name": "Mistral Large (OpenRouter)", "desc": "النموذج الأوروبي الرائد", "vision": False},
     ]
 }
 
@@ -54,6 +60,9 @@ DEFAULT_CONFIG = {
     # مفتاح وموديل OpenRouter
     "openrouter_api_key": "",
     "openrouter_model": "google/gemini-2.0-flash-001",
+
+    # قائمة النماذج المخصصة المضافة يدوياً من قبل المستخدم
+    "custom_models": [],
 
     # موديل مخصص لكل مهمة (اختياري — إذا فارغ يستخدم الافتراضي)
     # يدعم الاختيار من القائمة أو كتابة اسم الموديل مباشرة
@@ -158,17 +167,63 @@ def clean_model_id(model_str: str) -> str:
     val = model_str.strip()
     if "⭐" in val or "الافتراضي" in val or "default" in val.lower():
         return ""
+    if "✨" in val:
+        val = val.replace("✨", "").strip()
     if val.startswith("[") and "]" in val:
         val = val.split("]", 1)[1].strip()
-    if ":" in val and not "/" in val.split(":", 1)[0]:
+    if ":" in val and "/" not in val.split(":", 1)[0]:
         val = val.split(":", 1)[1].strip()
     if " - " in val:
         val = val.split(" - ", 1)[0].strip()
-    return val
+    if " (" in val and val.endswith(")"):
+        val = val.split(" (", 1)[0].strip()
+    return val.strip()
 
 
-def get_model_combobox_list(include_default: bool = True, provider_filter: str = None) -> list:
-    """توليد قائمة خيارات جاهزة ومنسقة لـ ttk.Combobox."""
+def get_custom_models(config: dict = None, provider_filter: str = None) -> list:
+    """إرجاع قائمة النماذج المخصصة المضافة من قبل المستخدم."""
+    if not config or not isinstance(config, dict):
+        return []
+    models = config.get("custom_models", [])
+    if provider_filter:
+        return [m for m in models if m.get("provider") == provider_filter]
+    return models
+
+
+def add_custom_model(config: dict, provider: str, model_id: str, desc: str = "مخصص") -> bool:
+    """إضافة نموذج مخصص لقائمة النماذج وحفظه في الإعدادات."""
+    clean_id = clean_model_id(model_id) or model_id.strip()
+    if not clean_id:
+        return False
+
+    customs = config.setdefault("custom_models", [])
+    for item in customs:
+        if item.get("id") == clean_id:
+            return True  # موجود مسبقاً
+
+    customs.append({
+        "provider": provider,
+        "id": clean_id,
+        "desc": desc or "مخصص",
+    })
+    save_config(config)
+    return True
+
+
+def remove_custom_model(config: dict, model_id: str) -> bool:
+    """حذف نموذج مخصص من الإعدادات."""
+    clean_id = clean_model_id(model_id) or model_id.strip()
+    customs = config.get("custom_models", [])
+    before_len = len(customs)
+    config["custom_models"] = [m for m in customs if m.get("id") != clean_id]
+    if len(config["custom_models"]) != before_len:
+        save_config(config)
+        return True
+    return False
+
+
+def get_model_combobox_list(include_default: bool = True, provider_filter: str = None, config: dict = None) -> list:
+    """توليد قائمة خيارات جاهزة ومنسقة لـ ttk.Combobox تشمل النماذج الجاهزة والمخصصة."""
     options = []
     if include_default:
         options.append("⭐ الافتراضي (حسب إعدادات المزود العام)")
@@ -176,8 +231,15 @@ def get_model_combobox_list(include_default: bool = True, provider_filter: str =
     providers = [provider_filter] if provider_filter else ["gemini", "openai", "openrouter"]
     for prov in providers:
         tag = prov.capitalize()
+        # النماذج الأساسية
         for item in AVAILABLE_MODELS.get(prov, []):
             options.append(f"[{tag}] {item['id']} - {item['desc']}")
+        # النماذج المخصصة المضافة
+        if config:
+            for item in get_custom_models(config, provider_filter=prov):
+                opt = f"[{tag}] ✨ {item['id']} ({item.get('desc', 'مخصص')})"
+                if opt not in options:
+                    options.append(opt)
     return options
 
 
@@ -219,7 +281,7 @@ def resolve_effective_model(config: dict, prompt_key: str) -> tuple:
     return prov, model, is_custom, has_key
 
 
-def find_combobox_display_value(model_str: str, include_default: bool = True, provider_filter: str = None) -> str:
+def find_combobox_display_value(model_str: str, include_default: bool = True, provider_filter: str = None, config: dict = None) -> str:
     """
     إيجاد النص المعروض في Combobox المطابق لقيمة محفوظة،
     أو إرجاع القيمة المخصصة إذا لم تكن ضمن النماذج الجاهزة.
@@ -234,9 +296,15 @@ def find_combobox_display_value(model_str: str, include_default: bool = True, pr
     providers = [provider_filter] if provider_filter else ["gemini", "openai", "openrouter"]
     for prov in providers:
         tag = prov.capitalize()
+        # فحص النماذج القياسية
         for item in AVAILABLE_MODELS.get(prov, []):
             if item["id"].lower() == clean_id.lower():
                 return f"[{tag}] {item['id']} - {item['desc']}"
+        # فحص النماذج المخصصة
+        if config:
+            for item in get_custom_models(config, provider_filter=prov):
+                if item["id"].lower() == clean_id.lower():
+                    return f"[{tag}] ✨ {item['id']} ({item.get('desc', 'مخصص')})"
 
-    # إذا لم يطابق نموذجاً مسجلاً، يُرجع كنموذج مخصص
-    return model_str
+    # إذا لم يطابق نموذجاً مسجلاً، يُرجع كمعرف نظيف
+    return clean_id
