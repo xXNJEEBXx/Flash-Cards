@@ -1159,9 +1159,11 @@ class PDFStudyToolGUI:
         """Thread المعالجة الفعلية."""
         try:
             # ── 1. استخراج المحتوى (PDF أو PowerPoint) ──
-            if is_powerpoint_file(self.pdf_path):
-                self._update_status("📊 جاري فحص وتحويل عرض PowerPoint...", 3)
-                self._log("📊 تم اكتشاف ملف PowerPoint — محاولة التحويل عبر PowerPoint COM...")
+            is_ppt = is_powerpoint_file(self.pdf_path)
+            converted_pdf = None
+            if is_ppt:
+                self._update_status("📊 جاري فحص وتحويل عرض PowerPoint إلى PDF...", 3)
+                self._log("📊 تم اكتشاف عرض PowerPoint — جاري التحويل فائق الدقة إلى PDF عبر PowerPoint...")
                 converted_pdf = convert_pptx_to_pdf(self.pdf_path)
                 if converted_pdf:
                     self._log("✅ تم تحويل PowerPoint إلى PDF بنجاح بدقة 100%")
@@ -1233,11 +1235,40 @@ class PDFStudyToolGUI:
 
             created = generate_all_documents(ai_results, pdf_name, output_folder, file_names)
 
+            # إذا كان الملف الأصلي PowerPoint، نحفظ نسخة PDF المحولة داخل مجلد المخرجات مع ملفات Word
+            if is_ppt:
+                import shutil
+                target_pdf_path = os.path.join(output_folder, f"{pdf_name}.pdf")
+                if converted_pdf and os.path.exists(converted_pdf):
+                    try:
+                        if os.path.abspath(converted_pdf) != os.path.abspath(target_pdf_path):
+                            shutil.copy2(converted_pdf, target_pdf_path)
+                            # تنظيف النسخة المؤقتة إن كانت تحمل لاحقة _converted.pdf
+                            if converted_pdf.endswith("_converted.pdf"):
+                                try:
+                                    os.remove(converted_pdf)
+                                except Exception:
+                                    pass
+                        created.append(target_pdf_path)
+                    except Exception as copy_err:
+                        self._log(f"⚠️ تعذر نقل ملف PDF إلى مجلد المخرجات: {copy_err}")
+                else:
+                    # محاولة إنشاء PDF مباشرة في مجلد المخرجات لو لم يكن متوفراً
+                    try:
+                        new_pdf = convert_pptx_to_pdf(self.pdf_path, output_pdf_path=target_pdf_path)
+                        if new_pdf and os.path.exists(new_pdf):
+                            created.append(new_pdf)
+                    except Exception as conv_err:
+                        self._log(f"⚠️ تعذر إنشاء ملف PDF من PowerPoint: {conv_err}")
+
             self.output_folder_path = output_folder
-            self._log(f"📝 تم إنشاء {len(created)} ملفات Word")
+            self._log(f"📝 تم إنشاء {len(created)} ملفات في المجلد:")
 
             for f in created:
-                self._log(f"   📄 {os.path.basename(f)}")
+                ext = os.path.splitext(f)[1].lower()
+                icon = "📑" if ext == ".pdf" else "📄"
+                extra = " (ملف PDF المحول من PowerPoint)" if ext == ".pdf" else ""
+                self._log(f"   {icon} {os.path.basename(f)}{extra}")
 
             # ── 4. تصدير الفلاش كاردز ──
             if self.config.get("flashcard_export_enabled", False):
