@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { translateCard } from '../../services/translationService';
 import './StealthStudyMode.css';
 
 const StealthStudyMode = ({
@@ -28,15 +29,19 @@ const StealthStudyMode = ({
     }
   });
 
-  const [documentTitle, setDocumentTitle] = useState(() => {
-    const raw = deck?.title || 'Lecture_Notes';
-    return `${raw.replace(/\s+/g, '_')}_Slides.pdf`;
-  });
-
+  const [documentTitle, setDocumentTitle] = useState(() => deck?.title || 'Lecture Slides');
   const [isRevealed, setIsRevealed] = useState(false);
   const [showNotesSidebar, setShowNotesSidebar] = useState(true);
   const [zoomLevel, setZoomLevel] = useState(100);
   const [showMenu, setShowMenu] = useState(false);
+
+  // نظام الترجمة في وضع التخفي
+  const [showTranslation, setShowTranslation] = useState(false);
+  const [translatedQuestion, setTranslatedQuestion] = useState('');
+  const [translatedAnswer, setTranslatedAnswer] = useState('');
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translationsCache, setTranslationsCache] = useState({});
+
   const fileInputRef = useRef(null);
 
   const currentCard = cards[currentIndex] || null;
@@ -91,6 +96,62 @@ const StealthStudyMode = ({
       onToggleKnown(currentCard.id);
     }
   }, [currentCard, onToggleKnown]);
+
+  // تبديل وجلب الترجمة للبطاقة الحالية
+  const handleToggleTranslate = useCallback(async () => {
+    if (!currentCard) return;
+    const next = !showTranslation;
+    setShowTranslation(next);
+    if (next && !translationsCache[currentCard.id]) {
+      setIsTranslating(true);
+      try {
+        const res = await translateCard(currentCard);
+        if (res) {
+          setTranslatedQuestion(res.translatedQuestion || '');
+          setTranslatedAnswer(res.translatedAnswer || '');
+          setTranslationsCache((prev) => ({
+            ...prev,
+            [currentCard.id]: {
+              question: res.translatedQuestion || '',
+              answer: res.translatedAnswer || '',
+            },
+          }));
+        }
+      } catch (err) {
+        console.error('Translation error in stealth mode:', err);
+      } finally {
+        setIsTranslating(false);
+      }
+    }
+  }, [currentCard, showTranslation, translationsCache]);
+
+  // تحديث الترجمة تلقائياً عند تغيير البطاقة إذا كانت الترجمة مفعّلة
+  useEffect(() => {
+    if (currentCard && showTranslation) {
+      if (translationsCache[currentCard.id]) {
+        setTranslatedQuestion(translationsCache[currentCard.id].question);
+        setTranslatedAnswer(translationsCache[currentCard.id].answer);
+      } else {
+        setIsTranslating(true);
+        translateCard(currentCard)
+          .then((res) => {
+            if (res) {
+              setTranslatedQuestion(res.translatedQuestion || '');
+              setTranslatedAnswer(res.translatedAnswer || '');
+              setTranslationsCache((prev) => ({
+                ...prev,
+                [currentCard.id]: {
+                  question: res.translatedQuestion || '',
+                  answer: res.translatedAnswer || '',
+                },
+              }));
+            }
+          })
+          .catch((err) => console.error(err))
+          .finally(() => setIsTranslating(false));
+      }
+    }
+  }, [currentCard?.id, showTranslation, translationsCache]);
 
   // اختصارات لوحة المفاتيح المتخفية
   useEffect(() => {
@@ -470,6 +531,28 @@ const StealthStudyMode = ({
                 {/* السؤال */}
                 <h4 className="sticky-note-question">{currentCard.question}</h4>
 
+                {/* ترجمة السؤال العربية إذا كانت مفعّلة */}
+                {showTranslation && translatedQuestion && (
+                  <div
+                    style={{
+                      background: 'rgba(99, 102, 241, 0.08)',
+                      borderRight: '3px solid #6366f1',
+                      padding: '8px 12px',
+                      borderRadius: '4px',
+                      fontSize: '13px',
+                      color: '#3730a3',
+                      direction: 'rtl',
+                      textAlign: 'right',
+                      marginBottom: '10px',
+                    }}
+                  >
+                    <span style={{ fontWeight: 'bold', fontSize: '11px', display: 'block', color: '#6366f1' }}>
+                      🌐 ترجمة السؤال:
+                    </span>
+                    {translatedQuestion}
+                  </div>
+                )}
+
                 {/* الجواب يظهر كرد أو شرح تفصيلي للملاحظة */}
                 <div className="sticky-note-reply">
                   <div
@@ -483,7 +566,29 @@ const StealthStudyMode = ({
                   </div>
 
                   {isRevealed ? (
-                    <p className="reply-text">{currentCard.answer}</p>
+                    <>
+                      <p className="reply-text">{currentCard.answer}</p>
+                      {showTranslation && translatedAnswer && (
+                        <div
+                          style={{
+                            background: 'rgba(99, 102, 241, 0.08)',
+                            borderRight: '3px solid #6366f1',
+                            padding: '8px 12px',
+                            borderRadius: '4px',
+                            fontSize: '13px',
+                            color: '#3730a3',
+                            direction: 'rtl',
+                            textAlign: 'right',
+                            marginTop: '10px',
+                          }}
+                        >
+                          <span style={{ fontWeight: 'bold', fontSize: '11px', display: 'block', color: '#6366f1' }}>
+                            🌐 ترجمة الشرح:
+                          </span>
+                          {translatedAnswer}
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <div
                       className="reply-hidden-placeholder"
@@ -494,7 +599,7 @@ const StealthStudyMode = ({
                   )}
                 </div>
 
-                {/* أزرار الحالة: تم الفهم والتراجع فقط */}
+                {/* أزرار الحالة: تم الفهم والتراجع والترجمة */}
                 <div className="sticky-note-actions">
                   <button
                     className={`note-action-btn ${currentCard.known ? 'active-known' : ''}`}
@@ -503,6 +608,15 @@ const StealthStudyMode = ({
                   >
                     <span>✓</span>
                     <span>{currentCard.known ? 'معروف ومتقن' : 'تم الفهم'}</span>
+                  </button>
+
+                  <button
+                    className={`note-action-btn ${showTranslation ? 'active-translate' : ''}`}
+                    onClick={handleToggleTranslate}
+                    title="ترجمة الملاحظة للعربية (اختصار T)"
+                  >
+                    <span>{isTranslating ? '⏳' : '🌐'}</span>
+                    <span>{isTranslating ? 'جاري الترجمة...' : showTranslation ? 'إخفاء الترجمة' : 'ترجمة'}</span>
                   </button>
 
                   <button

@@ -11,6 +11,7 @@ import DeckForm from './components/Forms/DeckForm';
 import CardForm from './components/Forms/CardForm';
 import StudyMode from './components/StudyMode/StudyMode';
 import { confirmDeleteWithPassword } from './utils/passwordProtection';
+import { translateCard, mergeTranslationWithOriginal } from './services/translationService';
 // Removed debug components for clean production interface
 import { ThemeProvider } from './context/ThemeContext';
 import './App.css';
@@ -324,9 +325,9 @@ const AppContent = ({ sidebarOpen, setSidebarOpen }) => {
   );
 };
 
-// Helper component to list cards of a deck with edit/delete functionality
+// Helper component to list cards of a deck with edit/delete/translate functionality
 const CardList = ({ deckId, onEditCard }) => {
-  const { decks, deleteCard } = React.useContext(CardsContext);
+  const { decks, deleteCard, editCard } = React.useContext(CardsContext);
   const deck = decks.find(d => d.id === deckId);
 
   if (!deck) return <div>Deck not found</div>;
@@ -342,35 +343,116 @@ const CardList = ({ deckId, onEditCard }) => {
   return (
     <div className="card-list">
       {deck.cards.map(card => (
-        <div key={card.id} className="card-list-item">
-          <div className="card-content">
-            <div className="card-question">
-              <strong>Q:</strong> {card.question}
-            </div>
-            <div className="card-answer">
-              <strong>A:</strong> {card.answer}
-            </div>
-          </div>
-          <div className="card-actions">
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={() => onEditCard(card.id)}
-            >
-              Edit
-            </button>
-            <button
-              className="btn btn-danger btn-sm"
-              onClick={() => {
-                if (confirmDeleteWithPassword('البطاقة', card.question.substring(0, 30) + '...')) {
-                  deleteCard(deckId, card.id);
-                }
-              }}
-            >
-              Delete
-            </button>
-          </div>
-        </div>
+        <CardListItem
+          key={card.id}
+          card={card}
+          deckId={deckId}
+          onEditCard={onEditCard}
+          deleteCard={deleteCard}
+          editCard={editCard}
+        />
       ))}
+    </div>
+  );
+};
+
+// Item component for individual card row
+const CardListItem = ({ card, deckId, onEditCard, deleteCard, editCard }) => {
+  const [showTrans, setShowTrans] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const [trans, setTrans] = React.useState(null);
+
+  const handleTranslate = async () => {
+    if (showTrans) {
+      setShowTrans(false);
+      return;
+    }
+    if (trans) {
+      setShowTrans(true);
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await translateCard(card);
+      if (res) {
+        setTrans(res);
+        setShowTrans(true);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!trans) return;
+    try {
+      const updatedQ = mergeTranslationWithOriginal(card.question, trans.translatedQuestion);
+      const updatedA = mergeTranslationWithOriginal(card.answer, trans.translatedAnswer);
+      await editCard(deckId, { ...card, question: updatedQ, answer: updatedA });
+      alert('✅ تم حفظ الترجمة في البطاقة بنجاح!');
+    } catch (e) {
+      alert('فشل حفظ الترجمة');
+    }
+  };
+
+  return (
+    <div className="card-list-item">
+      <div className="card-content">
+        <div className="card-question">
+          <strong>Q:</strong> {card.question}
+        </div>
+        <div className="card-answer">
+          <strong>A:</strong> {card.answer}
+        </div>
+        {showTrans && trans && (
+          <div className="card-translation-box" style={{ marginTop: '10px' }} dir="rtl">
+            <div className="translation-header">
+              <span className="translation-badge">🌐 الترجمة العربية:</span>
+              <button className="btn-save-translation" onClick={handleSave}>
+                💾 حفظ في البطاقة
+              </button>
+            </div>
+            <div style={{ fontSize: '0.95rem', marginBottom: '6px', color: '#1e1b4b' }}>
+              <strong>السؤال:</strong> {trans.translatedQuestion}
+            </div>
+            <div style={{ fontSize: '0.95rem', color: '#1e1b4b' }}>
+              <strong>الجواب:</strong> {trans.translatedAnswer}
+            </div>
+          </div>
+        )}
+      </div>
+      <div className="card-actions">
+        <button
+          className={`btn btn-secondary btn-sm ${loading ? 'disabled' : ''}`}
+          onClick={handleTranslate}
+          title="ترجمة البطاقة إلى العربية"
+          style={{
+            background: showTrans ? '#6366f1' : undefined,
+            color: showTrans ? '#fff' : undefined,
+            borderColor: showTrans ? '#6366f1' : undefined
+          }}
+        >
+          {loading ? '⏳' : '🌐'} {showTrans ? 'إخفاء' : 'ترجمة'}
+        </button>
+        <button
+          className="btn btn-secondary btn-sm"
+          onClick={() => onEditCard(card.id)}
+        >
+          Edit
+        </button>
+        <button
+          className="btn btn-danger btn-sm"
+          onClick={() => {
+            if (confirmDeleteWithPassword('البطاقة', card.question.substring(0, 30) + '...')) {
+              deleteCard(deckId, card.id);
+            }
+          }}
+        >
+          Delete
+        </button>
+      </div>
     </div>
   );
 };

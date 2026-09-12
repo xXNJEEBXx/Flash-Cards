@@ -198,6 +198,30 @@
   box-shadow: 0 6px 20px rgba(253, 121, 168, 0.4);
 }
 
+/* زر الترجمة الفورية */
+.btn-translate {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  border-color: #6366f1;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+}
+
+.btn-translate:hover {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+}
+
+.btn-translate.active {
+  background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.4);
+}
+
+.btn-translate.loading {
+  opacity: 0.8;
+  cursor: wait;
+}
+
 /* تحسين التخطيط للشاشات الصغيرة */
 @media (max-width: 768px) {
   .card-area {

@@ -3,6 +3,7 @@ import { CardsContext } from '../../context/CardsContext';
 import Card from '../Card/Card';
 import StealthStudyMode from './StealthStudyMode';
 import { settingsAPI, cardsAPI } from '../../services/apiService';
+import { translateCard, mergeTranslationWithOriginal } from '../../services/translationService';
 import './StudyMode.css';
 import './smart-mode.css';
 
@@ -357,6 +358,106 @@ const StudyMode = ({ deckId, onBack }) => {
             });
         }
     }, [shuffleMode, currentDeck, smartModeEnabled, reviewMode, unmastered, hideMasteredCards]);
+
+    // =========================================================================
+    // نظام ترجمة البطاقات للعربية (يجب تعريفه قبل أي return مشروط)
+    // =========================================================================
+    const [cardTranslations, setCardTranslations] = useState({});
+    const [showTranslation, setShowTranslation] = useState(false);
+    const [isTranslating, setIsTranslating] = useState(false);
+
+    // البطاقة الحالية النشطة
+    const activeCurrentCard = cards && cards.length > 0
+        ? cards[Math.min(currentCardIndex, cards.length - 1)]
+        : (currentDeck?.cards?.[0] || null);
+
+    // ترجمة البطاقة الحالية
+    const handleToggleTranslate = async () => {
+        if (!activeCurrentCard) return;
+        const nextShow = !showTranslation;
+        setShowTranslation(nextShow);
+
+        if (nextShow && !cardTranslations[activeCurrentCard.id]) {
+            setIsTranslating(true);
+            try {
+                const res = await translateCard(activeCurrentCard);
+                if (res) {
+                    setCardTranslations(prev => ({
+                        ...prev,
+                        [activeCurrentCard.id]: {
+                            question: res.translatedQuestion,
+                            answer: res.translatedAnswer
+                        }
+                    }));
+                }
+            } catch (err) {
+                console.error('Translation error:', err);
+            } finally {
+                setIsTranslating(false);
+            }
+        }
+    };
+
+    // حفظ الترجمة نهائياً في البطاقة
+    const handleSaveTranslation = async (tQuestion, tAnswer) => {
+        if (!activeCurrentCard || !currentDeck) return;
+        const trans = cardTranslations[activeCurrentCard.id] || { question: tQuestion, answer: tAnswer };
+        if (!trans.question && !trans.answer) return;
+
+        const updatedQ = mergeTranslationWithOriginal(activeCurrentCard.question, trans.question);
+        const updatedA = mergeTranslationWithOriginal(activeCurrentCard.answer, trans.answer);
+
+        try {
+            await editCard(currentDeck.id, {
+                ...activeCurrentCard,
+                question: updatedQ,
+                answer: updatedA
+            });
+            alert('✅ تم حفظ الترجمة في البطاقة بنجاح!');
+        } catch (err) {
+            console.error('Failed to save translation to card:', err);
+            alert('فشل حفظ الترجمة في البطاقة');
+        }
+    };
+
+    // جلب الترجمة تلقائياً للبطاقة الحالية إذا كان خيار الترجمة مفعلاً
+    useEffect(() => {
+        if (showTranslation && activeCurrentCard && !cardTranslations[activeCurrentCard.id]) {
+            let isMounted = true;
+            setIsTranslating(true);
+            translateCard(activeCurrentCard).then(res => {
+                if (isMounted && res) {
+                    setCardTranslations(prev => ({
+                        ...prev,
+                        [activeCurrentCard.id]: {
+                            question: res.translatedQuestion,
+                            answer: res.translatedAnswer
+                        }
+                    }));
+                }
+            }).catch(err => {
+                console.error('Auto-translate error:', err);
+            }).finally(() => {
+                if (isMounted) setIsTranslating(false);
+            });
+            return () => { isMounted = false; };
+        }
+    }, [activeCurrentCard?.id, showTranslation, cardTranslations]);
+
+    // اختصار لوحة المفاتيح: T للترجمة
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (['input', 'textarea'].includes(e.target?.tagName?.toLowerCase())) {
+                return;
+            }
+            if (e.key === 't' || e.key === 'T' || e.key === 'ف') {
+                handleToggleTranslate();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [activeCurrentCard, showTranslation, cardTranslations]);
 
     if (!currentDeck) {
         return <div>Loading...</div>;
@@ -824,6 +925,12 @@ const StudyMode = ({ deckId, onBack }) => {
                             card={currentCard}
                             onToggleKnown={handleToggleKnown}
                             inStudyMode={true}
+                            showTranslation={showTranslation}
+                            translatedQuestion={cardTranslations[currentCard?.id]?.question}
+                            translatedAnswer={cardTranslations[currentCard?.id]?.answer}
+                            isTranslating={isTranslating}
+                            onToggleTranslation={handleToggleTranslate}
+                            onSaveTranslation={handleSaveTranslation}
                         />
                     </div>
 
@@ -848,6 +955,15 @@ const StudyMode = ({ deckId, onBack }) => {
                 >
                     <span className="btn-icon">✅</span>
                     <span className="btn-text">Mark as Known</span>
+                </button>
+
+                <button
+                    className={`btn btn-translate ${showTranslation ? 'active' : ''} ${isTranslating ? 'loading' : ''}`}
+                    onClick={handleToggleTranslate}
+                    title="ترجمة السؤال والإجابة إلى العربية (اختصار: T)"
+                >
+                    <span className="btn-icon">{isTranslating ? '⏳' : '🌐'}</span>
+                    <span className="btn-text">{isTranslating ? 'جاري الترجمة...' : showTranslation ? 'إخفاء الترجمة' : 'ترجمة البطاقة'}</span>
                 </button>
 
                 <button
