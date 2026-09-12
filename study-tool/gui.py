@@ -18,10 +18,18 @@ _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 if _SCRIPT_DIR not in sys.path:
     sys.path.insert(0, _SCRIPT_DIR)
 
-from config import load_config, save_config, get_api_key, get_model, CONFIG_FILE
+from config import (
+    load_config, save_config, get_api_key, get_model, CONFIG_FILE,
+    AVAILABLE_MODELS, get_provider_display_name, detect_provider,
+    clean_model_id, get_model_combobox_list, parse_model_choice,
+    resolve_effective_model, find_combobox_display_value
+)
 from pdf_extractor import extract_text_from_pdf, get_pdf_info
 from pptx_extractor import is_powerpoint_file, convert_pptx_to_pdf, extract_text_and_visuals_from_pptx, get_pptx_info
-from ai_processor import AIProcessor, PROMPT_1_TRANSLATION, PROMPT_2_SIMPLIFIED, PROMPT_3_FLASHCARDS
+from ai_processor import (
+    AIProcessor, PROMPT_1_TRANSLATION, PROMPT_2_SIMPLIFIED, PROMPT_3_FLASHCARDS,
+    test_connection
+)
 from word_generator import generate_all_documents
 from flashcard_exporter import export_to_flashcards, get_existing_folders
 
@@ -87,8 +95,15 @@ class PDFStudyToolGUI:
         self.is_processing = False
         self.pages_data = None
 
+        self.prompt_tab_combos = {}
+        self.prompt_tab_badges = {}
+        self.settings_prompt_combos = {}
+        self.settings_prompt_badges = {}
+
         self._build_window()
         self._build_ui()
+        self._refresh_all_badges()
+        self._refresh_active_models_summary()
 
         if self.pdf_path:
             self._load_pdf_info()
@@ -279,6 +294,53 @@ class PDFStudyToolGUI:
             )
             desc_label.pack(fill="x", pady=(0, 6))
 
+            # ── شريط اختيار النموذج للمهمة ──
+            model_bar = tk.Frame(tab_frame, bg=COLORS["bg_card"], padx=10, pady=6)
+            model_bar.pack(fill="x", pady=(0, 6))
+
+            tk.Label(
+                model_bar, text="🤖 النموذج لهذه المهمة:",
+                font=("Segoe UI", 9, "bold"),
+                fg=COLORS["accent"], bg=COLORS["bg_card"],
+            ).pack(side="left", padx=(0, 6))
+
+            model_combo = ttk.Combobox(
+                model_bar,
+                values=get_model_combobox_list(include_default=True),
+                font=("Segoe UI", 9),
+                width=38,
+            )
+            model_combo.pack(side="left", padx=(0, 8))
+
+            init_val = find_combobox_display_value(self.config.get(f"{key}_model", ""))
+            model_combo.set(init_val)
+            self.prompt_tab_combos[key] = model_combo
+
+            # Badge
+            badge_lbl = tk.Label(
+                model_bar, text="", font=("Segoe UI", 8, "bold"),
+                bg=COLORS["bg_card"], cursor="hand2"
+            )
+            badge_lbl.pack(side="left", padx=(0, 6))
+            badge_lbl.bind("<Button-1>", lambda e: self._switch_tab(1))
+            self.prompt_tab_badges[key] = badge_lbl
+
+            # Test button
+            btn_test = tk.Button(
+                model_bar, text="⚡ فحص",
+                font=("Segoe UI", 8, "bold"),
+                fg=COLORS["fg"], bg=COLORS["bg_input"],
+                activeforeground=COLORS["accent"], activebackground=COLORS["bg_secondary"],
+                relief="flat", padx=8, pady=2,
+                cursor="hand2",
+                command=lambda k=key: self._test_model_for_prompt(k)
+            )
+            btn_test.pack(side="right")
+
+            # Bindings
+            model_combo.bind("<<ComboboxSelected>>", lambda e, k=key, cb=model_combo: self._on_prompt_model_change(k, cb.get(), "prompts_tab"))
+            model_combo.bind("<KeyRelease>", lambda e, k=key, cb=model_combo: self._on_prompt_model_change(k, cb.get(), "prompts_tab"))
+
             # محرر النص
             editor = scrolledtext.ScrolledText(
                 tab_frame,
@@ -369,25 +431,242 @@ class PDFStudyToolGUI:
     # ────────────────────────────────────────
     # تبويب الإعدادات
     # ────────────────────────────────────────
+    def _build_active_models_summary_card(self, parent):
+        """بناء بطاقة ملخص النماذج النشطة في أعلى تبويب الإعدادات."""
+        card = tk.Frame(parent, bg=COLORS["bg_secondary"], padx=14, pady=12, highlightthickness=1, highlightbackground=COLORS["border"])
+        card.pack(fill="x", padx=8, pady=(0, 14))
+
+        header = tk.Frame(card, bg=COLORS["bg_secondary"])
+        header.pack(fill="x", pady=(0, 8))
+
+        tk.Label(
+            header, text="📋 ملخص النماذج الفعالة للمهام (Active Models Overview)",
+            font=("Segoe UI", 10, "bold"), fg=COLORS["accent"], bg=COLORS["bg_secondary"]
+        ).pack(side="left")
+
+        tk.Label(
+            header, text="يتحدث تلقائياً عند تغيير أي نموذج أو مفتاح",
+            font=("Segoe UI", 8), fg=COLORS["fg_dim"], bg=COLORS["bg_secondary"]
+        ).pack(side="right")
+
+        self.summary_rows_frame = tk.Frame(card, bg=COLORS["bg_secondary"])
+        self.summary_rows_frame.pack(fill="x")
+
+    def _refresh_active_models_summary(self):
+        """تحديث بطاقة ملخص النماذج الفعالة في تبويب الإعدادات."""
+        if not hasattr(self, 'summary_rows_frame') or not self.summary_rows_frame:
+            return
+
+        for widget in self.summary_rows_frame.winfo_children():
+            widget.destroy()
+
+        tasks = [
+            ("prompt_1", "📘 المهمة 1: الترجمة والتنسيق"),
+            ("prompt_2", "💡 المهمة 2: التبسيط والزبدة"),
+            ("prompt_3", "🎴 المهمة 3: بطاقات الفلاش كارد"),
+        ]
+
+        for p_key, p_label in tasks:
+            prov, mod, is_custom, has_key = resolve_effective_model(self.config, p_key)
+            prov_name = get_provider_display_name(prov)
+
+            row = tk.Frame(self.summary_rows_frame, bg=COLORS["bg_card"], padx=10, pady=6)
+            row.pack(fill="x", pady=2)
+
+            # اسم المهمة
+            tk.Label(
+                row, text=p_label, font=("Segoe UI", 9, "bold"),
+                fg=COLORS["fg"], bg=COLORS["bg_card"], width=28, anchor="w"
+            ).pack(side="left")
+
+            # اسم النموذج والمزود
+            custom_tag = " (مخصص)" if is_custom else " (افتراضي)"
+            model_info = f"{mod}  [{prov_name}]{custom_tag}"
+            tk.Label(
+                row, text=model_info, font=("Consolas", 9, "bold"),
+                fg=COLORS["accent"], bg=COLORS["bg_card"], anchor="w"
+            ).pack(side="left", fill="x", expand=True, padx=6)
+
+            # الجاهزية
+            status_text = "🟢 المفتاح جاهز" if has_key else f"⚠️ مفتاح {prov_name} غير مدخل"
+            status_fg = COLORS["success"] if has_key else COLORS["error"]
+            tk.Label(
+                row, text=status_text, font=("Segoe UI", 8, "bold"),
+                fg=status_fg, bg=COLORS["bg_card"]
+            ).pack(side="right")
+
+    def _update_prompt_badge(self, prompt_key: str):
+        """تحديث شارة الجاهزية لمهمة معينة في تبويبي Prompts والإعدادات."""
+        prov, mod, is_custom, has_key = resolve_effective_model(self.config, prompt_key)
+        prov_name = get_provider_display_name(prov)
+
+        if has_key:
+            text = f"🟢 جاهز ({prov_name})"
+            fg = COLORS["success"]
+        else:
+            text = f"⚠️ مفتاح {prov_name} غير مدخل (انقر للإعداد)"
+            fg = COLORS["error"]
+
+        if prompt_key in self.prompt_tab_badges:
+            self.prompt_tab_badges[prompt_key].configure(text=text, fg=fg)
+
+        if prompt_key in self.settings_prompt_badges:
+            self.settings_prompt_badges[prompt_key].configure(text=text, fg=fg)
+
+    def _refresh_all_badges(self):
+        """تحديث كافة الشارات وحالات المفاتيح في كامل الواجهة."""
+        for p in ["gemini", "openai", "openrouter"]:
+            self._update_key_status_label(p)
+        for k in ["prompt_1", "prompt_2", "prompt_3"]:
+            self._update_prompt_badge(k)
+
+    def _update_key_status_label(self, provider: str):
+        """تحديث مؤشر توفر المفتاح."""
+        entry = getattr(self, f"{provider}_key_entry", None)
+        lbl = getattr(self, f"lbl_{provider}_key_status", None)
+        if entry and lbl:
+            has_key = bool(entry.get().strip())
+            lbl.configure(
+                text="🟢 المفتاح مضاف" if has_key else "⚪ غير مدخل",
+                fg=COLORS["success"] if has_key else COLORS["fg_dim"]
+            )
+
+    def _on_key_entry_changed(self, provider: str):
+        """عند تعديل حقل مفتاح API."""
+        key_entry = getattr(self, f"{provider}_key_entry", None)
+        if key_entry:
+            self.config[f"{provider}_api_key"] = key_entry.get().strip()
+        self._update_key_status_label(provider)
+        self._refresh_all_badges()
+        self._refresh_active_models_summary()
+
+    def _on_prompt_model_change(self, prompt_key: str, new_value: str, from_source: str = "prompts_tab"):
+        """معالجة تغيير النموذج لمهمة معينة ومزامنة الواجهة والإعدادات فوراً."""
+        clean_id = clean_model_id(new_value)
+        if not clean_id or "الافتراضي" in new_value or "⭐" in new_value:
+            self.config[f"{prompt_key}_model"] = ""
+        else:
+            prov = detect_provider(new_value)
+            self.config[f"{prompt_key}_model"] = f"{prov}:{clean_id}"
+
+        save_config(self.config)
+        self._update_prompt_badge(prompt_key)
+        self._refresh_active_models_summary()
+
+        # مزامنة القائمة المنسدلة في التبويب الآخر
+        display_val = find_combobox_display_value(self.config.get(f"{prompt_key}_model", ""))
+        if from_source == "prompts_tab" and prompt_key in self.settings_prompt_combos:
+            self.settings_prompt_combos[prompt_key].set(display_val)
+        elif from_source == "settings_tab" and prompt_key in self.prompt_tab_combos:
+            self.prompt_tab_combos[prompt_key].set(display_val)
+
+    def _test_model_for_prompt(self, prompt_key: str):
+        """اختبار النموذج المحدد لمهمة معينة."""
+        prov, mod, _, has_key = resolve_effective_model(self.config, prompt_key)
+        api_key = self.config.get(f"{prov}_api_key", "").strip()
+        self._run_connection_test(prov, api_key, mod, f"المهمة ({prompt_key.replace('prompt_', '')})")
+
+    def _run_connection_test(self, provider: str, api_key: str, model: str, context_label: str = ""):
+        """تشغيل فحص الاتصال بالذكاء الاصطناعي في thread منفصل لتجنب تجميد الواجهة."""
+        prov_name = get_provider_display_name(provider)
+        clean_mod = clean_model_id(model) or model
+        self._log(f"⚡ جاري فحص الاتصال بـ {prov_name} ({clean_mod})...")
+
+        def _test():
+            success, msg = test_connection(provider, api_key, clean_mod)
+            if success:
+                self._log(f"✅ {msg}")
+                self.root.after(0, lambda: messagebox.showinfo("نجاح الاتصال! ⚡", f"{msg}\n\nالنموذج جاهز تماماً للاستخدام."))
+            else:
+                self._log(f"❌ {msg}")
+                self.root.after(0, lambda: messagebox.showerror("فشل الاتصال", f"{msg}\n\nيرجى التحقق من مفتاح API وصحة اسم النموذج."))
+
+        threading.Thread(target=_test, daemon=True).start()
+
+    # ────────────────────────────────────────
+    # تبويب الإعدادات
+    # ────────────────────────────────────────
     def _build_settings_tab(self):
-        """تبويب الإعدادات."""
+        """تبويب الإعدادات المطور مع لوحة النماذج واختيار القوائم وفحص الاتصال."""
         frame = tk.Frame(self.tab_container, bg=COLORS["bg"])
         self.tab_frames.append(frame)
 
-        # Scrollable
+        # Scrollable canvas
         canvas = tk.Canvas(frame, bg=COLORS["bg"], highlightthickness=0)
         scrollbar = ttk.Scrollbar(frame, orient="vertical", command=canvas.yview)
         inner = tk.Frame(canvas, bg=COLORS["bg"])
 
         inner.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=inner, anchor="nw")
+        canvas_window = canvas.create_window((0, 0), window=inner, anchor="nw")
+
+        def _on_canvas_configure(event):
+            canvas.itemconfig(canvas_window, width=event.width)
+        canvas.bind("<Configure>", _on_canvas_configure)
         canvas.configure(yscrollcommand=scrollbar.set)
 
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        # ── مزود AI ──
-        self._settings_section(inner, "🤖 مزود الذكاء الاصطناعي")
+        # ── 1. لوحة النماذج النشطة في الأعلى (Active Models Dashboard) ──
+        self._build_active_models_summary_card(inner)
+
+        # ── 2. قسم تخصيص النماذج لكل مهمة (Task-Specific Models) ──
+        self._settings_section(inner, "🎯 تخصيص نموذج لكل مهمة (Task Models)")
+
+        task_models_frame = tk.Frame(inner, bg=COLORS["bg_card"], padx=16, pady=12)
+        task_models_frame.pack(fill="x", padx=8, pady=(0, 12))
+
+        tk.Label(
+            task_models_frame,
+            text="اختر النموذج المناسب لكل مهمة من القائمة، أو اكتب اسم أي نموذج تريده.\n"
+                 "يمكنك استخدام نماذج مختلفة في نفس الوقت (مثال: Gemini للترجمة و GPT-4o للتبسيط).",
+            font=("Segoe UI", 9), fg=COLORS["fg_dim"], bg=COLORS["bg_card"],
+            justify="right", anchor="e"
+        ).pack(fill="x", pady=(0, 10))
+
+        tasks = [
+            ("prompt_1", "📘 مهمة 1 - الترجمة والتنسيق:", "prompt_1_model"),
+            ("prompt_2", "💡 مهمة 2 - التبسيط والزبدة:", "prompt_2_model"),
+            ("prompt_3", "🎴 مهمة 3 - الفلاش كارد:", "prompt_3_model"),
+        ]
+
+        combobox_options = get_model_combobox_list(include_default=True)
+
+        for p_key, p_label, config_field in tasks:
+            row = tk.Frame(task_models_frame, bg=COLORS["bg_card"])
+            row.pack(fill="x", pady=4)
+
+            tk.Label(
+                row, text=p_label, font=("Segoe UI", 9, "bold"),
+                fg=COLORS["fg"], bg=COLORS["bg_card"], width=24, anchor="w"
+            ).pack(side="left")
+
+            cb = ttk.Combobox(row, values=combobox_options, font=("Segoe UI", 9), width=36)
+            cb.pack(side="left", padx=(4, 8), fill="x", expand=True)
+
+            init_val = find_combobox_display_value(self.config.get(config_field, ""))
+            cb.set(init_val)
+            self.settings_prompt_combos[p_key] = cb
+
+            badge = tk.Label(row, text="", font=("Segoe UI", 8, "bold"), bg=COLORS["bg_card"])
+            badge.pack(side="left", padx=(0, 8))
+            self.settings_prompt_badges[p_key] = badge
+
+            btn_test = tk.Button(
+                row, text="⚡ فحص",
+                font=("Segoe UI", 8, "bold"),
+                fg=COLORS["fg"], bg=COLORS["bg_input"],
+                activeforeground=COLORS["accent"], activebackground=COLORS["bg_secondary"],
+                relief="flat", padx=8, pady=2, cursor="hand2",
+                command=lambda k=p_key: self._test_model_for_prompt(k)
+            )
+            btn_test.pack(side="right")
+
+            cb.bind("<<ComboboxSelected>>", lambda e, k=p_key, box=cb: self._on_prompt_model_change(k, box.get(), "settings_tab"))
+            cb.bind("<KeyRelease>", lambda e, k=p_key, box=cb: self._on_prompt_model_change(k, box.get(), "settings_tab"))
+
+        # ── 3. المزود الافتراضي العام ──
+        self._settings_section(inner, "🌐 المزود الافتراضي العام (Default Provider)")
 
         provider_frame = tk.Frame(inner, bg=COLORS["bg_card"], padx=16, pady=10)
         provider_frame.pack(fill="x", padx=8, pady=(0, 12))
@@ -406,142 +685,169 @@ class PDFStudyToolGUI:
             )
             rb.pack(side="left", padx=(0, 20))
 
-        # ── Gemini ──
+        # ── 4. Google Gemini ──
         self._settings_section(inner, "🔑 Google Gemini")
 
-        gemini_frame = tk.Frame(inner, bg=COLORS["bg_card"], padx=16, pady=10)
+        gemini_frame = tk.Frame(inner, bg=COLORS["bg_card"], padx=16, pady=12)
         gemini_frame.pack(fill="x", padx=8, pady=(0, 12))
 
-        tk.Label(gemini_frame, text="API Key:", font=("Segoe UI", 9), fg=COLORS["fg_dim"], bg=COLORS["bg_card"]).pack(anchor="w")
+        key_header_g = tk.Frame(gemini_frame, bg=COLORS["bg_card"])
+        key_header_g.pack(fill="x", pady=(0, 2))
+        tk.Label(key_header_g, text="API Key:", font=("Segoe UI", 9, "bold"), fg=COLORS["fg_dim"], bg=COLORS["bg_card"]).pack(side="left")
+        self.lbl_gemini_key_status = tk.Label(key_header_g, text="", font=("Segoe UI", 8, "bold"), bg=COLORS["bg_card"])
+        self.lbl_gemini_key_status.pack(side="right")
+
         self.gemini_key_entry = tk.Entry(
             gemini_frame, font=("Consolas", 10), show="•",
             fg=COLORS["fg"], bg=COLORS["bg_input"],
             insertbackground=COLORS["accent"], relief="flat",
         )
-        self.gemini_key_entry.pack(fill="x", pady=(2, 8))
+        self.gemini_key_entry.pack(fill="x", pady=(2, 6))
         self.gemini_key_entry.insert(0, self.config.get("gemini_api_key", ""))
+        self.gemini_key_entry.bind("<KeyRelease>", lambda e: self._on_key_entry_changed("gemini"))
 
-        # زر إظهار/إخفاء
+        ctrl_row_g = tk.Frame(gemini_frame, bg=COLORS["bg_card"])
+        ctrl_row_g.pack(fill="x", pady=(0, 8))
+
         self.show_gemini_key = tk.BooleanVar(value=False)
         tk.Checkbutton(
-            gemini_frame, text="إظهار المفتاح",
+            ctrl_row_g, text="إظهار المفتاح",
             variable=self.show_gemini_key,
             font=("Segoe UI", 8), fg=COLORS["fg_dim"], bg=COLORS["bg_card"],
             selectcolor=COLORS["bg_input"],
             command=lambda: self.gemini_key_entry.configure(show="" if self.show_gemini_key.get() else "•"),
-        ).pack(anchor="w")
+        ).pack(side="left")
 
-        tk.Label(gemini_frame, text="Model:", font=("Segoe UI", 9), fg=COLORS["fg_dim"], bg=COLORS["bg_card"]).pack(anchor="w", pady=(8, 0))
-        self.gemini_model_entry = tk.Entry(
-            gemini_frame, font=("Consolas", 10),
+        btn_test_g = tk.Button(
+            ctrl_row_g, text="⚡ فحص اتصال Gemini",
+            font=("Segoe UI", 8, "bold"),
             fg=COLORS["fg"], bg=COLORS["bg_input"],
-            insertbackground=COLORS["accent"], relief="flat",
+            activeforeground=COLORS["accent"], activebackground=COLORS["bg_secondary"],
+            relief="flat", padx=10, pady=2, cursor="hand2",
+            command=lambda: self._run_connection_test("gemini", self.gemini_key_entry.get().strip(), clean_model_id(self.gemini_model_combo.get()) or self.gemini_model_combo.get().strip())
         )
-        self.gemini_model_entry.pack(fill="x", pady=(2, 0))
-        self.gemini_model_entry.insert(0, self.config.get("gemini_model", "gemini-2.0-flash"))
+        btn_test_g.pack(side="right")
 
-        # ── OpenAI ──
+        tk.Label(gemini_frame, text="النموذج الافتراضي لـ Gemini (اختر أو اكتب):", font=("Segoe UI", 9), fg=COLORS["fg_dim"], bg=COLORS["bg_card"]).pack(anchor="w", pady=(4, 2))
+        gemini_model_opts = get_model_combobox_list(include_default=False, provider_filter="gemini")
+        self.gemini_model_combo = ttk.Combobox(
+            gemini_frame, values=gemini_model_opts,
+            font=("Segoe UI", 9)
+        )
+        self.gemini_model_combo.pack(fill="x", pady=(0, 4))
+        self.gemini_model_combo.set(find_combobox_display_value(self.config.get("gemini_model", "gemini-2.0-flash"), include_default=False, provider_filter="gemini"))
+        self.gemini_model_combo.bind("<<ComboboxSelected>>", lambda e: self._refresh_active_models_summary())
+        self.gemini_model_combo.bind("<KeyRelease>", lambda e: self._refresh_active_models_summary())
+
+        # ── 5. OpenAI ──
         self._settings_section(inner, "🔑 OpenAI")
 
-        openai_frame = tk.Frame(inner, bg=COLORS["bg_card"], padx=16, pady=10)
+        openai_frame = tk.Frame(inner, bg=COLORS["bg_card"], padx=16, pady=12)
         openai_frame.pack(fill="x", padx=8, pady=(0, 12))
 
-        tk.Label(openai_frame, text="API Key:", font=("Segoe UI", 9), fg=COLORS["fg_dim"], bg=COLORS["bg_card"]).pack(anchor="w")
+        key_header_o = tk.Frame(openai_frame, bg=COLORS["bg_card"])
+        key_header_o.pack(fill="x", pady=(0, 2))
+        tk.Label(key_header_o, text="API Key:", font=("Segoe UI", 9, "bold"), fg=COLORS["fg_dim"], bg=COLORS["bg_card"]).pack(side="left")
+        self.lbl_openai_key_status = tk.Label(key_header_o, text="", font=("Segoe UI", 8, "bold"), bg=COLORS["bg_card"])
+        self.lbl_openai_key_status.pack(side="right")
+
         self.openai_key_entry = tk.Entry(
             openai_frame, font=("Consolas", 10), show="•",
             fg=COLORS["fg"], bg=COLORS["bg_input"],
             insertbackground=COLORS["accent"], relief="flat",
         )
-        self.openai_key_entry.pack(fill="x", pady=(2, 8))
+        self.openai_key_entry.pack(fill="x", pady=(2, 6))
         self.openai_key_entry.insert(0, self.config.get("openai_api_key", ""))
+        self.openai_key_entry.bind("<KeyRelease>", lambda e: self._on_key_entry_changed("openai"))
+
+        ctrl_row_o = tk.Frame(openai_frame, bg=COLORS["bg_card"])
+        ctrl_row_o.pack(fill="x", pady=(0, 8))
 
         self.show_openai_key = tk.BooleanVar(value=False)
         tk.Checkbutton(
-            openai_frame, text="إظهار المفتاح",
+            ctrl_row_o, text="إظهار المفتاح",
             variable=self.show_openai_key,
             font=("Segoe UI", 8), fg=COLORS["fg_dim"], bg=COLORS["bg_card"],
             selectcolor=COLORS["bg_input"],
             command=lambda: self.openai_key_entry.configure(show="" if self.show_openai_key.get() else "•"),
-        ).pack(anchor="w")
+        ).pack(side="left")
 
-        tk.Label(openai_frame, text="Model:", font=("Segoe UI", 9), fg=COLORS["fg_dim"], bg=COLORS["bg_card"]).pack(anchor="w", pady=(8, 0))
-        self.openai_model_entry = tk.Entry(
-            openai_frame, font=("Consolas", 10),
+        btn_test_o = tk.Button(
+            ctrl_row_o, text="⚡ فحص اتصال OpenAI",
+            font=("Segoe UI", 8, "bold"),
             fg=COLORS["fg"], bg=COLORS["bg_input"],
-            insertbackground=COLORS["accent"], relief="flat",
+            activeforeground=COLORS["accent"], activebackground=COLORS["bg_secondary"],
+            relief="flat", padx=10, pady=2, cursor="hand2",
+            command=lambda: self._run_connection_test("openai", self.openai_key_entry.get().strip(), clean_model_id(self.openai_model_combo.get()) or self.openai_model_combo.get().strip())
         )
-        self.openai_model_entry.pack(fill="x", pady=(2, 0))
-        self.openai_model_entry.insert(0, self.config.get("openai_model", "gpt-4o-mini"))
+        btn_test_o.pack(side="right")
 
-        # ── OpenRouter ──
+        tk.Label(openai_frame, text="النموذج الافتراضي لـ OpenAI (اختر أو اكتب):", font=("Segoe UI", 9), fg=COLORS["fg_dim"], bg=COLORS["bg_card"]).pack(anchor="w", pady=(4, 2))
+        openai_model_opts = get_model_combobox_list(include_default=False, provider_filter="openai")
+        self.openai_model_combo = ttk.Combobox(
+            openai_frame, values=openai_model_opts,
+            font=("Segoe UI", 9)
+        )
+        self.openai_model_combo.pack(fill="x", pady=(0, 4))
+        self.openai_model_combo.set(find_combobox_display_value(self.config.get("openai_model", "gpt-4o-mini"), include_default=False, provider_filter="openai"))
+        self.openai_model_combo.bind("<<ComboboxSelected>>", lambda e: self._refresh_active_models_summary())
+        self.openai_model_combo.bind("<KeyRelease>", lambda e: self._refresh_active_models_summary())
+
+        # ── 6. OpenRouter ──
         self._settings_section(inner, "🌐 OpenRouter")
 
-        openrouter_frame = tk.Frame(inner, bg=COLORS["bg_card"], padx=16, pady=10)
+        openrouter_frame = tk.Frame(inner, bg=COLORS["bg_card"], padx=16, pady=12)
         openrouter_frame.pack(fill="x", padx=8, pady=(0, 12))
 
-        tk.Label(openrouter_frame, text="API Key:", font=("Segoe UI", 9), fg=COLORS["fg_dim"], bg=COLORS["bg_card"]).pack(anchor="w")
+        key_header_r = tk.Frame(openrouter_frame, bg=COLORS["bg_card"])
+        key_header_r.pack(fill="x", pady=(0, 2))
+        tk.Label(key_header_r, text="API Key:", font=("Segoe UI", 9, "bold"), fg=COLORS["fg_dim"], bg=COLORS["bg_card"]).pack(side="left")
+        self.lbl_openrouter_key_status = tk.Label(key_header_r, text="", font=("Segoe UI", 8, "bold"), bg=COLORS["bg_card"])
+        self.lbl_openrouter_key_status.pack(side="right")
+
         self.openrouter_key_entry = tk.Entry(
             openrouter_frame, font=("Consolas", 10), show="•",
             fg=COLORS["fg"], bg=COLORS["bg_input"],
             insertbackground=COLORS["accent"], relief="flat",
         )
-        self.openrouter_key_entry.pack(fill="x", pady=(2, 8))
+        self.openrouter_key_entry.pack(fill="x", pady=(2, 6))
         self.openrouter_key_entry.insert(0, self.config.get("openrouter_api_key", ""))
+        self.openrouter_key_entry.bind("<KeyRelease>", lambda e: self._on_key_entry_changed("openrouter"))
+
+        ctrl_row_r = tk.Frame(openrouter_frame, bg=COLORS["bg_card"])
+        ctrl_row_r.pack(fill="x", pady=(0, 8))
 
         self.show_openrouter_key = tk.BooleanVar(value=False)
         tk.Checkbutton(
-            openrouter_frame, text="إظهار المفتاح",
+            ctrl_row_r, text="إظهار المفتاح",
             variable=self.show_openrouter_key,
             font=("Segoe UI", 8), fg=COLORS["fg_dim"], bg=COLORS["bg_card"],
             selectcolor=COLORS["bg_input"],
             command=lambda: self.openrouter_key_entry.configure(show="" if self.show_openrouter_key.get() else "•"),
-        ).pack(anchor="w")
+        ).pack(side="left")
 
-        tk.Label(openrouter_frame, text="Model (مثال: google/gemini-2.0-flash-001 أو anthropic/claude-3.5-sonnet):", font=("Segoe UI", 9), fg=COLORS["fg_dim"], bg=COLORS["bg_card"]).pack(anchor="w", pady=(8, 0))
-        self.openrouter_model_entry = tk.Entry(
-            openrouter_frame, font=("Consolas", 10),
+        btn_test_r = tk.Button(
+            ctrl_row_r, text="⚡ فحص اتصال OpenRouter",
+            font=("Segoe UI", 8, "bold"),
             fg=COLORS["fg"], bg=COLORS["bg_input"],
-            insertbackground=COLORS["accent"], relief="flat",
+            activeforeground=COLORS["accent"], activebackground=COLORS["bg_secondary"],
+            relief="flat", padx=10, pady=2, cursor="hand2",
+            command=lambda: self._run_connection_test("openrouter", self.openrouter_key_entry.get().strip(), clean_model_id(self.openrouter_model_combo.get()) or self.openrouter_model_combo.get().strip())
         )
-        self.openrouter_model_entry.pack(fill="x", pady=(2, 0))
-        self.openrouter_model_entry.insert(0, self.config.get("openrouter_model", "google/gemini-2.0-flash-001"))
+        btn_test_r.pack(side="right")
 
-        # ── موديل مخصص لكل Prompt ──
-        self._settings_section(inner, "🎯 موديل مخصص لكل Prompt")
+        tk.Label(openrouter_frame, text="النموذج الافتراضي لـ OpenRouter (اختر أو اكتب):", font=("Segoe UI", 9), fg=COLORS["fg_dim"], bg=COLORS["bg_card"]).pack(anchor="w", pady=(4, 2))
+        openrouter_model_opts = get_model_combobox_list(include_default=False, provider_filter="openrouter")
+        self.openrouter_model_combo = ttk.Combobox(
+            openrouter_frame, values=openrouter_model_opts,
+            font=("Segoe UI", 9)
+        )
+        self.openrouter_model_combo.pack(fill="x", pady=(0, 4))
+        self.openrouter_model_combo.set(find_combobox_display_value(self.config.get("openrouter_model", "google/gemini-2.0-flash-001"), include_default=False, provider_filter="openrouter"))
+        self.openrouter_model_combo.bind("<<ComboboxSelected>>", lambda e: self._refresh_active_models_summary())
+        self.openrouter_model_combo.bind("<KeyRelease>", lambda e: self._refresh_active_models_summary())
 
-        permodel_frame = tk.Frame(inner, bg=COLORS["bg_card"], padx=16, pady=10)
-        permodel_frame.pack(fill="x", padx=8, pady=(0, 12))
-
-        tk.Label(
-            permodel_frame,
-            text="حدد موديل مختلف لكل Prompt (اتركه فاضي لاستخدام الافتراضي)\n"
-                 "الصيغة:  provider:model  —  مثال:  gemini:gemini-2.0-flash  أو  openai:gpt-4o",
-            font=("Segoe UI", 8), fg=COLORS["fg_dim"], bg=COLORS["bg_card"],
-            justify="right", anchor="e",
-        ).pack(anchor="w", pady=(0, 8))
-
-        self.prompt_model_entries = {}
-        for key, label in [
-            ("prompt_1_model", "Prompt 1 - الترجمة:"),
-            ("prompt_2_model", "Prompt 2 - التبسيط:"),
-            ("prompt_3_model", "Prompt 3 - فلاش كارد:"),
-        ]:
-            row = tk.Frame(permodel_frame, bg=COLORS["bg_card"])
-            row.pack(fill="x", pady=(2, 4))
-
-            tk.Label(row, text=label, font=("Segoe UI", 9), fg=COLORS["fg_dim"],
-                     bg=COLORS["bg_card"], width=22, anchor="w").pack(side="left")
-
-            entry = tk.Entry(
-                row, font=("Consolas", 10),
-                fg=COLORS["fg"], bg=COLORS["bg_input"],
-                insertbackground=COLORS["accent"], relief="flat",
-            )
-            entry.pack(side="left", fill="x", expand=True, padx=(4, 0))
-            entry.insert(0, self.config.get(key, ""))
-            self.prompt_model_entries[key] = entry
-
-        # ── أسماء الملفات ──
+        # ── 7. أسماء الملفات ──
         self._settings_section(inner, "📁 أسماء الملفات الناتجة")
 
         files_frame = tk.Frame(inner, bg=COLORS["bg_card"], padx=16, pady=10)
@@ -564,7 +870,7 @@ class PDFStudyToolGUI:
             entry.insert(0, self.config.get(key, default))
             self.file_entries[key] = entry
 
-        # ── تصدير الفلاش كاردز ──
+        # ── 8. تصدير الفلاش كاردز ──
         self._settings_section(inner, "🎴 تصدير Flash Cards")
 
         fc_frame = tk.Frame(inner, bg=COLORS["bg_card"], padx=16, pady=10)
@@ -590,8 +896,8 @@ class PDFStudyToolGUI:
             font=("Segoe UI", 9), fg=COLORS["fg_dim"], bg=COLORS["bg_card"],
         ).pack(anchor="w")
 
-        # زر حفظ الإعدادات
-        save_btn_frame = tk.Frame(inner, bg=COLORS["bg"], pady=8)
+        # ── زر حفظ الإعدادات ──
+        save_btn_frame = tk.Frame(inner, bg=COLORS["bg"], pady=12)
         save_btn_frame.pack(fill="x", padx=8)
 
         tk.Button(
@@ -599,7 +905,7 @@ class PDFStudyToolGUI:
             font=("Segoe UI", 11, "bold"),
             fg=COLORS["bg"], bg=COLORS["success"],
             activeforeground=COLORS["bg"], activebackground="#7dd3a0",
-            relief="flat", padx=20, pady=8,
+            relief="flat", padx=20, pady=10,
             cursor="hand2",
             command=self._save_settings,
         ).pack(fill="x")
@@ -615,22 +921,32 @@ class PDFStudyToolGUI:
         lbl.pack(fill="x", padx=8, pady=(12, 4))
 
     def _on_provider_change(self):
-        """عند تغيير مزود AI."""
-        pass  # تحديث فوري عند الحفظ
+        """عند تغيير مزود AI الافتراضي."""
+        self.config["provider"] = self.provider_var.get()
+        self._refresh_all_badges()
+        self._refresh_active_models_summary()
 
     def _save_settings(self):
         """حفظ جميع الإعدادات."""
         self.config["provider"] = self.provider_var.get()
         self.config["gemini_api_key"] = self.gemini_key_entry.get().strip()
-        self.config["gemini_model"] = self.gemini_model_entry.get().strip()
+        self.config["gemini_model"] = clean_model_id(self.gemini_model_combo.get()) or self.gemini_model_combo.get().strip() or "gemini-2.0-flash"
         self.config["openai_api_key"] = self.openai_key_entry.get().strip()
-        self.config["openai_model"] = self.openai_model_entry.get().strip()
+        self.config["openai_model"] = clean_model_id(self.openai_model_combo.get()) or self.openai_model_combo.get().strip() or "gpt-4o-mini"
         self.config["openrouter_api_key"] = self.openrouter_key_entry.get().strip()
-        self.config["openrouter_model"] = self.openrouter_model_entry.get().strip()
+        self.config["openrouter_model"] = clean_model_id(self.openrouter_model_combo.get()) or self.openrouter_model_combo.get().strip() or "google/gemini-2.0-flash-001"
 
-        # حفظ الموديل المخصص لكل prompt
-        for key, entry in self.prompt_model_entries.items():
-            self.config[key] = entry.get().strip()
+        # حفظ الموديل المخصص لكل مهمة
+        for p_key in ["prompt_1", "prompt_2", "prompt_3"]:
+            cb = self.settings_prompt_combos.get(p_key)
+            if cb:
+                val = cb.get().strip()
+                clean_id = clean_model_id(val)
+                if not clean_id or "الافتراضي" in val or "⭐" in val:
+                    self.config[f"{p_key}_model"] = ""
+                else:
+                    prov = detect_provider(val)
+                    self.config[f"{p_key}_model"] = f"{prov}:{clean_id}"
 
         # حفظ إعدادات تصدير الفلاش كاردز
         self.config["flashcard_export_enabled"] = self.flashcard_export_var.get()
@@ -639,7 +955,10 @@ class PDFStudyToolGUI:
             self.config[key] = entry.get().strip()
 
         save_config(self.config)
-        self._log("✅ تم حفظ الإعدادات بنجاح")
+        self._refresh_all_badges()
+        self._refresh_active_models_summary()
+        self._log("✅ تم حفظ جميع الإعدادات وتحديث النماذج بنجاح")
+        messagebox.showinfo("تم الحفظ 💾", "تم حفظ جميع الإعدادات وتحديث النماذج بنجاح!")
 
     # ────────────────────────────────────────
     # تبويب السجل
@@ -790,31 +1109,38 @@ class PDFStudyToolGUI:
         self._save_settings()
         self._save_prompts()
 
-        # تحديد المزودات المطلوبة (الافتراضي + أي موديل مخصص)
-        default_provider = self.config["provider"]
-        needed_providers = {default_provider}
+        # استخراج المزودات والموديلات الفعلية لكل مهمة
+        prompt_tasks = [
+            ("prompt_1", "1️⃣ الترجمة مع التنسيق"),
+            ("prompt_2", "2️⃣ التبسيط والشرح"),
+            ("prompt_3", "3️⃣ بطاقات الفلاش كارد"),
+        ]
 
-        model_overrides = {}
-        for key in ["prompt_1_model", "prompt_2_model", "prompt_3_model"]:
-            val = self.config.get(key, "").strip()
-            if val and ":" in val:
-                prov = val.split(":", 1)[0].strip()
-                needed_providers.add(prov)
-                prompt_key = key.replace("_model", "")  # prompt_1, prompt_2, prompt_3
-                model_overrides[prompt_key] = val
+        effective_models = {}
+        needed_providers = set()
 
-        # التحقق من API Keys لكل مزود مطلوب
+        for key, name in prompt_tasks:
+            prov, mod, _, _ = resolve_effective_model(self.config, key)
+            effective_models[key] = (prov, mod)
+            needed_providers.add(prov)
+
+        # التحقق من وجود مفتاح API لكل مزود مطلوب
+        missing_keys = []
         for prov in needed_providers:
-            key_field = f"{prov}_api_key"
-            if not self.config.get(key_field, "").strip():
-                messagebox.showerror(
-                    "خطأ",
-                    f"مفتاح {prov.upper()} API غير موجود!\n\n"
-                    f"أنت تستخدم {prov} في أحد الـ Prompts.\n"
-                    f"اذهب لتبويب الإعدادات وأضف المفتاح."
-                )
-                self._switch_tab(1)
-                return
+            key_val = self.config.get(f"{prov}_api_key", "").strip()
+            if not key_val:
+                tasks_using = [name for k, name in prompt_tasks if effective_models[k][0] == prov]
+                missing_keys.append(f"• مزود {prov.upper()}: مطلوب لـ ({', '.join(tasks_using)})")
+
+        if missing_keys:
+            messagebox.showerror(
+                "مفاتيح API مفقودة",
+                "لا يمكن بدء المعالجة لأن بعض المفاتيح غير مضافة:\n\n"
+                + "\n".join(missing_keys) +
+                "\n\nيرجى التوجه لتبويب 'الإعدادات' وإدخال المفتاح أولاً."
+            )
+            self._switch_tab(1)
+            return
 
         self.is_processing = True
         self.btn_start.configure(state="disabled", text="⏳ جاري المعالجة...")
@@ -824,12 +1150,12 @@ class PDFStudyToolGUI:
         # تشغيل في thread منفصل
         thread = threading.Thread(
             target=self._process_thread,
-            args=(model_overrides,),
+            args=(effective_models,),
             daemon=True,
         )
         thread.start()
 
-    def _process_thread(self, model_overrides: dict):
+    def _process_thread(self, effective_models: dict):
         """Thread المعالجة الفعلية."""
         try:
             # ── 1. استخراج المحتوى (PDF أو PowerPoint) ──
@@ -857,34 +1183,21 @@ class PDFStudyToolGUI:
             chunks_count = max(1, -(-len(pages) // 10))  # ceil division
             self._log(f"📦 سيتم المعالجة على {chunks_count} دفعة (كل دفعة 10 صفحات كحد أقصى)")
 
-            if model_overrides:
-                for k, v in model_overrides.items():
-                    self._log(f"🎯 {k}: {v}")
-            self._log("🔗 السلسلة: Prompt1 (الأصل + المخططات) → Prompt2 (التبسيط) → Prompt3 (البطاقات)")
+            # إظهار الموديلات الفعالة لكل مهمة في السجل للمستخدم
+            self._log("⚙️ النماذج والمزودات المعتمدة للمعالجة:")
+            self._log(f"   1️⃣ الترجمة: [{effective_models['prompt_1'][0].upper()}] {effective_models['prompt_1'][1]}")
+            self._log(f"   2️⃣ التبسيط: [{effective_models['prompt_2'][0].upper()}] {effective_models['prompt_2'][1]}")
+            self._log(f"   3️⃣ البطاقات: [{effective_models['prompt_3'][0].upper()}] {effective_models['prompt_3'][1]}")
+            self._log("🔗 السلسلة: الترجمة (الأصل + المخططات) → التبسيط (الشرح) → البطاقات (الفلاش كارد)")
 
             self._update_status(f"✅ تم استخراج {len(pages)} صفحة ({chunks_count} دفعة)", 10)
 
-            # ── 2. معالجة AI ──
-            # المعالج الأساسي يستخدم المزود الافتراضي
-            # كل prompt يمكنه استخدام موديل مختلف عبر model_overrides
-            provider = self.config["provider"]
-            api_key = get_api_key(self.config)
-            model = get_model(self.config)
-
-            # إنشاء معالجات إضافية حسب الحاجة
-            # AIProcessor الأساسي للمزود الافتراضي
-            processors = {provider: AIProcessor(provider, api_key, model, self.config)}
-
-            # معالجات إضافية للمزودات الأخرى
-            for key, val in model_overrides.items():
-                prov = val.split(":", 1)[0].strip()
-                if prov not in processors:
-                    prov_key = self.config.get(f"{prov}_api_key", "")
-                    prov_model = self.config.get(f"{prov}_model", "")
-                    processors[prov] = AIProcessor(prov, prov_key, prov_model, self.config)
-
-            # نستخدم المعالج الافتراضي — process_all_three يتعامل مع model_overrides
-            main_processor = processors[provider]
+            # ── 2. تجهيز معالجات الذكاء الاصطناعي ──
+            needed_providers = {prov for prov, _ in effective_models.values()}
+            processors = {}
+            for prov in needed_providers:
+                prov_key = self.config.get(f"{prov}_api_key", "").strip()
+                processors[prov] = AIProcessor(prov, prov_key, None, self.config)
 
             # الحصول على الـ Prompts الحالية من المحررات
             current_prompts = {}
@@ -897,26 +1210,10 @@ class PDFStudyToolGUI:
                 self._update_status(f"🤖 {message}", pct)
                 self._log(f"  {message}")
 
-            # لكل prompt مزود مختلف محتمل — نحتاج ضمان صحة API keys
-            # model_overrides بصيغة {"prompt_1": "gemini:gemini-2.0-flash", ...}
-            # process_all_three يعرف يتعامل مع provider:model لكل prompt
-
-            # لكن المعالج الواحد يحمل api_key واحد فقط
-            # اذا فيه أكثر من مزود نحتاج معالج لكل مزود
-            # الحل: نعيد بناء process_all_three من هنا لو فيه أكثر من مزود
-
-            has_multi_provider = len(processors) > 1
-            if has_multi_provider:
-                # معالجة يدوية — كل prompt بمعالجه الخاص
-                ai_results = self._process_multi_provider(
-                    pages, current_prompts, model_overrides, processors, ai_progress
-                )
-            else:
-                ai_results = main_processor.process_all_three(
-                    pages, prompts=current_prompts,
-                    model_overrides=model_overrides,
-                    progress_callback=ai_progress,
-                )
+            # معالجة السلسلة
+            ai_results = self._process_multi_provider(
+                pages, current_prompts, effective_models, processors, ai_progress
+            )
 
             self._log("✅ تمت جميع المعالجات بنجاح")
             self._update_status("📝 جاري إنشاء ملفات Word...", 90)
@@ -956,10 +1253,14 @@ class PDFStudyToolGUI:
                 except Exception:
                     pass
 
-                # طلب من AI اقتراح الأسماء
+                # طلب من AI اقتراح الأسماء (باستخدام معالج الترجمة أو المتاح)
                 try:
-                    deck_info = main_processor.suggest_deck_info(
+                    p1_prov, p1_mod = effective_models["prompt_1"]
+                    naming_proc = processors.get(p1_prov) or list(processors.values())[0]
+                    deck_info = naming_proc.suggest_deck_info(
                         ai_results["translation"],
+                        use_provider=p1_prov,
+                        use_model=p1_mod,
                         existing_folders=existing_folders,
                     )
                     fc_folder = deck_info["folder"] or pdf_name
@@ -1010,10 +1311,10 @@ class PDFStudyToolGUI:
             self.is_processing = False
             self.root.after(0, lambda: self.btn_start.configure(state="normal", text="🚀 ابدأ المعالجة"))
 
-    def _process_multi_provider(self, pages, prompts, model_overrides, processors, progress_callback):
+    def _process_multi_provider(self, pages, prompts, effective_models, processors, progress_callback):
         """
-        معالجة السلسلة عندما تكون هناك عدة مزودات AI.
-        كل prompt يستخدم المعالج المناسب لمزوده.
+        معالجة السلسلة عبر المزودات والنماذج المحددة لكل مهمة.
+        كل prompt يستخدم المعالج والنموذج المخصص له.
         السلسلة: Prompt1(PDF) → Prompt2(نتيجة 1) → Prompt3(نتيجة 2)
         """
         import time
@@ -1025,57 +1326,48 @@ class PDFStudyToolGUI:
         p2 = prompts.get("prompt_2", PROMPT_2_SIMPLIFIED)
         p3 = prompts.get("prompt_3", PROMPT_3_FLASHCARDS)
 
-        default_provider = self.config["provider"]
+        prov1, mod1 = effective_models["prompt_1"]
+        prov2, mod2 = effective_models["prompt_2"]
+        prov3, mod3 = effective_models["prompt_3"]
 
-        def _get_processor_and_model(prompt_key):
-            """إرجاع المعالج والموديل المناسبين لـ prompt معين."""
-            val = model_overrides.get(prompt_key, "").strip()
-            if val and ":" in val:
-                prov, mod = val.split(":", 1)
-                prov, mod = prov.strip(), mod.strip()
-                return processors[prov], mod
-            return processors[default_provider], None
+        proc1 = processors[prov1]
+        proc2 = processors[prov2]
+        proc3 = processors[prov3]
 
         # ── Prompt 1: الترجمة — على محتوى PDF الأصلي ──
-        proc1, mod1 = _get_processor_and_model("prompt_1")
-        label1 = f" [{proc1.provider}:{mod1 or proc1.model}]"
-
+        label1 = f" [{prov1.upper()}: {mod1}]"
         if progress_callback:
             progress_callback(1, 6, f"جاري إنشاء: الترجمة{label1}...")
 
         results["translation"] = proc1.process_chunked(
-            pages, p1, use_model=mod1,
+            pages, p1, use_provider=prov1, use_model=mod1,
             progress_callback=lambda c, t, m: progress_callback(1, 6, f"الترجمة{label1}: {m}") if progress_callback else None
         )
         time.sleep(3)
 
         # ── Prompt 2: التبسيط — على نتيجة Prompt 1 ──
-        proc2, mod2 = _get_processor_and_model("prompt_2")
-        label2 = f" [{proc2.provider}:{mod2 or proc2.model}]"
-
+        label2 = f" [{prov2.upper()}: {mod2}]"
         if progress_callback:
             progress_callback(3, 6, f"جاري إنشاء: التبسيط{label2} (معتمد على الترجمة)...")
 
         results["simplified"] = proc2.process_text_chunked(
-            results["translation"], p2, use_model=mod2,
+            results["translation"], p2, use_provider=prov2, use_model=mod2,
             progress_callback=lambda c, t, m: progress_callback(3, 6, f"التبسيط{label2}: {m}") if progress_callback else None
         )
         time.sleep(3)
 
         # ── Prompt 3: فلاش كارد — على نتيجة Prompt 2 ──
         # (مستثنى من قاعدة الـ 10 صفحات — يرسل كل المحتوى مرة واحدة)
-        proc3, mod3 = _get_processor_and_model("prompt_3")
-        label3 = f" [{proc3.provider}:{mod3 or proc3.model}]"
-
+        label3 = f" [{prov3.upper()}: {mod3}]"
         if progress_callback:
-            progress_callback(5, 6, f"جاري إنشاء: فلاش كارد{label3} (معتمد على التبسيط)...")
+            progress_callback(5, 6, f"جاري إنشاء: بطاقات الفلاش كارد{label3} (معتمد على التبسيط)...")
 
         results["flashcards"] = proc3.process(
-            results["simplified"], p3, use_model=mod3
+            results["simplified"], p3, use_provider=prov3, use_model=mod3
         )
 
         if progress_callback:
-            progress_callback(6, 6, "تم!")
+            progress_callback(6, 6, "تمت المعالجة الذكية بالكامل!")
 
         return results
 

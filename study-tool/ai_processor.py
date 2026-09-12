@@ -97,13 +97,25 @@ class AIProcessor:
     def _init_gemini(self, model: str = None):
         """تهيئة عميل Gemini."""
         import google.generativeai as genai
-        genai.configure(api_key=self.api_key)
+        key = self.api_key if self.provider == "gemini" else self.config.get("gemini_api_key", "")
+        if not key:
+            raise ValueError(
+                "مفتاح Google Gemini API غير موجود!\n"
+                "افتح الإعدادات وأضف مفتاح Gemini."
+            )
+        genai.configure(api_key=key)
         self._gemini_client = genai.GenerativeModel(model or self.model)
 
     def _init_openai(self):
         """تهيئة عميل OpenAI."""
         from openai import OpenAI
-        self._openai_client = OpenAI(api_key=self.api_key)
+        key = self.api_key if self.provider == "openai" else self.config.get("openai_api_key", "")
+        if not key:
+            raise ValueError(
+                "مفتاح OpenAI API غير موجود!\n"
+                "افتح الإعدادات وأضف مفتاح OpenAI."
+            )
+        self._openai_client = OpenAI(api_key=key)
 
     def _init_openrouter(self):
         """تهيئة عميل OpenRouter عبر OpenAI SDK."""
@@ -507,12 +519,19 @@ Content:
         p3 = prompts.get("prompt_3", PROMPT_3_FLASHCARDS) if prompts else PROMPT_3_FLASHCARDS
 
         def _parse_model_override(key: str):
-            """تحليل الموديل المخصص: 'provider:model' -> (provider, model)"""
+            """تحليل الموديل المخصص: إرجاع (provider, model)"""
             val = model_overrides.get(key, "").strip()
-            if val and ":" in val:
-                p, m = val.split(":", 1)
-                return p.strip(), m.strip()
-            return None, None
+            if not val or "الافتراضي" in val or "⭐" in val:
+                return None, None
+            try:
+                from config import parse_model_choice
+                prov, mod = parse_model_choice(val, default_provider=self.provider, default_model=self.model)
+                return prov, mod
+            except Exception:
+                if ":" in val:
+                    p, m = val.split(":", 1)
+                    return p.strip(), m.strip()
+                return None, None
 
         # ============================================================
         # Prompt 1: الترجمة — يشتغل على محتوى PDF الأصلي
@@ -562,3 +581,60 @@ Content:
             progress_callback(6, 6, "تم!")
 
         return results
+
+
+def test_connection(provider: str, api_key: str, model: str) -> tuple:
+    """
+    اختبار اتصال سريع مع مزود وموديل الذكاء الاصطناعي.
+    Returns: (success: bool, message: str)
+    """
+    if not api_key or not api_key.strip():
+        return False, f"مفتاح {provider.upper()} API غير مدخل. يرجى إدخال المفتاح أولاً."
+    if not model or not model.strip():
+        return False, "اسم الموديل غير محدد."
+
+    api_key = api_key.strip()
+    model = model.strip()
+
+    try:
+        if provider == "gemini":
+            import google.generativeai as genai
+            genai.configure(api_key=api_key)
+            g_model = genai.GenerativeModel(model)
+            resp = g_model.generate_content("Say OK in 1 word")
+            return True, f"✅ الاتصال بـ Google Gemini ({model}) ناجح ويعمل 100%!"
+        elif provider == "openai":
+            from openai import OpenAI
+            client = OpenAI(api_key=api_key)
+            resp = client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": "hi"}],
+                max_tokens=5
+            )
+            return True, f"✅ الاتصال بـ OpenAI ({model}) ناجح ويعمل 100%!"
+        elif provider == "openrouter":
+            from openai import OpenAI
+            client = OpenAI(
+                base_url="https://openrouter.ai/api/v1",
+                api_key=api_key,
+                default_headers={
+                    "HTTP-Referer": "https://github.com/xXNJEEBXx/Flash-Cards",
+                    "X-Title": "PDF Study Tool",
+                }
+            )
+            resp = client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": "hi"}],
+                max_tokens=5
+            )
+            return True, f"✅ الاتصال بـ OpenRouter ({model}) ناجح ويعمل 100%!"
+        else:
+            return False, f"مزود غير مدعوم: {provider}"
+    except Exception as e:
+        err = str(e)
+        if "401" in err or "api_key" in err.lower() or "invalid" in err.lower():
+            return False, f"❌ مفتاح API غير صحيح أو منتهي الصلاحية: {err}"
+        if "404" in err or "not found" in err.lower() or "model" in err.lower():
+            return False, f"❌ النموذج '{model}' غير متاح أو اسمه غير دقيق: {err}"
+        return False, f"❌ فشل الاتصال: {err}"
+
