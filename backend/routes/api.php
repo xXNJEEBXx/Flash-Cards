@@ -148,6 +148,7 @@ Route::get('/db-status', function () {
 });
 
 Route::get('/decks', [DeckController::class, 'index']);
+Route::post('/decks/reorder', [DeckController::class, 'reorder']);
 Route::post('/decks', [DeckController::class, 'store']);
 Route::get('/decks/{deck}', [DeckController::class, 'show']);
 Route::put('/decks/{deck}', [DeckController::class, 'update']);

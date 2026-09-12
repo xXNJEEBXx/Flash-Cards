@@ -6,12 +6,13 @@ import FolderItem from '../Folders/FolderItem';
 import FolderForm from '../Folders/FolderForm';
 import MoveFolderModal from '../Folders/MoveFolderModal';
 import MoveDeckModal from '../Folders/MoveDeckModal';
+import ReorderDecksModal from '../Folders/ReorderDecksModal';
 import { confirmDeleteWithPassword } from '../../utils/passwordProtection';
 import './DeckList.css';
 import '../Folders/FoldersView.css';
 
 const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
-    const { decks, deleteDeck, updateDeckFolder } = useContext(CardsContext);
+    const { decks, deleteDeck, updateDeckFolder, reorderDecks } = useContext(CardsContext);
     const {
         folders,
         loading: foldersLoading,
@@ -27,6 +28,7 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
     const [filterType, setFilterType] = useState('all');
     const [sortBy, setSortBy] = useState('name');
     const [showFolderForm, setShowFolderForm] = useState(false);
+    const [showReorderModal, setShowReorderModal] = useState(false);
     const [editingFolder, setEditingFolder] = useState(null);
     const [parentFolderId, setParentFolderId] = useState(null);
     const [folderToMove, setFolderToMove] = useState(null);
@@ -36,9 +38,15 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
     const [draggedFolder, setDraggedFolder] = useState(null);
     const [viewMode, setViewMode] = useState('both'); // 'both', 'folders', 'decks'
 
-    // Get decks not in any folder (must be defined BEFORE unifiedItems)
+    // Get decks not in any folder sorted by custom order
     const rootDecks = useMemo(() => {
-        return decks.filter(deck => !deck.folder_id);
+        const unassigned = decks.filter(deck => !deck.folder_id && !deck.title?.includes('تجريبية'));
+        return [...unassigned].sort((a, b) => {
+            const orderA = a.order !== undefined && a.order !== null ? a.order : 999999;
+            const orderB = b.order !== undefined && b.order !== null ? b.order : 999999;
+            if (orderA !== orderB) return orderA - orderB;
+            return a.id - b.id;
+        });
     }, [decks]);
 
     // Combine folders and decks into unified items
@@ -185,6 +193,33 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
         } catch (error) {
             alert('فشل إخراج المجلد إلى الصفحة الرئيسية: ' + error.message);
         }
+    };
+
+    // Root decks reordering handlers
+    const handleQuickMoveUpRoot = async (deckId) => {
+        const index = rootDecks.findIndex(d => d.id === deckId);
+        if (index <= 0) return;
+        const newOrder = [...rootDecks];
+        const temp = newOrder[index];
+        newOrder[index] = newOrder[index - 1];
+        newOrder[index - 1] = temp;
+        const orderedIds = newOrder.map(d => d.id);
+        await reorderDecks(orderedIds);
+    };
+
+    const handleQuickMoveDownRoot = async (deckId) => {
+        const index = rootDecks.findIndex(d => d.id === deckId);
+        if (index < 0 || index >= rootDecks.length - 1) return;
+        const newOrder = [...rootDecks];
+        const temp = newOrder[index];
+        newOrder[index] = newOrder[index + 1];
+        newOrder[index + 1] = temp;
+        const orderedIds = newOrder.map(d => d.id);
+        await reorderDecks(orderedIds);
+    };
+
+    const handleSaveReorderRoot = async (orderedDeckIds) => {
+        await reorderDecks(orderedDeckIds);
     };
 
     useEffect(() => {
@@ -344,17 +379,31 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
                     </div>
                 </div>
 
-                <button
-                    className="btn btn-primary"
-                    onClick={() => {
-                        setParentFolderId(null);
-                        setEditingFolder(null);
-                        setShowFolderForm(true);
-                    }}
-                >
-                    <span className="btn-icon">➕</span>
-                    Create Folder
-                </button>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {rootDecks.length > 1 && (
+                        <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => setShowReorderModal(true)}
+                            title="ترتيب المجموعات الرئيسية"
+                            style={{ display: 'flex', alignItems: 'center', gap: '5px' }}
+                        >
+                            <span>↕️</span>
+                            <span>ترتيب المجموعات</span>
+                        </button>
+                    )}
+                    <button
+                        className="btn btn-primary"
+                        onClick={() => {
+                            setParentFolderId(null);
+                            setEditingFolder(null);
+                            setShowFolderForm(true);
+                        }}
+                    >
+                        <span className="btn-icon">➕</span>
+                        Create Folder
+                    </button>
+                </div>
             </div>
 
             {/* Unified Section - All Items Together */}
@@ -428,6 +477,8 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
 
                         if (!passesFilter) return null;
 
+                        const rootDeckIndex = rootDecks.findIndex(d => d.id === deck.id);
+
                         return (
                             <div
                                 key={`deck-${deck.id}`}
@@ -440,30 +491,92 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
                                         style={{ backgroundColor: getDifficultyColor(deck.cards) }}>
                                         {getDifficultyLabel(deck.cards)}
                                     </div>
-                                    <div className="deck-menu-container">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        {/* Quick Move Up/Down Buttons */}
                                         <button
                                             type="button"
-                                            className="deck-menu-btn"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                setOpenDeckMenuId(openDeckMenuId === deck.id ? null : deck.id);
+                                                handleQuickMoveUpRoot(deck.id);
                                             }}
-                                            title="خيارات المجموعة"
+                                            disabled={rootDeckIndex <= 0}
+                                            title="تقديم للأعلى (Move Up)"
+                                            style={{
+                                                background: 'transparent',
+                                                border: '1px solid rgba(0,0,0,0.1)',
+                                                borderRadius: '4px',
+                                                cursor: rootDeckIndex <= 0 ? 'not-allowed' : 'pointer',
+                                                opacity: rootDeckIndex <= 0 ? 0.25 : 0.8,
+                                                padding: '2px 6px',
+                                                fontSize: '12px'
+                                            }}
                                         >
-                                            ⋮
+                                            ▲
                                         </button>
-                                        {openDeckMenuId === deck.id && (
-                                            <div className="deck-dropdown-menu" onClick={(e) => e.stopPropagation()}>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setOpenDeckMenuId(null);
-                                                        onStudyDeck(deck.id);
-                                                    }}
-                                                    disabled={deck.cards.length === 0}
-                                                >
-                                                    🎓 دراسة (Study)
-                                                </button>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleQuickMoveDownRoot(deck.id);
+                                            }}
+                                            disabled={rootDeckIndex < 0 || rootDeckIndex === rootDecks.length - 1}
+                                            title="تأخير للأسفل (Move Down)"
+                                            style={{
+                                                background: 'transparent',
+                                                border: '1px solid rgba(0,0,0,0.1)',
+                                                borderRadius: '4px',
+                                                cursor: (rootDeckIndex < 0 || rootDeckIndex === rootDecks.length - 1) ? 'not-allowed' : 'pointer',
+                                                opacity: (rootDeckIndex < 0 || rootDeckIndex === rootDecks.length - 1) ? 0.25 : 0.8,
+                                                padding: '2px 6px',
+                                                fontSize: '12px'
+                                            }}
+                                        >
+                                            ▼
+                                        </button>
+                                        <div className="deck-menu-container">
+                                            <button
+                                                type="button"
+                                                className="deck-menu-btn"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setOpenDeckMenuId(openDeckMenuId === deck.id ? null : deck.id);
+                                                }}
+                                                title="خيارات المجموعة"
+                                            >
+                                                ⋮
+                                            </button>
+                                            {openDeckMenuId === deck.id && (
+                                                <div className="deck-dropdown-menu" onClick={(e) => e.stopPropagation()}>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setOpenDeckMenuId(null);
+                                                            handleQuickMoveUpRoot(deck.id);
+                                                        }}
+                                                        disabled={rootDeckIndex <= 0}
+                                                    >
+                                                        ▲ تقديم للأعلى (Move Up)
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setOpenDeckMenuId(null);
+                                                            handleQuickMoveDownRoot(deck.id);
+                                                        }}
+                                                        disabled={rootDeckIndex < 0 || rootDeckIndex === rootDecks.length - 1}
+                                                    >
+                                                        ▼ تأخير للأسفل (Move Down)
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setOpenDeckMenuId(null);
+                                                            onStudyDeck(deck.id);
+                                                        }}
+                                                        disabled={deck.cards.length === 0}
+                                                    >
+                                                        🎓 دراسة (Study)
+                                                    </button>
                                                 <button
                                                     type="button"
                                                     onClick={() => {
@@ -496,6 +609,7 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
                                                 </button>
                                             </div>
                                         )}
+                                    </div>
                                     </div>
                                 </div>
 
@@ -617,6 +731,15 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
                     folders={folders}
                     onMove={handleMoveDeck}
                     onClose={() => setDeckToMove(null)}
+                />
+            )}
+
+            {/* Reorder Decks Modal */}
+            {showReorderModal && (
+                <ReorderDecksModal
+                    decks={rootDecks}
+                    onSave={handleSaveReorderRoot}
+                    onClose={() => setShowReorderModal(false)}
                 />
             )}
         </div>

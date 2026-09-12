@@ -36,7 +36,7 @@ class Folder extends Model
      */
     public function decks(): HasMany
     {
-        return $this->hasMany(Deck::class)->orderBy('order');
+        return $this->hasMany(Deck::class)->orderBy('order', 'asc')->orderBy('id', 'asc');
     }
 
     /**

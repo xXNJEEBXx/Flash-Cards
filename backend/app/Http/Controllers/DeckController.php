@@ -14,13 +14,40 @@ class DeckController extends Controller
     public function index()
     {
         try {
-            $decks = Deck::with('cards')->orderBy('id', 'asc')->get();
+            $decks = Deck::with('cards')->orderBy('order', 'asc')->orderBy('id', 'asc')->get();
             return response()->json($decks);
         } catch (\Throwable $e) {
             Log::error("Database error fetching decks: " . $e->getMessage());
             return response()->json([
                 'error' => 'Database connection error',
                 'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function reorder(Request $request)
+    {
+        $request->validate([
+            'deck_ids' => 'required|array',
+            'deck_ids.*' => 'integer'
+        ]);
+
+        try {
+            $deckIds = $request->deck_ids;
+            foreach ($deckIds as $index => $id) {
+                Deck::where('id', $id)->update(['order' => $index]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Decks reordered successfully'
+            ]);
+        } catch (\Throwable $e) {
+            Log::error("Error reordering decks: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reorder decks',
+                'error' => $e->getMessage()
             ], 500);
         }
     }

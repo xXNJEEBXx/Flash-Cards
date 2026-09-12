@@ -41,7 +41,6 @@ const fetchWithTimeout = async (url, options = {}) => {
             if (attempt === retries) {
                 break;
             }
-            // التدرج في الانتظار ليتعافى السيرفر
             await sleep(baseDelay * Math.min(attempt, 5));
         }
     }
@@ -51,7 +50,6 @@ const fetchWithTimeout = async (url, options = {}) => {
 
 const json = async (res) => {
     if (!res.ok) {
-        // Get more details about the error
         let errorDetails;
         try {
             errorDetails = await res.json();
@@ -110,6 +108,14 @@ export const api = {
         () => fetchWithTimeout(`${API_URL}/api/decks/${id}/reset`, { method: 'POST', headers: { 'Accept': 'application/json' } }).then(json).then(r => r?.data ?? r),
         () => null
     ),
+    reorderDecks: (deckIds) => tryApi(
+        () => fetchWithTimeout(`${API_URL}/api/decks/reorder`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ deck_ids: deckIds })
+        }).then(json).then(r => r?.success ?? true),
+        () => true
+    ),
     addCard: (deckId, data) => tryApi(
         () => fetchWithTimeout(`${API_URL}/api/decks/${deckId}/cards`, {
             method: 'POST',
@@ -152,5 +158,3 @@ export const api = {
         }
     ),
 };
-
-

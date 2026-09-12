@@ -403,6 +403,46 @@ export const CardsProvider = ({ children }) => {
         }
     };
 
+    // Reorder decks (optimistic update + API call)
+    const reorderDecks = async (orderedDeckIds) => {
+        try {
+            console.log('🔄 Reordering decks:', orderedDeckIds);
+
+            // Optimistic update of decks state
+            setDecks(prev => {
+                const idToOrder = {};
+                orderedDeckIds.forEach((id, idx) => {
+                    idToOrder[id] = idx;
+                });
+
+                const updated = prev.map(deck => {
+                    if (idToOrder[deck.id] !== undefined) {
+                        return { ...deck, order: idToOrder[deck.id] };
+                    }
+                    return deck;
+                });
+
+                // Sort decks by order asc, then id asc
+                updated.sort((a, b) => {
+                    const orderA = a.order !== undefined && a.order !== null ? a.order : 999999;
+                    const orderB = b.order !== undefined && b.order !== null ? b.order : 999999;
+                    if (orderA !== orderB) return orderA - orderB;
+                    return a.id - b.id;
+                });
+
+                localStorage.setItem('flashcards-decks', JSON.stringify(updated));
+                return updated;
+            });
+
+            // Call API to persist to MySQL
+            await api.reorderDecks(orderedDeckIds);
+            return true;
+        } catch (error) {
+            console.error('Error reordering decks:', error);
+            return false;
+        }
+    };
+
     return (
         <CardsContext.Provider
             value={{
@@ -417,6 +457,7 @@ export const CardsProvider = ({ children }) => {
                 resetDeckProgress,
                 undoLastKnownCard,
                 updateDeckFolder,
+                reorderDecks,
                 hasRecentlyKnownCards: recentlyKnownCards.length > 0,
             }}
         >

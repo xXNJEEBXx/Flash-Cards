@@ -5,17 +5,20 @@ import { FoldersContext } from '../../context/FoldersContext';
 import { foldersAPI } from '../../services/apiService';
 import MoveFolderModal from './MoveFolderModal';
 import MoveDeckModal from './MoveDeckModal';
+import ReorderDecksModal from './ReorderDecksModal';
 import { confirmDeleteWithPassword } from '../../utils/passwordProtection';
 import './FolderView.css';
 
 const FolderView = ({ folderId, onBack, onSelectDeck, onStudyDeck }) => {
     const navigate = useNavigate();
-    const { decks, deleteDeck, updateDeckFolder } = useContext(CardsContext);
+    const { decks, deleteDeck, updateDeckFolder, reorderDecks } = useContext(CardsContext);
     const { folders, loading: foldersLoading, removeDeckFromFolder, moveDeckToFolder, moveFolder, findFolderById } = useContext(FoldersContext);
     const [fetchedFolder, setFetchedFolder] = useState(null);
     const [isFetchingDirect, setIsFetchingDirect] = useState(false);
     const [folderToMove, setFolderToMove] = useState(null);
     const [deckToMove, setDeckToMove] = useState(null);
+    const [showReorderModal, setShowReorderModal] = useState(false);
+    const [sortBy, setSortBy] = useState('custom'); // 'custom', 'chapter', 'name', 'date-newest', 'date-oldest'
     const [openDeckMenuId, setOpenDeckMenuId] = useState(null);
 
     // Find the current folder (support deep nested folders)
@@ -46,20 +49,40 @@ const FolderView = ({ folderId, onBack, onSelectDeck, onStudyDeck }) => {
         }
     }, [contextFolder, folderId]);
 
-    // Get decks in this folder
-    const folderDecks = useMemo(() => {
+    // Raw decks in this folder
+    const rawFolderDecks = useMemo(() => {
         if (!folder) return [];
-        // Match from global decks (ignoring test decks)
         const matched = decks
             .filter(d => !d.title?.includes('تجريبية'))
             .filter(d => Number(d.folder_id) === Number(folderId));
         if (matched.length > 0) return matched;
-        // Fallback to decks embedded in folder object
         if (folder.decks && Array.isArray(folder.decks)) {
             return folder.decks.filter(d => !d.title?.includes('تجريبية'));
         }
         return [];
     }, [decks, folderId, folder]);
+
+    // Decks sorted according to active sort setting (Custom / Chapter numbers / Name / Date)
+    const folderDecks = useMemo(() => {
+        const list = [...rawFolderDecks];
+        if (sortBy === 'chapter') {
+            const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+            return list.sort((a, b) => collator.compare(a.title || '', b.title || ''));
+        } else if (sortBy === 'name') {
+            return list.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+        } else if (sortBy === 'date-newest') {
+            return list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        } else if (sortBy === 'date-oldest') {
+            return list.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+        }
+        // Default: 'custom' order
+        return list.sort((a, b) => {
+            const orderA = a.order !== undefined && a.order !== null ? a.order : 999999;
+            const orderB = b.order !== undefined && b.order !== null ? b.order : 999999;
+            if (orderA !== orderB) return orderA - orderB;
+            return a.id - b.id;
+        });
+    }, [rawFolderDecks, sortBy]);
 
     // Get subfolders
     const subfolders = useMemo(() => {
@@ -105,6 +128,38 @@ const FolderView = ({ folderId, onBack, onSelectDeck, onStudyDeck }) => {
                 alert('Failed to remove deck from folder: ' + error.message);
             }
         }
+    };
+
+    // Quick move deck up
+    const handleQuickMoveUp = async (deckId) => {
+        const index = folderDecks.findIndex(d => d.id === deckId);
+        if (index <= 0) return;
+        const newOrder = [...folderDecks];
+        const temp = newOrder[index];
+        newOrder[index] = newOrder[index - 1];
+        newOrder[index - 1] = temp;
+        const orderedIds = newOrder.map(d => d.id);
+        setSortBy('custom');
+        await reorderDecks(orderedIds);
+    };
+
+    // Quick move deck down
+    const handleQuickMoveDown = async (deckId) => {
+        const index = folderDecks.findIndex(d => d.id === deckId);
+        if (index < 0 || index >= folderDecks.length - 1) return;
+        const newOrder = [...folderDecks];
+        const temp = newOrder[index];
+        newOrder[index] = newOrder[index + 1];
+        newOrder[index + 1] = temp;
+        const orderedIds = newOrder.map(d => d.id);
+        setSortBy('custom');
+        await reorderDecks(orderedIds);
+    };
+
+    // Save reorder from modal
+    const handleSaveReorder = async (orderedDeckIds) => {
+        await reorderDecks(orderedDeckIds);
+        setSortBy('custom');
     };
 
     const getDifficultyLabel = (cards) => {
@@ -170,6 +225,15 @@ const FolderView = ({ folderId, onBack, onSelectDeck, onStudyDeck }) => {
                         <p className="folder-description">{folder.description}</p>
                     )}
                     <div className="folder-header-actions" style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '12px' }}>
+                        <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => setShowReorderModal(true)}
+                            title="ترتيب مجموعات البطاقات في هذا المجلد"
+                            style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 14px', borderRadius: '6px' }}
+                        >
+                            <span>↕️</span>
+                            <span>ترتيب المجموعات</span>
+                        </button>
                         <button
                             className="btn btn-secondary btn-sm"
                             onClick={() => setFolderToMove(folder)}
@@ -310,10 +374,47 @@ const FolderView = ({ folderId, onBack, onSelectDeck, onStudyDeck }) => {
 
             {/* Decks Section */}
             <div className="folder-decks-section">
-                <h2 className="section-heading">
-                    <span className="section-icon">📚</span>
-                    Decks in this folder
-                </h2>
+                <div className="folder-decks-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
+                    <h2 className="section-heading" style={{ margin: 0 }}>
+                        <span className="section-icon">📚</span>
+                        مجموعات البطاقات في هذا المجلد ({folderDecks.length})
+                    </h2>
+                    {folderDecks.length > 0 && (
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                            <select
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                                className="sort-select"
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '8px',
+                                    border: '1px solid #cbd5e1',
+                                    fontSize: '13px',
+                                    fontWeight: 500,
+                                    background: 'var(--card-bg, #ffffff)',
+                                    color: 'var(--text-primary, #1e293b)',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <option value="custom">↕️ الترتيب المخصص (يدوي)</option>
+                                <option value="chapter">🔢 ترتيب ذكي للفصول (Chapter 1, 2, 3...)</option>
+                                <option value="name">🔤 أبجدي (A - Z)</option>
+                                <option value="date-newest">📅 الأحدث أولاً</option>
+                                <option value="date-oldest">📅 الأقدم أولاً</option>
+                            </select>
+                            <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => setShowReorderModal(true)}
+                                title="إعادة ترتيب المجموعات بالسحب أو الأسهم"
+                                style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '6px 14px', borderRadius: '8px', fontWeight: 600 }}
+                            >
+                                <span>↕️</span>
+                                <span>ترتيب المجموعات</span>
+                            </button>
+                        </div>
+                    )}
+                </div>
 
                 {folderDecks.length === 0 ? (
                     <div className="no-decks-message">
@@ -323,37 +424,99 @@ const FolderView = ({ folderId, onBack, onSelectDeck, onStudyDeck }) => {
                     </div>
                 ) : (
                     <div className="folder-decks-grid">
-                        {folderDecks.map(deck => (
+                        {folderDecks.map((deck, deckIndex) => (
                             <div key={deck.id} className="deck-card">
                                 <div className="deck-card-header">
                                     <div className="deck-difficulty-badge"
                                         style={{ backgroundColor: getDifficultyColor(deck.cards) }}>
                                         {getDifficultyLabel(deck.cards)}
                                     </div>
-                                    <div className="deck-menu-container">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        {/* Quick Move Up/Down Buttons */}
                                         <button
                                             type="button"
-                                            className="deck-menu-btn"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                setOpenDeckMenuId(openDeckMenuId === deck.id ? null : deck.id);
+                                                handleQuickMoveUp(deck.id);
                                             }}
-                                            title="خيارات المجموعة"
+                                            disabled={deckIndex === 0}
+                                            title="تقديم للأعلى (Move Up)"
+                                            style={{
+                                                background: 'transparent',
+                                                border: '1px solid rgba(0,0,0,0.1)',
+                                                borderRadius: '4px',
+                                                cursor: deckIndex === 0 ? 'not-allowed' : 'pointer',
+                                                opacity: deckIndex === 0 ? 0.25 : 0.8,
+                                                padding: '2px 6px',
+                                                fontSize: '12px'
+                                            }}
                                         >
-                                            ⋮
+                                            ▲
                                         </button>
-                                        {openDeckMenuId === deck.id && (
-                                            <div className="deck-dropdown-menu" onClick={(e) => e.stopPropagation()}>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setOpenDeckMenuId(null);
-                                                        onStudyDeck(deck.id);
-                                                    }}
-                                                    disabled={deck.cards.length === 0}
-                                                >
-                                                    🎓 دراسة (Study)
-                                                </button>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleQuickMoveDown(deck.id);
+                                            }}
+                                            disabled={deckIndex === folderDecks.length - 1}
+                                            title="تأخير للأسفل (Move Down)"
+                                            style={{
+                                                background: 'transparent',
+                                                border: '1px solid rgba(0,0,0,0.1)',
+                                                borderRadius: '4px',
+                                                cursor: deckIndex === folderDecks.length - 1 ? 'not-allowed' : 'pointer',
+                                                opacity: deckIndex === folderDecks.length - 1 ? 0.25 : 0.8,
+                                                padding: '2px 6px',
+                                                fontSize: '12px'
+                                            }}
+                                        >
+                                            ▼
+                                        </button>
+                                        <div className="deck-menu-container">
+                                            <button
+                                                type="button"
+                                                className="deck-menu-btn"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setOpenDeckMenuId(openDeckMenuId === deck.id ? null : deck.id);
+                                                }}
+                                                title="خيارات المجموعة"
+                                            >
+                                                ⋮
+                                            </button>
+                                            {openDeckMenuId === deck.id && (
+                                                <div className="deck-dropdown-menu" onClick={(e) => e.stopPropagation()}>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setOpenDeckMenuId(null);
+                                                            handleQuickMoveUp(deck.id);
+                                                        }}
+                                                        disabled={deckIndex === 0}
+                                                    >
+                                                        ▲ تقديم للأعلى (Move Up)
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setOpenDeckMenuId(null);
+                                                            handleQuickMoveDown(deck.id);
+                                                        }}
+                                                        disabled={deckIndex === folderDecks.length - 1}
+                                                    >
+                                                        ▼ تأخير للأسفل (Move Down)
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setOpenDeckMenuId(null);
+                                                            onStudyDeck(deck.id);
+                                                        }}
+                                                        disabled={deck.cards.length === 0}
+                                                    >
+                                                        🎓 دراسة (Study)
+                                                    </button>
                                                 <button
                                                     type="button"
                                                     onClick={() => {
@@ -395,6 +558,7 @@ const FolderView = ({ folderId, onBack, onSelectDeck, onStudyDeck }) => {
                                                 </button>
                                             </div>
                                         )}
+                                    </div>
                                     </div>
                                 </div>
 
@@ -507,6 +671,15 @@ const FolderView = ({ folderId, onBack, onSelectDeck, onStudyDeck }) => {
                     folders={folders}
                     onMove={handleMoveDeck}
                     onClose={() => setDeckToMove(null)}
+                />
+            )}
+
+            {showReorderModal && (
+                <ReorderDecksModal
+                    decks={rawFolderDecks}
+                    folderName={folder?.name || ''}
+                    onSave={handleSaveReorder}
+                    onClose={() => setShowReorderModal(false)}
                 />
             )}
         </div>
