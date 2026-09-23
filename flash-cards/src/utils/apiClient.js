@@ -48,6 +48,7 @@ const fetchWithTimeout = async (url, options = {}) => {
     throw lastError;
 };
 
+
 const json = async (res) => {
     if (!res.ok) {
         let errorDetails;
@@ -143,10 +144,16 @@ export const api = {
         () => fetchWithTimeout(`${API_URL}/api/decks/${deckId}/cards/${cardId}`, { method: 'DELETE' }).then(() => true),
         () => null
     ),
-    toggleKnown: (deckId, cardId) => tryApi(
+    toggleKnown: (deckId, cardId, targetKnown = null) => tryApi(
         async () => {
-            console.log(`Toggling known state for card ${cardId} in deck ${deckId}`);
-            const response = await fetchWithTimeout(`${API_URL}/api/decks/${deckId}/cards/${cardId}/toggle-known`, { method: 'POST', headers: { 'Accept': 'application/json' } });
+            console.log(`Setting known state for card ${cardId} in deck ${deckId} to:`, targetKnown);
+            const headers = { 'Accept': 'application/json' };
+            const options = { method: 'POST', headers };
+            if (targetKnown !== null && targetKnown !== undefined) {
+                headers['Content-Type'] = 'application/json';
+                options.body = JSON.stringify({ known: !!targetKnown });
+            }
+            const response = await fetchWithTimeout(`${API_URL}/api/decks/${deckId}/cards/${cardId}/toggle-known`, options);
             const result = await json(response);
             const data = result?.data ?? result;
             console.log('Toggle known result:', data);

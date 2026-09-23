@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Folder;
+use App\Models\Deck;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class FolderController extends Controller
 {
@@ -155,13 +157,17 @@ class FolderController extends Controller
         try {
             $folder = Folder::findOrFail($id);
 
-            // Move decks to parent folder or root level
-            $folder->decks()->update(['folder_id' => $folder->parent_folder_id]);
+            DB::transaction(function () use ($folder) {
+                // Move decks to parent folder or root level (null)
+                Deck::where('folder_id', $folder->id)
+                    ->update(['folder_id' => $folder->parent_folder_id]);
 
-            // Move subfolders to parent folder or root level
-            $folder->subfolders()->update(['parent_folder_id' => $folder->parent_folder_id]);
+                // Move subfolders to parent folder or root level
+                Folder::where('parent_folder_id', $folder->id)
+                    ->update(['parent_folder_id' => $folder->parent_folder_id]);
 
-            $folder->delete();
+                $folder->delete();
+            });
 
             return response()->json([
                 'success' => true,

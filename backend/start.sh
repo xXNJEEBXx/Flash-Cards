@@ -14,4 +14,4 @@ chmod -R 775 storage database 2>/dev/null || true
 
 # Start Laravel server immediately
 echo "✨ Starting Laravel server on port ${PORT:-8000} with 4 workers..."
-exec php -d default_socket_timeout=3 artisan serve --host=0.0.0.0 --port="${PORT:-8000}"
+exec php -d default_socket_timeout=3 artisan serve --host=0.0.0.0 --port="${PORT:-8000}" --no-reload

@@ -7,23 +7,47 @@ export const FoldersProvider = ({ children }) => {
     const [folders, setFolders] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Load folders from API
+    // Load folders from API with localStorage fallback
     const loadFolders = useCallback(async () => {
         try {
             setLoading(true);
             const data = await foldersAPI.getFolders();
-            setFolders(data || []);
+            if (Array.isArray(data) && data.length > 0) {
+                setFolders(data);
+                localStorage.setItem('flashcards-folders', JSON.stringify(data));
+            } else {
+                const stored = localStorage.getItem('flashcards-folders');
+                if (stored) {
+                    setFolders(JSON.parse(stored));
+                } else {
+                    setFolders(data || []);
+                }
+            }
         } catch (error) {
             console.error('Error loading folders:', error);
-            setFolders([]);
+            const stored = localStorage.getItem('flashcards-folders');
+            if (stored) {
+                try { setFolders(JSON.parse(stored)); } catch (_) { setFolders([]); }
+            } else {
+                setFolders([]);
+            }
         } finally {
             setLoading(false);
         }
     }, []);
 
-    // Load folders on mount
+    // Load folders on mount and on visibility change
     useEffect(() => {
         loadFolders();
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                loadFolders();
+            }
+        };
+
+        window.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => window.removeEventListener('visibilitychange', handleVisibilityChange);
     }, [loadFolders]);
 
     // Create a new folder
@@ -50,14 +74,19 @@ export const FoldersProvider = ({ children }) => {
         }
     };
 
-    // Delete a folder
+    // Delete a folder (Optimistic UI update + API call)
     const deleteFolder = async (folderId) => {
+        // Optimistically remove folder immediately from UI and local storage
+        setFolders(prev => {
+            const updated = prev.filter(f => f.id !== folderId);
+            localStorage.setItem('flashcards-folders', JSON.stringify(updated));
+            return updated;
+        });
+
         try {
             await foldersAPI.deleteFolder(folderId);
-            await loadFolders(); // Reload to reflect deletion
         } catch (error) {
-            console.error('Error deleting folder:', error);
-            throw error;
+            console.warn('Backend delete folder warning, continuing with local deletion:', error.message);
         }
     };
 

@@ -4,6 +4,7 @@ import Card from '../Card/Card';
 import StealthStudyMode from './StealthStudyMode';
 import { settingsAPI, cardsAPI } from '../../services/apiService';
 import { translateCard, mergeTranslationWithOriginal } from '../../services/translationService';
+import { API_CONFIG } from '../../config/api.js';
 import './StudyMode.css';
 import './smart-mode.css';
 
@@ -126,7 +127,7 @@ const StudyMode = ({ deckId, onBack }) => {
                     session_token: localStorage.getItem('session_token')
                 };
                 navigator.sendBeacon && navigator.sendBeacon(
-                    'https://flash-cards-production-5df5.up.railway.app/api/settings',
+                    `${API_CONFIG.getApiUrl()}/api/settings`,
                     new Blob([JSON.stringify(payload)], { type: 'application/json' })
                 );
             } catch (_) {
@@ -615,8 +616,8 @@ const StudyMode = ({ deckId, onBack }) => {
             // تسجيل عرض البطاقة (خلفية)
             cardsAPI.markCardAsSeen(currentDeck.id, currentCard.id)?.catch(() => { });
 
-            // اجعل البطاقة معروفة محلياً
-            toggleCardKnown(currentDeck.id, currentCard.id);
+            // اجعل البطاقة معروفة محلياً بشكل صريح
+            toggleCardKnown(currentDeck.id, currentCard.id, true);
 
             // إزالة من غير المتقنة (خلفية)
             removeFromUnmastered(currentCard.id);
@@ -658,11 +659,11 @@ const StudyMode = ({ deckId, onBack }) => {
         try {
             // تسجيل عرض البطاقة (خلفية)
             cardsAPI.markCardAsSeen(currentDeck.id, cardId)?.catch(() => { });
-            const card = currentDeck.cards.find(c => c.id === cardId);
+            const card = currentDeck?.cards?.find(c => c.id === cardId);
             const willBeKnown = card ? !card.known : true;
 
-            // تبديل حالة البطاقة فوراً
-            toggleCardKnown(currentDeck.id, cardId);
+            // تبديل حالة البطاقة فوراً مع القيمة المستهدفة
+            toggleCardKnown(currentDeck.id, cardId, willBeKnown);
 
             if (willBeKnown) {
                 removeFromUnmastered(cardId);

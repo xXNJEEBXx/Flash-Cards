@@ -16,99 +16,97 @@ export const CardsProvider = ({ children }) => {
     // Track recently marked as known cards for undo functionality
     const [recentlyKnownCards, setRecentlyKnownCards] = useState([]);
 
-    // Load decks: try Laravel API first, then localStorage fallback
-    useEffect(() => {
-        let mounted = true;
-        (async () => {
-            try {
-                console.log('🔄 Loading decks from Laravel API...');
+    // Reusable fetchDecks with smart merge to preserve cross-device progress
+    const cleanDecks = (list) => {
+        if (!Array.isArray(list)) return [];
+        return list.filter(d => d && !d.title?.includes('تجريبية'));
+    };
 
-                const cleanDecks = (list) => {
-                    if (!Array.isArray(list)) return [];
-                    return list.filter(d => d && !d.title?.includes('تجريبية'));
-                };
+    const fetchDecks = React.useCallback(async () => {
+        try {
+            console.log('🔄 Loading decks from Laravel API...');
+            let apiDecks = await api.listDecks();
+            let emptyRetries = 0;
 
-                // Sanitize any existing localStorage test decks immediately
-                try {
-                    const rawStored = localStorage.getItem('flashcards-decks');
-                    if (rawStored) {
-                        const parsed = JSON.parse(rawStored);
-                        const sanitized = cleanDecks(parsed);
-                        if (sanitized.length !== parsed.length) {
-                            localStorage.setItem('flashcards-decks', JSON.stringify(sanitized));
-                        }
+            while (Array.isArray(apiDecks) && apiDecks.length === 0 && emptyRetries < 3) {
+                console.log(`⚠️ API returned 0 decks (attempt ${emptyRetries + 1}/3). Retrying in 1.5 seconds...`);
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                apiDecks = await api.listDecks();
+                emptyRetries++;
+            }
+
+            const validApiDecks = cleanDecks(apiDecks);
+
+            if (validApiDecks.length > 0) {
+                console.log(`✅ API returned ${validApiDecks.length} valid decks`);
+                setDecks(prev => {
+                    if (prev && prev.length > 0) {
+                        const localKnownMap = new Map();
+                        prev.forEach(d => {
+                            (d.cards || []).forEach(c => {
+                                if (c.known) localKnownMap.set(c.id, true);
+                            });
+                        });
+
+                        // Intelligent merge: card remains known if known on server OR known locally
+                        const merged = validApiDecks.map(serverDeck => ({
+                            ...serverDeck,
+                            cards: (serverDeck.cards || []).map(serverCard => ({
+                                ...serverCard,
+                                known: !!(serverCard.known || localKnownMap.get(serverCard.id))
+                            }))
+                        }));
+                        localStorage.setItem('flashcards-decks', JSON.stringify(merged));
+                        return merged;
                     }
-                } catch (e) {}
-
-                // Load decks from Laravel API
-                let apiDecks = await api.listDecks();
-                let emptyRetries = 0;
-                
-                while (Array.isArray(apiDecks) && apiDecks.length === 0 && emptyRetries < 3) {
-                    console.log(`⚠️ API returned 0 decks (attempt ${emptyRetries + 1}/3). Retrying in 1.5 seconds...`);
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-                    apiDecks = await api.listDecks();
-                    emptyRetries++;
-                }
-
-                if (!mounted) return;
-
-                const validApiDecks = cleanDecks(apiDecks);
-
-                if (Array.isArray(apiDecks) && validApiDecks.length > 0) {
-                    console.log(`✅ API returned ${validApiDecks.length} valid decks`);
-                    setDecks(validApiDecks);
                     localStorage.setItem('flashcards-decks', JSON.stringify(validApiDecks));
-                } else if (Array.isArray(apiDecks) && validApiDecks.length === 0) {
-                    // Check if non-empty backup in localStorage
-                    const localDecksRaw = localStorage.getItem('flashcards-decks');
-                    const localDecks = cleanDecks(localDecksRaw ? JSON.parse(localDecksRaw) : []);
-                    if (localDecks.length > 0) {
-                        setDecks(localDecks);
-                    } else {
-                        setDecks([]);
-                    }
-                } else {
-                    console.log('⚠️ Unexpected API response, checking localStorage');
-                    await loadFromLocalStorageOrCreateDefault();
-                }
-            } catch (error) {
-                console.log('❌ Laravel API error:', error.message);
-                if (!mounted) return;
-                await loadFromLocalStorageOrCreateDefault();
+                    return validApiDecks;
+                });
             }
-
-            async function loadFromLocalStorageOrCreateDefault() {
-                try {
-                    const storedDecks = localStorage.getItem('flashcards-decks');
-                    if (storedDecks) {
-                        const parsedDecks = JSON.parse(storedDecks).filter(d => d && !d.title?.includes('تجريبية'));
-                        console.log('📂 Loaded from localStorage:', parsedDecks.length, 'decks');
-                        setDecks(parsedDecks);
-                    } else {
-                        setDecks([]);
-                    }
-                } catch (err) {
-                    console.error('Error parsing localStorage backup:', err);
-                    setDecks([]);
-                }
-            }
-        })();
-
-        return () => { mounted = false; };
+        } catch (error) {
+            console.log('ℹ️ Laravel API sync note:', error.message);
+        }
     }, []);
+
+    // Initial mount: load localStorage instantly (0ms), then sync with API
+    useEffect(() => {
+        const storedDecks = localStorage.getItem('flashcards-decks');
+        if (storedDecks) {
+            try {
+                const parsed = JSON.parse(storedDecks);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    console.log('📂 Instant load from localStorage:', parsed.length, 'decks');
+                    setDecks(parsed);
+                }
+            } catch (_) {}
+        }
+
+        fetchDecks();
+
+        // Re-sync whenever the user switches back to the tab/window (e.g. mobile returning from PC)
+        let lastSyncTime = Date.now();
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && Date.now() - lastSyncTime > 4000) {
+                lastSyncTime = Date.now();
+                console.log('🔄 Tab became active, refreshing decks from server...');
+                fetchDecks();
+            }
+        };
+
+        window.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('focus', handleVisibilityChange);
+
+        return () => {
+            window.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('focus', handleVisibilityChange);
+        };
+    }, [fetchDecks]);
 
     // Save to localStorage whenever decks state changes
     useEffect(() => {
-        if (decks.length > 0) {
+        if (decks && decks.length > 0) {
             localStorage.setItem('flashcards-decks', JSON.stringify(decks));
-            console.log('Saved decks to localStorage:', decks.length, 'decks');
         }
-    }, [decks]);
-
-    // Save decks to localStorage whenever decks change
-    useEffect(() => {
-        localStorage.setItem('flashcards-decks', JSON.stringify(decks));
     }, [decks]);
 
     // Add a new deck (Laravel API first, fallback local)
@@ -235,19 +233,20 @@ export const CardsProvider = ({ children }) => {
         setDecks(prevDecks => prevDecks.map(deck => deck.id === deckId ? { ...deck, cards: deck.cards.filter(card => card.id !== cardId) } : deck));
     };
 
-    // Toggle a card's known status (optimistic update with API sync)
-    const toggleCardKnown = async (deckId, cardId) => {
-        console.log(`🔄 Toggling card ${cardId} in deck ${deckId}`);
+    // Toggle a card's known status (optimistic update with API sync and explicit state support)
+    const toggleCardKnown = async (deckId, cardId, explicitKnown = null) => {
+        console.log(`🔄 Updating card ${cardId} in deck ${deckId}`, explicitKnown !== null ? `to ${explicitKnown}` : '(toggle)');
 
         // Determine previous known state from current snapshot
         const deckSnapshot = decks.find(d => d.id === deckId);
         const cardSnapshot = deckSnapshot?.cards?.find(c => c.id === cardId);
         const prevKnown = !!cardSnapshot?.known;
+        const targetKnown = explicitKnown !== null ? !!explicitKnown : !prevKnown;
 
-        console.log(`Previous known state: ${prevKnown}`);
+        console.log(`Target known state: ${targetKnown} (was ${prevKnown})`);
 
         // If marking card as known, add to recently known cards for undo functionality
-        if (!prevKnown) {
+        if (targetKnown && !prevKnown) {
             setRecentlyKnownCards(prev => [...prev, { deckId, cardId, timestamp: Date.now() }]);
             console.log('📝 Added card to recently known cards for undo');
         }
@@ -255,57 +254,35 @@ export const CardsProvider = ({ children }) => {
         // Optimistic UI update
         setDecks(prev => prev.map(deck =>
             deck.id === deckId
-                ? { ...deck, cards: deck.cards.map(c => c.id === cardId ? { ...c, known: !prevKnown } : c) }
+                ? { ...deck, cards: deck.cards.map(c => c.id === cardId ? { ...c, known: targetKnown } : c) }
                 : deck
         ));
 
-        console.log(`Updated UI optimistically to: ${!prevKnown}`);
-
         try {
-            // Sync with Laravel API
+            // Sync with Laravel API with explicit targetKnown
             console.log('📡 Syncing with Laravel API...');
-            const updated = await api.toggleKnown(deckId, cardId);
+            const updated = await api.toggleKnown(deckId, cardId, targetKnown);
 
             if (updated && updated.id !== undefined) {
                 console.log('✅ API sync successful:', updated);
 
                 // Update with server truth
-                setDecks(prev => prev.map(deck =>
-                    deck.id === deckId
-                        ? {
-                            ...deck, cards: deck.cards.map(c =>
-                                c.id === updated.id ? { ...c, ...updated } : c
-                            )
-                        }
-                        : deck
-                ));
-
-                // Update localStorage backup
-                const updatedDecks = decks.map(deck =>
-                    deck.id === deckId
-                        ? {
-                            ...deck, cards: deck.cards.map(c =>
-                                c.id === updated.id ? { ...c, ...updated } : c
-                            )
-                        }
-                        : deck
-                );
-                localStorage.setItem('flashcards-decks', JSON.stringify(updatedDecks));
-
-                console.log('💾 Updated localStorage backup');
-                console.log(`Synced with API: ${!!updated.known}`);
+                setDecks(prev => {
+                    const next = prev.map(deck =>
+                        deck.id === deckId
+                            ? {
+                                ...deck, cards: deck.cards.map(c =>
+                                    c.id === updated.id ? { ...c, ...updated, known: !!updated.known } : c
+                                )
+                            }
+                            : deck
+                    );
+                    localStorage.setItem('flashcards-decks', JSON.stringify(next));
+                    return next;
+                });
             }
         } catch (error) {
-            console.log('❌ API sync failed:', error.message);
-
-            // Revert optimistic update on failure
-            setDecks(prev => prev.map(deck =>
-                deck.id === deckId
-                    ? { ...deck, cards: deck.cards.map(c => c.id === cardId ? { ...c, known: prevKnown } : c) }
-                    : deck
-            ));
-
-            console.log('🔄 Reverted to previous state due to sync failure');
+            console.warn('API sync note, maintaining local state:', error.message);
         }
     };
 
@@ -447,6 +424,7 @@ export const CardsProvider = ({ children }) => {
         <CardsContext.Provider
             value={{
                 decks,
+                fetchDecks,
                 addDeck,
                 editDeck,
                 deleteDeck,

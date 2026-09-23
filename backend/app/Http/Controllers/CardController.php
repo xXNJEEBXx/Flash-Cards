@@ -37,16 +37,25 @@ class CardController extends Controller
         return response()->noContent();
     }
 
-    public function toggleKnown(Deck $deck, Card $card)
+    public function toggleKnown(Request $request, Deck $deck, Card $card)
     {
         $this->assertCardInDeck($deck, $card);
 
-        if (!$card->known) {
-            // تسجيل الإتقان
-            $card->markAsKnown();
+        if ($request->has('known')) {
+            $targetKnown = $request->boolean('known');
+            if ($targetKnown) {
+                $card->markAsKnown();
+            } else {
+                $card->update(['known' => false]);
+            }
         } else {
-            // إلغاء الإتقان
-            $card->update(['known' => false]);
+            if (!$card->known) {
+                // تسجيل الإتقان
+                $card->markAsKnown();
+            } else {
+                // إلغاء الإتقان
+                $card->update(['known' => false]);
+            }
         }
 
         return response()->json([

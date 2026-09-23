@@ -42,7 +42,7 @@
   flex-direction: column;
   justify-content: flex-start; /* allow footer/hint to sit at the bottom */
   align-items: center;
-  padding: 30px;
+  padding: 48px 32px 30px 32px; /* Generous top padding prevents overlap with browser translation buttons/icons */
   box-sizing: border-box;
   border-radius: 8px;
   word-wrap: break-word;
@@ -58,7 +58,10 @@
 
 .card-front h3 {
   font-size: 1.4rem;
-  margin: 0;
+  margin: 6px 0 12px 0;
+  padding: 0 12px;
+  width: 100%;
+  box-sizing: border-box;
   text-align: center;
   word-break: break-word;
   hyphens: auto;
@@ -73,7 +76,10 @@
 
 .card-back p {
   font-size: 1.2rem;
-  margin: 0;
+  margin: 6px 0 12px 0;
+  padding: 0 12px;
+  width: 100%;
+  box-sizing: border-box;
   text-align: center;
   word-break: break-word;
   hyphens: auto;
@@ -201,16 +207,16 @@
 
   .card-front,
   .card-back {
-    padding: 20px;
+    padding: 44px 20px 24px 20px;
   }
-  /* Slightly reduce reserved top space on small screens */
+  /* Reserved top space for status badges on small screens */
   .card.smart-mode-active .card-front,
   .card.high-priority .card-front,
   .card.review-mode .card-front,
   .card.smart-mode-active .card-back,
   .card.high-priority .card-back,
   .card.review-mode .card-back {
-    padding-top: 44px;
+    padding-top: 56px;
   }
 }
 
@@ -222,15 +228,26 @@
 
   .card-front h3 {
     font-size: 1.1rem;
+    margin: 4px 0 10px 0;
   }
 
   .card-back p {
     font-size: 1rem;
+    margin: 4px 0 10px 0;
   }
 
   .card-front,
   .card-back {
-    padding: 15px;
+    padding: 48px 16px 20px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .card-quick-translate-btn {
+    top: 8px;
+    left: 8px;
+    font-size: 0.75rem;
+    padding: 3px 8px;
   }
 }
 
