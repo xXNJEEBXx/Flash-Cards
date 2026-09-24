@@ -52,6 +52,8 @@ const StudyMode = ({ deckId, onBack }) => {
     const UNMASTERED_LIMIT = 6;
     // مرجع لمؤقت الحفظ لتطبيق debounce وتجنب كثرة الطلبات
     const saveTimeoutRef = useRef(null);
+    const shuffleOrderRef = useRef(new Map());
+    const prevSmartModeRef = useRef(false);
 
     // جلب الإعدادات من قاعدة البيانات عند التحميل
     useEffect(() => {
@@ -62,6 +64,7 @@ const StudyMode = ({ deckId, onBack }) => {
                 console.log('Loaded settings:', savedSettings);
                 if (savedSettings) {
                     setSmartModeEnabled(savedSettings.smart_mode_enabled || false);
+                    prevSmartModeRef.current = !!savedSettings.smart_mode_enabled;
                     setHideMasteredCards(savedSettings.hide_mastered_cards || false);
                     setShuffleMode(savedSettings.shuffle_mode || false);
                     setUnmastered(savedSettings.unmastered_cards || []);
@@ -123,7 +126,6 @@ const StudyMode = ({ deckId, onBack }) => {
                     unmastered_cards: unmastered,
                     current_deck_id: currentDeck?.id || null,
                     current_card_index: currentCardIndex,
-                    // تمرير التوكن ضمن الجسم لأن sendBeacon لا يسمح برؤوس مخصصة
                     session_token: localStorage.getItem('session_token')
                 };
                 navigator.sendBeacon && navigator.sendBeacon(
@@ -141,7 +143,7 @@ const StudyMode = ({ deckId, onBack }) => {
         };
     }, [smartModeEnabled, hideMasteredCards, shuffleMode, unmastered, currentDeck, currentCardIndex]);
 
-    // Find the current deck and reset systems state if needed
+    // Find the current deck and initialize if deckId changed
     useEffect(() => {
         console.log(`🔍 Looking for deck ID: ${deckId}`);
         const deck = decks.find(d => d.id === deckId);
@@ -149,25 +151,17 @@ const StudyMode = ({ deckId, onBack }) => {
             console.log(`✅ Found deck: ${deck.title} with ${deck.cards.length} cards`);
             setCurrentDeck(deck);
 
-            // إعادة ضبط حالة النظام الذكي ووضع المراجعة عند تغيير المجموعة
-            if (smartModeEnabled) {
-                console.log('🧠 Smart Mode is active - checking non-mastered cards');
-                const nonMasteredCount = deck.cards.filter(card => !card.known).length;
-                console.log(`📊 Found ${nonMasteredCount} non-mastered cards in this deck`);
-
-                // إذا كان هناك خلل في وضع المراجعة، نعيد ضبطه
-                if (reviewMode && (unmastered.length === 0 || nonMasteredCount === 0)) {
-                    console.log('🔄 Resetting review mode for new deck');
-                    setReviewMode(false);
+            // Initialize cards array only if empty or changed to a different deck
+            setCards(prevCards => {
+                if (!prevCards || prevCards.length === 0 || currentDeck?.id !== deck.id) {
+                    return [...deck.cards];
                 }
-            }
-
-            // Initialize cards array
-            setCards([...deck.cards]);
+                return prevCards;
+            });
         } else {
             console.log(`⚠️ Deck with ID ${deckId} not found!`);
         }
-    }, [deckId, decks, smartModeEnabled, reviewMode, unmastered]);
+    }, [deckId, decks]);
 
     // تحسين معالجة وضع المراجعة وقائمة unmastered
     useEffect(() => {
@@ -177,59 +171,41 @@ const StudyMode = ({ deckId, onBack }) => {
         }
     }, [reviewMode, unmastered]);
 
-    // تحقق من حالة البطاقات عند تفعيل النظام الذكي
+    // تفعيل النظام الذكي وتهيئة قائمة البطاقات غير المتقنة عند التبديل فقط
     useEffect(() => {
-        if (currentDeck) {
-            // تنفيذ فقط عند تغيير حالة النظام الذكي
-            console.log(`🧠 Smart Mode status changed: ${smartModeEnabled ? 'ENABLED' : 'DISABLED'}`);
+        if (!settingsLoaded || !currentDeck) return;
 
-            // تحقق من وجود بطاقات غير متقنة
-            const nonMasteredCards = currentDeck.cards.filter(card => !card.known);
-            console.log(`📊 Found ${nonMasteredCards.length} non-mastered cards in deck`);
+        const wasSmartMode = prevSmartModeRef.current;
+        prevSmartModeRef.current = smartModeEnabled;
 
-            if (smartModeEnabled) {
-                // عند تفعيل النظام الذكي، قم بتهيئة قائمة unmastered بشكل صحيح
-                // إذا كانت القائمة فارغة أو تم إعادة تفعيل النظام، أعد تهيئتها
-                console.log('🔄 Smart Mode: initializing unmastered list with non-mastered cards');
-
-                // أضف بطاقات غير متقنة بالترتيب الأصلي إلى قائمة unmastered
+        if (smartModeEnabled && !wasSmartMode) {
+            console.log('🧠 Smart Mode status changed: ENABLED');
+            // عند تشغيل النظام الذكي، نهيئ قائمة unmastered فقط إذا كانت فارغة حالياً
+            if (unmastered.length === 0) {
+                const nonMasteredCards = currentDeck.cards.filter(card => !card.known);
                 if (nonMasteredCards.length > 0) {
                     const cardsToAdd = [...nonMasteredCards]
                         .slice(0, Math.min(UNMASTERED_LIMIT, nonMasteredCards.length))
                         .map(card => card.id);
 
-                    console.log(`🔄 Adding ${cardsToAdd.length} cards to unmastered list`);
-
-                    // تحديث قائمة unmastered محلياً
+                    console.log(`🔄 Initializing ${cardsToAdd.length} cards in unmastered list`);
                     setUnmastered(cardsToAdd);
 
-                    // مزامنة مع الخادم
-                    Promise.all(cardsToAdd.map(cardId =>
-                        settingsAPI.addUnmasteredCard(cardId).catch(() => { })
-                    ));
-
-                    // إذا وصلنا للحد، فعّل وضع المراجعة
                     if (cardsToAdd.length >= UNMASTERED_LIMIT) {
-                        console.log('🔄 Activating review mode');
                         setReviewMode(true);
                     }
-                }
-            } else {
-                // عند إيقاف النظام الذكي، يمكننا إعادة ضبط وضع المراجعة
-                if (reviewMode) {
-                    console.log('🔄 Disabling review mode when smart mode is disabled');
-                    setReviewMode(false);
+
+                    settingsAPI.updateSettings({ unmastered_cards: cardsToAdd }).catch(() => { });
                 }
             }
-
-            // إذا كان وضع المراجعة مفعلاً وقائمة unmastered فارغة، أوقف وضع المراجعة
-            if (reviewMode && unmastered.length === 0) {
-                console.log('⚠️ Smart Mode: review mode active but unmastered list is empty - resetting');
+        } else if (!smartModeEnabled && wasSmartMode) {
+            console.log('🧠 Smart Mode status changed: DISABLED');
+            if (reviewMode) {
                 setReviewMode(false);
             }
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [smartModeEnabled, currentDeck]);
+    }, [smartModeEnabled, settingsLoaded, currentDeck?.id]);
 
     // Handle shuffle mode and card filtering
     useEffect(() => {
@@ -240,7 +216,7 @@ const StudyMode = ({ deckId, onBack }) => {
                 console.log('🎯 Smart Mode: ACTIVE');
                 // الخطوة 1: دائماً ابدأ بجميع البطاقات غير المتقنة
                 const nonMasteredCards = currentDeck.cards.filter(card => !card.known);
-                console.log(`� Found ${nonMasteredCards.length} non-mastered cards`);
+                console.log(`📊 Found ${nonMasteredCards.length} non-mastered cards`);
 
                 // الخطوة 2: تحقق من وضع المراجعة وقائمة unmastered
                 if (reviewMode && unmastered.length > 0) {
@@ -274,7 +250,6 @@ const StudyMode = ({ deckId, onBack }) => {
                     console.log('📚 Smart mode - prioritizing difficult cards');
 
                     // ترتيب البطاقات لإعطاء الأولوية للبطاقات الصعبة
-                    // أولاً: البطاقات غير المتقنة والتي في قائمة unmastered
                     const difficultCardIds = new Set(unmastered);
                     const difficultCards = nonMasteredCards
                         .filter(card => difficultCardIds.has(card.id))
@@ -296,11 +271,10 @@ const StudyMode = ({ deckId, onBack }) => {
                 // الخطوة 4: تحقق نهائي من وجود بطاقات
                 if (cardsToDisplay.length === 0 && currentDeck.cards.length > 0) {
                     console.log('🚨 No cards to display despite having cards in deck!');
-                    // الخطة B: استخدم البطاقات غير المتقنة أولاً، وإن لم تتوفر، استخدم جميع البطاقات
-                    const nonMasteredCards = currentDeck.cards.filter(card => !card.known);
-                    if (nonMasteredCards.length > 0) {
+                    const nonMastered = currentDeck.cards.filter(card => !card.known);
+                    if (nonMastered.length > 0) {
                         console.log('🔄 Fallback: using non-mastered cards');
-                        cardsToDisplay = nonMasteredCards;
+                        cardsToDisplay = nonMastered;
                     } else {
                         console.log('🔄 Fallback: using all cards');
                         cardsToDisplay = [...currentDeck.cards];
@@ -323,19 +297,22 @@ const StudyMode = ({ deckId, onBack }) => {
                     cardsToDisplay = cardsToDisplay.filter(card => !card.known);
                 }
 
-                // ترتيب البطاقات
+                // ترتيب البطاقات عشوائياً بثبات تام
                 if (shuffleMode) {
-                    cardsToDisplay = cardsToDisplay.sort(() => Math.random() - 0.5);
+                    cardsToDisplay = [...cardsToDisplay].sort((a, b) => {
+                        if (!shuffleOrderRef.current.has(a.id)) {
+                            shuffleOrderRef.current.set(a.id, Math.random());
+                        }
+                        if (!shuffleOrderRef.current.has(b.id)) {
+                            shuffleOrderRef.current.set(b.id, Math.random());
+                        }
+                        return shuffleOrderRef.current.get(a.id) - shuffleOrderRef.current.get(b.id);
+                    });
                 }
             }
 
-            // إذا كان لدينا تغيير كبير في قائمة البطاقات، يمكن أن نعيد ضبط الفهرس إلى 0
-            // التعديل: لا نعيد ضبط المؤشر إلى 0 إذا كنا في وضع النظام الذكي (المراجعة)
-            // لضمان استمرارية تجربة الاستخدام عند تبديل البطاقة
-            const isSmartReviewActive = smartModeEnabled && reviewMode;
-            const shouldResetIndex = !isSmartReviewActive && (Math.abs((cards.length || 0) - cardsToDisplay.length) > 5);
-
-            // حدّث قائمة العرض مع الحفاظ على الفهرس الحالي قدر الإمكان
+            // الحفاظ على نفس البطاقة المعروضة حالياً لمنع انقلابها أو تبدلها المفاجئ
+            const activeCardId = cards[currentCardIndex]?.id;
             setCards(cardsToDisplay);
             setCurrentCardIndex(prev => {
                 if (!Array.isArray(cardsToDisplay) || cardsToDisplay.length === 0) {
@@ -343,20 +320,15 @@ const StudyMode = ({ deckId, onBack }) => {
                     return 0;
                 }
 
-                // إعادة ضبط الفهرس إلى 0 إذا كان هناك تغيير كبير في القائمة
-                if (shouldResetIndex) {
-                    console.log('🔄 Significant change in card list - resetting index to 0');
-                    return 0;
+                if (activeCardId) {
+                    const matchIdx = cardsToDisplay.findIndex(c => c.id === activeCardId);
+                    if (matchIdx !== -1) {
+                        return matchIdx;
+                    }
                 }
 
-                // التأكد من أن الفهرس في نطاق صحيح
                 const maxIndex = Math.max(0, cardsToDisplay.length - 1);
-                // إذا كنا في وضع المراجعة ونحن عند الفهرس، نبقيه كما هو (ينزلق المؤشر ليقرأ البطاقة التالية التي تحل محل البطاقة المحذوفة)
-                const validIndex = Math.min(prev, maxIndex);
-                if (validIndex !== prev) {
-                    console.log(`🔄 Adjusting index from ${prev} to ${validIndex}`);
-                }
-                return validIndex;
+                return Math.min(prev, maxIndex);
             });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -704,7 +676,15 @@ const StudyMode = ({ deckId, onBack }) => {
                     }
 
                     if (shuffleMode) {
-                        cardsToDisplay = cardsToDisplay.sort(() => Math.random() - 0.5);
+                        cardsToDisplay = cardsToDisplay.sort((a, b) => {
+                            if (!shuffleOrderRef.current.has(a.id)) {
+                                shuffleOrderRef.current.set(a.id, Math.random());
+                            }
+                            if (!shuffleOrderRef.current.has(b.id)) {
+                                shuffleOrderRef.current.set(b.id, Math.random());
+                            }
+                            return shuffleOrderRef.current.get(a.id) - shuffleOrderRef.current.get(b.id);
+                        });
                     }
 
                     setCards(cardsToDisplay);
@@ -720,6 +700,7 @@ const StudyMode = ({ deckId, onBack }) => {
     const handleResetProgress = async () => {
         if (window.confirm("Are you sure you want to reset your progress for this deck?")) {
             try {
+                shuffleOrderRef.current.clear();
                 await settingsAPI.resetSettings();
                 resetDeckProgress(currentDeck.id);
                 // إعادة تعيين النظام
@@ -735,6 +716,7 @@ const StudyMode = ({ deckId, onBack }) => {
     const handleToggleShuffle = () => {
         try {
             const newValue = !shuffleMode;
+            shuffleOrderRef.current.clear();
             setShuffleMode(newValue);
             // احفظ في الخلفية (السيف التلقائي سيغطي أيضاً)
             settingsAPI.updateSettings({ shuffle_mode: newValue }).catch(() => { });
@@ -769,10 +751,8 @@ const StudyMode = ({ deckId, onBack }) => {
                         setReviewMode(true);
                     }
 
-                    // حفظ على الخادم
-                    Promise.all(cardsToAdd.map(cardId =>
-                        settingsAPI.addUnmasteredCard(cardId).catch(() => { })
-                    ));
+                    // حفظ على الخادم دفعة واحدة بدون طلبات فردية متكررة
+                    settingsAPI.updateSettings({ unmastered_cards: cardsToAdd, smart_mode_enabled: true }).catch(() => { });
                 }
             } else if (!newValue) {
                 // عند إيقاف النظام الذكي، نوقف وضع المراجعة
@@ -927,6 +907,7 @@ const StudyMode = ({ deckId, onBack }) => {
                     {/* البطاقة في المنتصف */}
                     <div className="card-container-flexible">
                         <Card
+                            key={currentCard?.id || currentCardIndex}
                             card={currentCard}
                             onToggleKnown={handleToggleKnown}
                             inStudyMode={true}

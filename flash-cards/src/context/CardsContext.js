@@ -56,6 +56,21 @@ export const CardsProvider = ({ children }) => {
                                 known: !!(serverCard.known || localKnownMap.get(serverCard.id))
                             }))
                         }));
+
+                        // If merged state is functionally identical to prev, preserve prev reference
+                        const isSame = prev.length === merged.length && prev.every((d, i) => {
+                            const md = merged[i];
+                            if (!md || d.id !== md.id || d.title !== md.title || (d.cards || []).length !== (md.cards || []).length) return false;
+                            return (d.cards || []).every((c, ci) => {
+                                const mc = md.cards[ci];
+                                return mc && c.id === mc.id && !!c.known === !!mc.known;
+                            });
+                        });
+
+                        if (isSame) {
+                            return prev;
+                        }
+
                         localStorage.setItem('flashcards-decks', JSON.stringify(merged));
                         return merged;
                     }
@@ -86,7 +101,7 @@ export const CardsProvider = ({ children }) => {
         // Re-sync whenever the user switches back to the tab/window (e.g. mobile returning from PC)
         let lastSyncTime = Date.now();
         const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible' && Date.now() - lastSyncTime > 4000) {
+            if (document.visibilityState === 'visible' && Date.now() - lastSyncTime > 30000) {
                 lastSyncTime = Date.now();
                 console.log('🔄 Tab became active, refreshing decks from server...');
                 fetchDecks();
@@ -94,11 +109,9 @@ export const CardsProvider = ({ children }) => {
         };
 
         window.addEventListener('visibilitychange', handleVisibilityChange);
-        window.addEventListener('focus', handleVisibilityChange);
 
         return () => {
             window.removeEventListener('visibilitychange', handleVisibilityChange);
-            window.removeEventListener('focus', handleVisibilityChange);
         };
     }, [fetchDecks]);
 

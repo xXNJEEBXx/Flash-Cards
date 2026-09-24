@@ -47,8 +47,10 @@ export const FoldersProvider = ({ children }) => {
     useEffect(() => {
         loadFolders();
 
+        let lastFoldersLoad = Date.now();
         const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible') {
+            if (document.visibilityState === 'visible' && Date.now() - lastFoldersLoad > 30000) {
+                lastFoldersLoad = Date.now();
                 loadFolders();
             }
         };

@@ -25,10 +25,15 @@ const Card = ({
     useEffect(() => {
         setIsFlipped(false);
         setLocalShowTranslation(false);
-    }, [card.id]);
+    }, [card?.id]);
 
     const handleCardClick = () => {
-        setIsFlipped(!isFlipped);
+        // إذا كان المستخدم يحدد نصاً للنسخ، لا نقلب البطاقة
+        const selection = window.getSelection();
+        if (selection && selection.toString().trim().length > 0) {
+            return;
+        }
+        setIsFlipped(prev => !prev);
     };
 
     // تحديد القيم النشطة (من الـ props أو الحالة المحلية)
