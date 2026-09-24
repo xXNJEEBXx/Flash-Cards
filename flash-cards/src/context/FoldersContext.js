@@ -4,8 +4,15 @@ import { foldersAPI } from '../services/apiService';
 export const FoldersContext = createContext();
 
 export const FoldersProvider = ({ children }) => {
-    const [folders, setFolders] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [folders, setFolders] = useState(() => {
+        try {
+            const stored = localStorage.getItem('flashcards-folders');
+            return stored ? JSON.parse(stored) : [];
+        } catch {
+            return [];
+        }
+    });
+    const [loading, setLoading] = useState(false);
 
     // Load folders from API with localStorage fallback
     const loadFolders = useCallback(async () => {

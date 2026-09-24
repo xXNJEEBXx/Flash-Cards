@@ -37,16 +37,20 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
     const [draggedFolder, setDraggedFolder] = useState(null);
     const [viewMode, setViewMode] = useState('both'); // 'both', 'folders', 'decks'
 
-    // Get decks not in any folder sorted by custom order
+    // Get decks not in any folder sorted by custom order (or all decks as fallback if folders are empty)
     const rootDecks = useMemo(() => {
-        const unassigned = decks.filter(deck => !deck.folder_id && !deck.title?.includes('تجريبية'));
+        const hasFolders = folders && folders.length > 0;
+        const unassigned = hasFolders
+            ? decks.filter(deck => !deck.folder_id && !deck.title?.includes('تجريبية'))
+            : decks.filter(deck => !deck.title?.includes('تجريبية'));
+
         return [...unassigned].sort((a, b) => {
             const orderA = a.order !== undefined && a.order !== null ? a.order : 999999;
             const orderB = b.order !== undefined && b.order !== null ? b.order : 999999;
             if (orderA !== orderB) return orderA - orderB;
             return a.id - b.id;
         });
-    }, [decks]);
+    }, [decks, folders]);
 
     // Combine folders and decks into unified items
     const unifiedItems = useMemo(() => {

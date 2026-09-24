@@ -258,7 +258,7 @@ export const foldersAPI = {
             if (!response.ok) throw new Error('Failed to fetch folders');
 
             const result = await response.json();
-            return result.data;
+            return Array.isArray(result?.data) ? result.data : (Array.isArray(result) ? result : []);
         } catch (error) {
             console.error('Error fetching folders:', error);
             return [];
