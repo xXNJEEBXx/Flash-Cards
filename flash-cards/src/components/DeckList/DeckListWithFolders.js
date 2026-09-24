@@ -15,7 +15,6 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
     const { decks, deleteDeck, updateDeckFolder, reorderDecks } = useContext(CardsContext);
     const {
         folders,
-        loading: foldersLoading,
         createFolder,
         updateFolder,
         deleteFolder,
@@ -71,6 +70,7 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
     }, [folders, rootDecks, viewMode]);
 
     // Filter and sort decks
+    // eslint-disable-next-line no-unused-vars
     const filteredAndSortedDecks = useMemo(() => {
         let filtered = rootDecks.filter(deck =>
             deck.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -103,6 +103,8 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
                     return learnedRatio >= 0.8;
                 });
                 break;
+            default:
+                break;
         }
 
         // Apply sorting
@@ -123,6 +125,8 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
                         : 0;
                     return bProgress - aProgress;
                 });
+                break;
+            default:
                 break;
         }
 
@@ -472,6 +476,8 @@ const DeckListWithFolders = ({ onSelectDeck, onStudyDeck, onOpenFolder }) => {
                                 break;
                             case 'mastered':
                                 passesFilter = learnedRatio >= 0.8;
+                                break;
+                            default:
                                 break;
                         }
 

@@ -151,6 +151,7 @@ const StealthStudyMode = ({
           .finally(() => setIsTranslating(false));
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentCard?.id, showTranslation, translationsCache]);
 
   // اختصارات لوحة المفاتيح المتخفية

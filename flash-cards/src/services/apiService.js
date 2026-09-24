@@ -380,9 +380,11 @@ export const foldersAPI = {
     }
 };
 
-export default {
+const apiService = {
     settings: settingsAPI,
     cards: cardsAPI,
     folders: foldersAPI
 };
+
+export default apiService;
 

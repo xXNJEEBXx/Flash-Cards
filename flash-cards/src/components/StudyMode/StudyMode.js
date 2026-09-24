@@ -228,6 +228,7 @@ const StudyMode = ({ deckId, onBack }) => {
                 setReviewMode(false);
             }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [smartModeEnabled, currentDeck]);
 
     // Handle shuffle mode and card filtering
@@ -358,6 +359,7 @@ const StudyMode = ({ deckId, onBack }) => {
                 return validIndex;
             });
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [shuffleMode, currentDeck, smartModeEnabled, reviewMode, unmastered, hideMasteredCards]);
 
     // =========================================================================
@@ -443,6 +445,7 @@ const StudyMode = ({ deckId, onBack }) => {
             });
             return () => { isMounted = false; };
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeCurrentCard?.id, showTranslation, cardTranslations]);
 
     // اختصار لوحة المفاتيح: T للترجمة
@@ -458,6 +461,7 @@ const StudyMode = ({ deckId, onBack }) => {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeCurrentCard, showTranslation, cardTranslations]);
 
     if (!currentDeck) {
