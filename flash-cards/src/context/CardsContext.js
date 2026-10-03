@@ -242,8 +242,8 @@ export const CardsProvider = ({ children }) => {
 
     // Delete a card from a deck
     const deleteCard = async (deckId, cardId) => {
-        try { await api.deleteCard(deckId, cardId); } catch (_e) { /* ignore */ }
         setDecks(prevDecks => prevDecks.map(deck => deck.id === deckId ? { ...deck, cards: deck.cards.filter(card => card.id !== cardId) } : deck));
+        try { await api.deleteCard(deckId, cardId); } catch (_e) { /* ignore */ }
     };
 
     // Toggle a card's known status (optimistic update with API sync and explicit state support)

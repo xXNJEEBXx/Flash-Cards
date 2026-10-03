@@ -752,3 +752,291 @@
     min-width: unset;
   }
 }
+
+/* زر حذف البطاقة في الأسفل */
+.btn-delete-card {
+  background: rgba(239, 68, 68, 0.08);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
+}
+
+.btn-delete-card:hover:not(:disabled) {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
+}
+
+.btn-delete-card:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-delete-card:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* دعم الوضع الليلي لزر الحذف */
+[data-theme="dark"] .btn-delete-card {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+[data-theme="dark"] .btn-delete-card:hover:not(:disabled) {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.5);
+}
+
+/* نافذة تأكيد حذف البطاقة */
+.delete-modal {
+  max-width: 480px;
+  text-align: center;
+}
+
+.delete-modal-icon-badge {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 14px auto;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  border: 2px solid rgba(239, 68, 68, 0.25);
+  animation: pulseWarning 1.5s infinite ease-in-out;
+}
+
+@keyframes pulseWarning {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3); }
+  70% { transform: scale(1.04); box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.delete-modal-title {
+  color: #dc2626;
+  font-size: 1.4rem;
+  margin: 0 0 8px 0;
+  font-weight: 700;
+}
+
+.delete-modal-subtitle {
+  color: #64748b;
+  font-size: 0.95rem;
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+
+[data-theme="dark"] .delete-modal-title {
+  color: #f87171;
+}
+
+[data-theme="dark"] .delete-modal-subtitle {
+  color: #94a3b8;
+}
+
+.delete-card-preview-box {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  text-align: right;
+  direction: rtl;
+}
+
+[data-theme="dark"] .delete-card-preview-box {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.delete-preview-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+[data-theme="dark"] .delete-preview-tag {
+  color: #94a3b8;
+}
+
+.delete-preview-quote {
+  font-size: 0.95rem;
+  color: #1e293b;
+  line-height: 1.5;
+  font-weight: 500;
+  max-height: 75px;
+  overflow-y: auto;
+  word-break: break-word;
+}
+
+[data-theme="dark"] .delete-preview-quote {
+  color: #e2e8f0;
+}
+
+.delete-password-section {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 20px;
+  text-align: right;
+  direction: rtl;
+}
+
+[data-theme="dark"] .delete-password-section {
+  background: #0f172a;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.delete-password-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 8px;
+}
+
+[data-theme="dark"] .delete-password-label {
+  color: #cbd5e1;
+}
+
+.delete-input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.delete-input-group input {
+  flex: 1;
+  padding: 9px 12px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  background: #ffffff;
+  color: #1e293b;
+}
+
+[data-theme="dark"] .delete-input-group input {
+  background: #1e293b;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+.delete-input-group input:focus {
+  outline: none;
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.btn-fill-pass {
+  padding: 9px 12px;
+  background: #e0e7ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.btn-fill-pass:hover {
+  background: #c7d2fe;
+  color: #312e81;
+}
+
+[data-theme="dark"] .btn-fill-pass {
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+[data-theme="dark"] .btn-fill-pass:hover {
+  background: rgba(99, 102, 241, 0.35);
+  color: #ffffff;
+}
+
+.delete-error-banner {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #fee2e2;
+  color: #b91c1c;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+}
+
+[data-theme="dark"] .delete-error-banner {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+.delete-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.delete-modal-actions .btn {
+  flex: 1;
+  padding: 11px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+.delete-confirm-btn {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+.delete-confirm-btn:hover:not(:disabled) {
+  background: #b91c1c !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
+}
+
+/* دعم الوضع الليلي لنموذج التعديل السريع ونموذج الحذف */
+[data-theme="dark"] .edit-overlay {
+  background: rgba(0, 0, 0, 0.82);
+}
+
+[data-theme="dark"] .edit-form {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="dark"] .edit-form h3 {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .edit-form .form-group label {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .edit-form .form-group textarea {
+  background: #0f172a;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .edit-form .form-group textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}

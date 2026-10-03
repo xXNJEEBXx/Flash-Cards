@@ -566,3 +566,81 @@
   background: #4b5563;
   transform: translateY(-1px);
 }
+
+/* إدارة البطاقات في الملاحظات الجانبية (تعديل وحذف) */
+.sticky-note-manage-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+[data-theme="dark"] .sticky-note-manage-actions {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.note-manage-btn {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: transparent;
+}
+
+.note-manage-btn.note-edit-btn {
+  border: 1px solid #cbd5e1;
+  color: #475569;
+}
+
+.note-manage-btn.note-edit-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #1e293b;
+  border-color: #94a3b8;
+}
+
+[data-theme="dark"] .note-manage-btn.note-edit-btn {
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .note-manage-btn.note-edit-btn:hover:not(:disabled) {
+  background: #334155;
+  color: #ffffff;
+}
+
+.note-manage-btn.note-delete-btn {
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.04);
+}
+
+.note-manage-btn.note-delete-btn:hover:not(:disabled) {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+[data-theme="dark"] .note-manage-btn.note-delete-btn {
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+[data-theme="dark"] .note-manage-btn.note-delete-btn:hover:not(:disabled) {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.note-manage-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

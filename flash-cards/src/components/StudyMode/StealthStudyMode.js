@@ -20,6 +20,8 @@ const StealthStudyMode = ({
   shuffleMode = false,
   onToggleShuffle,
   onResetProgress,
+  onStartEdit,
+  onStartDelete,
 }) => {
   const [localPdfUrl, setLocalPdfUrl] = useState(() => {
     try {
@@ -404,6 +406,28 @@ const StealthStudyMode = ({
                 >
                   🎴 النمط العادي (بطاقات 3D)
                 </div>
+                {onStartEdit && (
+                  <div
+                    style={{ padding: '8px 16px', cursor: 'pointer', color: '#93c5fd' }}
+                    onClick={() => {
+                      setShowMenu(false);
+                      onStartEdit();
+                    }}
+                  >
+                    ✏️ تعديل البطاقة الحالية
+                  </div>
+                )}
+                {onStartDelete && (
+                  <div
+                    style={{ padding: '8px 16px', cursor: 'pointer', color: '#fca5a5' }}
+                    onClick={() => {
+                      setShowMenu(false);
+                      onStartDelete();
+                    }}
+                  >
+                    🗑️ حذف البطاقة الحالية
+                  </div>
+                )}
                 {onResetProgress && (
                   <div
                     style={{ padding: '8px 16px', cursor: 'pointer', color: '#fbbf24' }}
@@ -630,6 +654,35 @@ const StealthStudyMode = ({
                     <span>تراجع</span>
                   </button>
                 </div>
+
+                {/* أدوات التحكم بالبطاقة (تعديل وحذف) في قسم مستقل وآمن */}
+                {(onStartEdit || onStartDelete) && (
+                  <div className="sticky-note-manage-actions">
+                    {onStartEdit && (
+                      <button
+                        className="note-manage-btn note-edit-btn"
+                        onClick={onStartEdit}
+                        disabled={!currentCard}
+                        title="تعديل سريع لمحتوى هذه البطاقة"
+                      >
+                        <span>✏️</span>
+                        <span>تعديل</span>
+                      </button>
+                    )}
+
+                    {onStartDelete && (
+                      <button
+                        className="note-manage-btn note-delete-btn"
+                        onClick={onStartDelete}
+                        disabled={!currentCard}
+                        title="حذف هذه البطاقة نهائياً من المجموعة"
+                      >
+                        <span>🗑️</span>
+                        <span>حذف</span>
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               <div style={{ color: '#9ca3af', textAlign: 'center', padding: '30px 0' }}>

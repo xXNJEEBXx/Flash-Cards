@@ -9,7 +9,7 @@ import './StudyMode.css';
 import './smart-mode.css';
 
 const StudyMode = ({ deckId, onBack }) => {
-    const { decks, toggleCardKnown, resetDeckProgress, undoLastKnownCard, hasRecentlyKnownCards, editCard } = useContext(CardsContext);
+    const { decks, toggleCardKnown, resetDeckProgress, undoLastKnownCard, hasRecentlyKnownCards, editCard, deleteCard } = useContext(CardsContext);
     const [currentDeck, setCurrentDeck] = useState(null);
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
     const [shuffleMode, setShuffleMode] = useState(false);
@@ -48,6 +48,12 @@ const StudyMode = ({ deckId, onBack }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editQuestion, setEditQuestion] = useState('');
     const [editAnswer, setEditAnswer] = useState('');
+
+    // نموذج تأكيد حذف البطاقة
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deletePassword, setDeletePassword] = useState('');
+    const [deleteError, setDeleteError] = useState('');
+    const [isDeletingLoading, setIsDeletingLoading] = useState(false);
 
     const UNMASTERED_LIMIT = 6;
     // مرجع لمؤقت الحفظ لتطبيق debounce وتجنب كثرة الطلبات
@@ -805,28 +811,216 @@ const StudyMode = ({ deckId, onBack }) => {
         }
     };
 
+    // فتح نموذج تأكيد الحذف
+    const handleStartDelete = () => {
+        if (currentCard) {
+            setDeletePassword('');
+            setDeleteError('');
+            setIsDeleting(true);
+        }
+    };
+
+    // إلغاء الحذف
+    const handleCancelDelete = () => {
+        setIsDeleting(false);
+        setDeletePassword('');
+        setDeleteError('');
+    };
+
+    // تأكيد الحذف مع التحقق من كلمة المرور
+    const handleConfirmDelete = async () => {
+        if (!currentCard || !currentDeck) return;
+
+        // التحقق من رمز الحماية (123123)
+        if (deletePassword !== '123123') {
+            setDeleteError('❌ كلمة المرور غير صحيحة (رمز التأكيد: 123123)');
+            return;
+        }
+
+        try {
+            setIsDeletingLoading(true);
+            const cardIdToDelete = currentCard.id;
+
+            // إزالة من قائمة النظام الذكي إن وجدت
+            if (unmastered.includes(cardIdToDelete)) {
+                setUnmastered(prev => prev.filter(id => id !== cardIdToDelete));
+            }
+
+            // إزالة من ذاكرة الترجمة
+            setCardTranslations(prev => {
+                const next = { ...prev };
+                delete next[cardIdToDelete];
+                return next;
+            });
+
+            // حذف البطاقة عبر CardsContext
+            await deleteCard(currentDeck.id, cardIdToDelete);
+
+            // تحديث محلي فوري لقائمة البطاقات
+            setCards(prev => prev.filter(c => c.id !== cardIdToDelete));
+
+            setIsDeleting(false);
+            setDeletePassword('');
+            setDeleteError('');
+        } catch (error) {
+            console.error('Failed to delete card:', error);
+            setDeleteError('فشل حذف البطاقة، يرجى المحاولة مرة أخرى');
+        } finally {
+            setIsDeletingLoading(false);
+        }
+    };
+
+    // نافذة نموذج التعديل السريع
+    const renderEditModal = () => {
+        if (!isEditing) return null;
+        return (
+            <div className="edit-overlay" onClick={handleCancelEdit}>
+                <div className="edit-form" onClick={(e) => e.stopPropagation()}>
+                    <h3>✏️ تعديل البطاقة</h3>
+
+                    <div className="form-group">
+                        <label>السؤال:</label>
+                        <textarea
+                            value={editQuestion}
+                            onChange={(e) => setEditQuestion(e.target.value)}
+                            rows="4"
+                            placeholder="أدخل السؤال"
+                            autoFocus
+                        />
+                    </div>
+
+                    <div className="form-group">
+                        <label>الإجابة:</label>
+                        <textarea
+                            value={editAnswer}
+                            onChange={(e) => setEditAnswer(e.target.value)}
+                            rows="4"
+                            placeholder="أدخل الإجابة"
+                        />
+                    </div>
+
+                    <div className="edit-actions">
+                        <button
+                            className="btn btn-success"
+                            onClick={handleSaveEdit}
+                        >
+                            ✓ حفظ التعديلات
+                        </button>
+                        <button
+                            className="btn btn-secondary"
+                            onClick={handleCancelEdit}
+                        >
+                            ✕ إلغاء
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // نافذة تأكيد حذف البطاقة
+    const renderDeleteModal = () => {
+        if (!isDeleting) return null;
+        return (
+            <div className="edit-overlay" onClick={handleCancelDelete}>
+                <div className="edit-form delete-modal" onClick={(e) => e.stopPropagation()}>
+                    <div className="delete-modal-icon-badge">🗑️</div>
+                    <h3 className="delete-modal-title">حذف البطاقة</h3>
+                    <p className="delete-modal-subtitle">
+                        هل أنت متأكد من رغبتك في حذف هذه البطاقة نهائياً من المجموعة؟ لن تتمكن من التراجع عن هذه الخطوة.
+                    </p>
+
+                    <div className="delete-card-preview-box">
+                        <span className="delete-preview-tag">محتوى السؤال:</span>
+                        <div className="delete-preview-quote">
+                            "{currentCard?.question}"
+                        </div>
+                    </div>
+
+                    <div className="delete-password-section">
+                        <label className="delete-password-label">أدخل رمز التأكيد للحذف (123123):</label>
+                        <div className="delete-input-group">
+                            <input
+                                type="password"
+                                value={deletePassword}
+                                onChange={(e) => {
+                                    setDeletePassword(e.target.value);
+                                    setDeleteError('');
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleConfirmDelete();
+                                }}
+                                placeholder="رمز التأكيد"
+                                autoFocus
+                            />
+                            <button
+                                type="button"
+                                className="btn-fill-pass"
+                                onClick={() => {
+                                    setDeletePassword('123123');
+                                    setDeleteError('');
+                                }}
+                                title="تعبئة الرمز تلقائياً"
+                            >
+                                تعبئة 123123
+                            </button>
+                        </div>
+                        {deleteError && (
+                            <div className="delete-error-banner">
+                                {deleteError}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="delete-modal-actions">
+                        <button
+                            className="btn btn-secondary"
+                            onClick={handleCancelDelete}
+                            disabled={isDeletingLoading}
+                        >
+                            ✕ إلغاء
+                        </button>
+                        <button
+                            className="btn btn-danger delete-confirm-btn"
+                            onClick={handleConfirmDelete}
+                            disabled={isDeletingLoading}
+                        >
+                            {isDeletingLoading ? 'جاري الحذف...' : '🗑️ تأكيد الحذف النهائي'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     // إذا كان المستخدم يفضل وضع المحاضرة (المتخفي)
     if (studyStyle === 'stealth' && currentDeck) {
         return (
-            <StealthStudyMode
-                deck={currentDeck}
-                cards={cards}
-                currentIndex={currentCardIndex}
-                onIndexChange={setCurrentCardIndex}
-                onToggleKnown={handleToggleKnown}
-                onToggleStyle={handleToggleStudyStyle}
-                onBack={onBack}
-                onUndo={handleUndoLastKnown}
-                canUndo={hasRecentlyKnownCards}
-                smartModeEnabled={smartModeEnabled}
-                onToggleSmartMode={toggleSmartMode}
-                reviewMode={reviewMode}
-                unmasteredCount={unmastered.length}
-                unmasteredLimit={UNMASTERED_LIMIT}
-                shuffleMode={shuffleMode}
-                onToggleShuffle={handleToggleShuffle}
-                onResetProgress={() => resetDeckProgress(currentDeck.id)}
-            />
+            <>
+                <StealthStudyMode
+                    deck={currentDeck}
+                    cards={cards}
+                    currentIndex={currentCardIndex}
+                    onIndexChange={setCurrentCardIndex}
+                    onToggleKnown={handleToggleKnown}
+                    onToggleStyle={handleToggleStudyStyle}
+                    onBack={onBack}
+                    onUndo={handleUndoLastKnown}
+                    canUndo={hasRecentlyKnownCards}
+                    smartModeEnabled={smartModeEnabled}
+                    onToggleSmartMode={toggleSmartMode}
+                    reviewMode={reviewMode}
+                    unmasteredCount={unmastered.length}
+                    unmasteredLimit={UNMASTERED_LIMIT}
+                    shuffleMode={shuffleMode}
+                    onToggleShuffle={handleToggleShuffle}
+                    onResetProgress={() => resetDeckProgress(currentDeck.id)}
+                    onStartEdit={handleStartEdit}
+                    onStartDelete={handleStartDelete}
+                />
+                {renderEditModal()}
+                {renderDeleteModal()}
+            </>
         );
     }
 
@@ -950,6 +1144,16 @@ const StudyMode = ({ deckId, onBack }) => {
                 </button>
 
                 <button
+                    className="btn btn-delete-card"
+                    onClick={handleStartDelete}
+                    title="حذف هذه البطاقة من المجموعة"
+                    disabled={!currentCard}
+                >
+                    <span className="btn-icon">🗑️</span>
+                    <span className="btn-text">حذف</span>
+                </button>
+
+                <button
                     className={`btn btn-settings ${showSettingsPanel ? 'active' : ''}`}
                     onClick={toggleSettingsPanel}
                     title="إعدادات الدراسة"
@@ -970,49 +1174,9 @@ const StudyMode = ({ deckId, onBack }) => {
                 )}
             </div>
 
-            {/* نموذج التعديل السريع */}
-            {isEditing && (
-                <div className="edit-overlay">
-                    <div className="edit-form">
-                        <h3>✏️ تعديل البطاقة</h3>
-
-                        <div className="form-group">
-                            <label>السؤال:</label>
-                            <textarea
-                                value={editQuestion}
-                                onChange={(e) => setEditQuestion(e.target.value)}
-                                rows="4"
-                                placeholder="أدخل السؤال"
-                            />
-                        </div>
-
-                        <div className="form-group">
-                            <label>الإجابة:</label>
-                            <textarea
-                                value={editAnswer}
-                                onChange={(e) => setEditAnswer(e.target.value)}
-                                rows="4"
-                                placeholder="أدخل الإجابة"
-                            />
-                        </div>
-
-                        <div className="edit-actions">
-                            <button
-                                className="btn btn-success"
-                                onClick={handleSaveEdit}
-                            >
-                                ✓ حفظ
-                            </button>
-                            <button
-                                className="btn btn-secondary"
-                                onClick={handleCancelEdit}
-                            >
-                                ✕ إلغاء
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* النوافذ المشتركة: التعديل والحذف */}
+            {renderEditModal()}
+            {renderDeleteModal()}
 
             {/* لوحة الإعدادات */}
             {showSettingsPanel && (
