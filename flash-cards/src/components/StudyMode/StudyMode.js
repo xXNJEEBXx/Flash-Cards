@@ -208,6 +208,20 @@ const StudyMode = ({ deckId, onBack }) => {
             setUnmastered(cardsToAdd);
             setReviewMode(true);
             settingsAPI.updateSettings({ unmastered_cards: cardsToAdd }).catch(() => { });
+        } else if (validUnmastered.length < UNMASTERED_LIMIT && nonMasteredCards.length > validUnmastered.length) {
+            // إذا كان عدد البطاقات في اللوب أقل من الحد الأقصى (6) وهناك بطاقات غير متقنة إضافية في المجموعة: أعد ملء اللوب
+            const currentIds = new Set(validUnmastered);
+            const needed = UNMASTERED_LIMIT - validUnmastered.length;
+            const additional = nonMasteredCards
+                .filter(c => !currentIds.has(c.id))
+                .slice(0, needed)
+                .map(c => c.id);
+
+            const refilled = [...validUnmastered, ...additional];
+            console.log(`🧠 Smart Mode: Refilling loop (${validUnmastered.length} -> ${refilled.length} cards)`);
+            setUnmastered(refilled);
+            setReviewMode(true);
+            settingsAPI.updateSettings({ unmastered_cards: refilled }).catch(() => { });
         } else {
             // إذا كانت بعض البطاقات لا تخص هذه المجموعة، نظف القائمة
             if (validUnmastered.length !== unmastered.length) {
@@ -218,7 +232,7 @@ const StudyMode = ({ deckId, onBack }) => {
                 setReviewMode(true);
             }
         }
-    }, [smartModeEnabled, settingsLoaded, currentDeck?.id]);
+    }, [smartModeEnabled, settingsLoaded, currentDeck?.id, currentDeck?.cards?.length]);
 
     // Handle shuffle mode and card filtering
     useEffect(() => {
@@ -236,7 +250,19 @@ const StudyMode = ({ deckId, onBack }) => {
                 const activeUnmasteredIds = unmastered.filter(id => nonMasteredIds.has(id));
 
                 if (activeUnmasteredIds.length > 0) {
-                    const activeUnmastered = activeUnmasteredIds.slice(-UNMASTERED_LIMIT);
+                    // الحفاظ على سعة اللوب كاملة (حتى 6 بطاقات) إذا توفرت بطاقات غير متقنة إضافية في المجموعة
+                    let activeIdsToDisplay = [...activeUnmasteredIds];
+                    if (activeIdsToDisplay.length < UNMASTERED_LIMIT && nonMasteredCards.length > activeIdsToDisplay.length) {
+                        const existingSet = new Set(activeIdsToDisplay);
+                        const needed = UNMASTERED_LIMIT - activeIdsToDisplay.length;
+                        const candidates = nonMasteredCards
+                            .filter(c => !existingSet.has(c.id))
+                            .slice(0, needed)
+                            .map(c => c.id);
+                        activeIdsToDisplay = [...activeIdsToDisplay, ...candidates];
+                    }
+
+                    const activeUnmastered = activeIdsToDisplay.slice(-UNMASTERED_LIMIT);
                     const idToOrder = new Map(activeUnmastered.map((id, idx) => [id, idx]));
                     const unmasteredCards = currentDeck.cards
                         .filter(card => idToOrder.has(card.id))
@@ -507,13 +533,13 @@ const StudyMode = ({ deckId, onBack }) => {
                     if (newList.length === 0 && reviewMode) {
                         setReviewMode(false);
                     } else if (reviewMode && newList.length < UNMASTERED_LIMIT) {
+                        const needed = UNMASTERED_LIMIT - newList.length;
                         const remainingCards = currentDeck.cards.filter(card =>
                             !newList.includes(card.id) && !card.known && card.id !== cardId
                         );
 
                         if (remainingCards.length > 0) {
-                            // إضافة أول بطاقة غير متقنة متوفرة بالترتيب الأصلي
-                            return [...newList, remainingCards[0].id];
+                            return [...newList, ...remainingCards.slice(0, needed).map(c => c.id)];
                         }
                     }
                 }
@@ -832,9 +858,54 @@ const StudyMode = ({ deckId, onBack }) => {
             setIsDeletingLoading(true);
             const cardIdToDelete = currentCard.id;
 
-            // إزالة من قائمة النظام الذكي إن وجدت
-            if (unmastered.includes(cardIdToDelete)) {
-                setUnmastered(prev => prev.filter(id => id !== cardIdToDelete));
+            // معالجة النظام الذكي: الحفاظ التام على حجم اللوب (6 بطاقات أو الحد الأقصى المتوفر)
+            if (smartModeEnabled) {
+                const remainingUnmastered = unmastered.filter(id => id !== cardIdToDelete);
+
+                // البحث عن بطاقات أخرى غير متقنة في المجموعة ليست موجودة حالياً في اللوب
+                const availableCards = currentDeck.cards.filter(c =>
+                    c.id !== cardIdToDelete &&
+                    !c.known &&
+                    !remainingUnmastered.includes(c.id)
+                );
+
+                const needed = UNMASTERED_LIMIT - remainingUnmastered.length;
+                let newUnmastered = remainingUnmastered;
+
+                if (needed > 0 && availableCards.length > 0) {
+                    const refillBatch = availableCards.slice(0, needed);
+                    newUnmastered = [...remainingUnmastered, ...refillBatch.map(c => c.id)];
+                    console.log(`🧠 Smart Mode: Refilled loop after delete from ${remainingUnmastered.length} to ${newUnmastered.length} cards`);
+                }
+
+                setUnmastered(newUnmastered);
+                settingsAPI.updateSettings({ unmastered_cards: newUnmastered }).catch(() => { });
+
+                // تحديث البطاقات المعروضة للوب الذكي فوراً
+                const idToOrder = new Map(newUnmastered.map((id, idx) => [id, idx]));
+                const newDisplayCards = currentDeck.cards
+                    .filter(c => c.id !== cardIdToDelete && idToOrder.has(c.id))
+                    .sort((a, b) => idToOrder.get(a.id) - idToOrder.get(b.id))
+                    .map(card => ({
+                        ...card,
+                        isInReviewMode: true,
+                        smartModeHighlight: true
+                    }));
+
+                setCards(newDisplayCards);
+                setCurrentCardIndex(prev => {
+                    const maxIndex = Math.max(0, newDisplayCards.length - 1);
+                    return Math.min(prev, maxIndex);
+                });
+            } else {
+                if (unmastered.includes(cardIdToDelete)) {
+                    setUnmastered(prev => prev.filter(id => id !== cardIdToDelete));
+                }
+                setCards(prev => prev.filter(c => c.id !== cardIdToDelete));
+                setCurrentCardIndex(prev => {
+                    const maxIndex = Math.max(0, cards.length - 2);
+                    return Math.min(prev, Math.max(0, maxIndex));
+                });
             }
 
             // إزالة من ذاكرة الترجمة
@@ -846,9 +917,6 @@ const StudyMode = ({ deckId, onBack }) => {
 
             // حذف البطاقة عبر CardsContext
             await deleteCard(currentDeck.id, cardIdToDelete);
-
-            // تحديث محلي فوري لقائمة البطاقات
-            setCards(prev => prev.filter(c => c.id !== cardIdToDelete));
 
             setIsDeleting(false);
             setDeleteError('');
