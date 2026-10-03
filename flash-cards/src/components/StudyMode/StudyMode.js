@@ -51,7 +51,6 @@ const StudyMode = ({ deckId, onBack }) => {
 
     // نموذج تأكيد حذف البطاقة
     const [isDeleting, setIsDeleting] = useState(false);
-    const [deletePassword, setDeletePassword] = useState('');
     const [deleteError, setDeleteError] = useState('');
     const [isDeletingLoading, setIsDeletingLoading] = useState(false);
 
@@ -814,7 +813,6 @@ const StudyMode = ({ deckId, onBack }) => {
     // فتح نموذج تأكيد الحذف
     const handleStartDelete = () => {
         if (currentCard) {
-            setDeletePassword('');
             setDeleteError('');
             setIsDeleting(true);
         }
@@ -823,19 +821,12 @@ const StudyMode = ({ deckId, onBack }) => {
     // إلغاء الحذف
     const handleCancelDelete = () => {
         setIsDeleting(false);
-        setDeletePassword('');
         setDeleteError('');
     };
 
-    // تأكيد الحذف مع التحقق من كلمة المرور
+    // تأكيد الحذف
     const handleConfirmDelete = async () => {
         if (!currentCard || !currentDeck) return;
-
-        // التحقق من رمز الحماية (123123)
-        if (deletePassword !== '123123') {
-            setDeleteError('❌ كلمة المرور غير صحيحة (رمز التأكيد: 123123)');
-            return;
-        }
 
         try {
             setIsDeletingLoading(true);
@@ -860,7 +851,6 @@ const StudyMode = ({ deckId, onBack }) => {
             setCards(prev => prev.filter(c => c.id !== cardIdToDelete));
 
             setIsDeleting(false);
-            setDeletePassword('');
             setDeleteError('');
         } catch (error) {
             console.error('Failed to delete card:', error);
@@ -937,40 +927,11 @@ const StudyMode = ({ deckId, onBack }) => {
                         </div>
                     </div>
 
-                    <div className="delete-password-section">
-                        <label className="delete-password-label">أدخل رمز التأكيد للحذف (123123):</label>
-                        <div className="delete-input-group">
-                            <input
-                                type="password"
-                                value={deletePassword}
-                                onChange={(e) => {
-                                    setDeletePassword(e.target.value);
-                                    setDeleteError('');
-                                }}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleConfirmDelete();
-                                }}
-                                placeholder="رمز التأكيد"
-                                autoFocus
-                            />
-                            <button
-                                type="button"
-                                className="btn-fill-pass"
-                                onClick={() => {
-                                    setDeletePassword('123123');
-                                    setDeleteError('');
-                                }}
-                                title="تعبئة الرمز تلقائياً"
-                            >
-                                تعبئة 123123
-                            </button>
+                    {deleteError && (
+                        <div className="delete-error-banner" style={{ marginBottom: '16px' }}>
+                            {deleteError}
                         </div>
-                        {deleteError && (
-                            <div className="delete-error-banner">
-                                {deleteError}
-                            </div>
-                        )}
-                    </div>
+                    )}
 
                     <div className="delete-modal-actions">
                         <button
@@ -985,7 +946,7 @@ const StudyMode = ({ deckId, onBack }) => {
                             onClick={handleConfirmDelete}
                             disabled={isDeletingLoading}
                         >
-                            {isDeletingLoading ? 'جاري الحذف...' : '🗑️ تأكيد الحذف النهائي'}
+                            {isDeletingLoading ? 'جاري الحذف...' : '🗑️ نعم، احذف البطاقة'}
                         </button>
                     </div>
                 </div>
