@@ -14,5 +14,16 @@
         "BACKEND_BASE_URL": "https://flash-cards-production-e52d.up.railway.app/api"
       }
     }
+  },
+  "mcpServers": {
+    "flashcards": {
+      "command": "node",
+      "args": [
+        "c:/xXNJEEBXx/Projects/flash Cards/tools/mcp/flashcards-server/dist/index.js"
+      ],
+      "env": {
+        "BACKEND_BASE_URL": "https://flash-cards-production-e52d.up.railway.app/api"
+      }
+    }
   }
 }

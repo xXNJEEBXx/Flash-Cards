@@ -1,6 +1,7 @@
 import "dotenv/config";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -14,6 +15,11 @@ import { CardSchema, DeckSchema, FolderSchema } from "./schemas.js";
 
 const name = "flashcards-mcp-server";
 const version = "0.2.0";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// Also load .env from the server's own directory (in case CWD is elsewhere)
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
 // Resolve backend base URL with priority:
 // 1) BACKEND_BASE_URL (env)
@@ -30,10 +36,8 @@ if (rawRoot) {
   if (!reactApi) {
     // Try loading from frontend .env
     try {
-      // Resolve ../flash-cards/.env relative to this file
-      const here = path.dirname(new URL(import.meta.url).pathname);
       const frontendEnvPath = path.resolve(
-        here,
+        __dirname,
         "../../../../flash-cards/.env"
       );
       if (fs.existsSync(frontendEnvPath)) {
@@ -51,7 +55,7 @@ if (rawRoot) {
 }
 
 if (!rawRoot) {
-  rawRoot = "https://flash-cards-production-5df5.up.railway.app";
+  rawRoot = "https://flash-cards-production-e52d.up.railway.app";
   resolvedSource = "DEFAULT_RAILWAY";
 }
 
@@ -98,8 +102,7 @@ async function main() {
 
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     // Log backend target once when tools are listed (first interaction)
-    // eslint-disable-next-line no-console
-    console.log(`[MCP] Using backend: ${BASE_URL} (source: ${resolvedSource})`);
+    console.error(`[MCP] Using backend: ${BASE_URL} (source: ${resolvedSource})`);
     return {
       tools: [
         {
@@ -252,7 +255,7 @@ async function main() {
         },
         {
           name: "createFolder",
-          description: "Create a new folder",
+          description: "Create a new folder (optionally password protected)",
           inputSchema: {
             type: "object",
             required: ["name"],
@@ -265,6 +268,10 @@ async function main() {
               parent_folder_id: {
                 type: "number",
                 description: "Parent folder ID for nested folders",
+              },
+              password: {
+                type: "string",
+                description: "Optional folder password for protection",
               },
             },
           },
@@ -279,6 +286,22 @@ async function main() {
               folderId: { type: "number" },
               name: { type: "string" },
               description: { type: "string" },
+              password: {
+                type: "string",
+                description: "Folder password (or empty string to remove)",
+              },
+            },
+          },
+        },
+        {
+          name: "verifyFolderPassword",
+          description: "Verify password for a password-protected folder",
+          inputSchema: {
+            type: "object",
+            required: ["folderId", "password"],
+            properties: {
+              folderId: { type: "number", description: "Folder ID" },
+              password: { type: "string", description: "Password to verify" },
             },
           },
         },
@@ -441,10 +464,11 @@ async function main() {
         }
 
         case "createFolder": {
-          const { name, description, parent_folder_id } = args as any;
+          const { name, description, parent_folder_id, password } = args as any;
           const body: any = { name };
           if (description) body.description = description;
           if (parent_folder_id) body.parent_folder_id = parent_folder_id;
+          if (password !== undefined) body.password = password;
           const res = await client.call<any>("POST", `/folders`, body);
           // Extract data from Laravel response wrapper
           const folderData = res.data || res;
@@ -452,10 +476,11 @@ async function main() {
         }
 
         case "updateFolder": {
-          const { folderId, name, description } = args as any;
+          const { folderId, name, description, password } = args as any;
           const body: any = {};
           if (name) body.name = name;
           if (description !== undefined) body.description = description;
+          if (password !== undefined) body.password = password;
           const res = await client.call<any>(
             "PUT",
             `/folders/${folderId}`,
@@ -464,6 +489,16 @@ async function main() {
           // Extract data from Laravel response wrapper
           const folderData = res.data || res;
           return okJson(FolderSchema.parse(folderData));
+        }
+
+        case "verifyFolderPassword": {
+          const { folderId, password } = args as any;
+          const res = await client.call<any>(
+            "POST",
+            `/folders/${folderId}/verify-password`,
+            { password }
+          );
+          return okJson(res);
         }
 
         case "deleteFolder": {

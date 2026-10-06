@@ -138,6 +138,26 @@ export const FoldersProvider = ({ children }) => {
         }
     };
 
+    // Track unlocked password-protected folders in current session
+    const [unlockedFolders, setUnlockedFolders] = useState(() => new Set());
+
+    const isFolderUnlocked = useCallback((folderId) => {
+        return unlockedFolders.has(Number(folderId));
+    }, [unlockedFolders]);
+
+    const unlockFolder = useCallback((folderId) => {
+        setUnlockedFolders(prev => new Set(prev).add(Number(folderId)));
+    }, []);
+
+    const verifyFolderPassword = async (folderId, password) => {
+        const result = await foldersAPI.verifyPassword(folderId, password);
+        if (result && result.valid) {
+            unlockFolder(folderId);
+            return true;
+        }
+        return false;
+    };
+
     // Find a folder by ID (including nested folders)
     const findFolderById = useCallback((folderId, foldersList = folders) => {
         const targetId = Number(folderId);
@@ -165,7 +185,11 @@ export const FoldersProvider = ({ children }) => {
                 moveDeckToFolder,
                 removeDeckFromFolder,
                 loadFolders,
-                findFolderById
+                findFolderById,
+                unlockedFolders,
+                isFolderUnlocked,
+                unlockFolder,
+                verifyFolderPassword
             }}
         >
             {children}

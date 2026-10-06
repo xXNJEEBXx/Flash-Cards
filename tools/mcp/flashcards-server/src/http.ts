@@ -21,7 +21,7 @@ export class ApiClient {
     };
     if (this.authToken) headers["authorization"] = `Bearer ${this.authToken}`;
 
-    console.log(
+    console.error(
       `[MCP DEBUG] ${method} ${url}`,
       body ? JSON.stringify(body) : "no body"
     );

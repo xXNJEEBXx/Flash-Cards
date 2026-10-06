@@ -66,7 +66,8 @@ class FolderController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'parent_folder_id' => 'nullable|exists:folders,id',
-            'order' => 'nullable|integer|min:0'
+            'order' => 'nullable|integer|min:0',
+            'password' => 'nullable|string|max:255'
         ]);
 
         if ($validator->fails()) {
@@ -103,11 +104,16 @@ class FolderController extends Controller
             $request->merge(['parent_folder_id' => null]);
         }
 
+        if ($request->has('password') && $request->password === '') {
+            $request->merge(['password' => null]);
+        }
+
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
             'parent_folder_id' => 'nullable|exists:folders,id',
-            'order' => 'nullable|integer|min:0'
+            'order' => 'nullable|integer|min:0',
+            'password' => 'nullable|string|max:255'
         ]);
 
         if ($validator->fails()) {
@@ -254,6 +260,52 @@ class FolderController extends Controller
                 'message' => 'Failed to remove deck from folder',
                 'error' => $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Verify folder password
+     */
+    public function verifyPassword(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'password' => 'required|string'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'valid' => false,
+                'message' => 'Password is required'
+            ], 422);
+        }
+
+        try {
+            $folder = Folder::findOrFail($id);
+
+            // If folder has no password, always valid
+            if (empty($folder->password)) {
+                return response()->json([
+                    'success' => true,
+                    'valid' => true,
+                    'message' => 'Folder is not password protected'
+                ]);
+            }
+
+            $isValid = ($folder->password === $request->password);
+
+            return response()->json([
+                'success' => true,
+                'valid' => $isValid,
+                'message' => $isValid ? 'Password verified successfully' : 'Incorrect password'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'valid' => false,
+                'message' => 'Folder not found',
+                'error' => $e->getMessage()
+            ], 404);
         }
     }
 }

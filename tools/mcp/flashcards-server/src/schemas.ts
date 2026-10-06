@@ -27,6 +27,8 @@ export const FolderSchema = z.object({
   description: z.string().nullable().optional(),
   parent_folder_id: z.number().nullable().optional(),
   order: z.number().optional(),
+  password: z.string().nullable().optional(),
+  is_password_protected: z.boolean().optional(),
   decks: z.array(DeckSchema).optional(),
   subfolders: z.lazy(() => z.array(FolderSchema)).optional(),
 });

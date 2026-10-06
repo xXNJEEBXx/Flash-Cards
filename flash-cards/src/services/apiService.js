@@ -377,6 +377,28 @@ export const foldersAPI = {
             console.error('Error removing deck from folder:', error);
             throw error;
         }
+    },
+
+    // Verify folder password
+    async verifyPassword(folderId, password) {
+        try {
+            const response = await fetchWithRetry(${API_BASE_URL}/folders//verify-password, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({ password })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                return { success: false, valid: false, message: errorData.message || 'Incorrect password' };
+            }
+
+            const result = await response.json();
+            return result;
+        } catch (error) {
+            console.error('Error verifying folder password:', error);
+            return { success: false, valid: false, message: error.message };
+        }
     }
 };
 

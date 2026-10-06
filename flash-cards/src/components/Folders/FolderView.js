@@ -12,7 +12,10 @@ import './FolderView.css';
 const FolderView = ({ folderId, onBack, onSelectDeck, onStudyDeck }) => {
     const navigate = useNavigate();
     const { decks, deleteDeck, updateDeckFolder, reorderDecks } = useContext(CardsContext);
-    const { folders, loading: foldersLoading, removeDeckFromFolder, moveDeckToFolder, moveFolder, findFolderById } = useContext(FoldersContext);
+    const { folders, loading: foldersLoading, removeDeckFromFolder, moveDeckToFolder, moveFolder, findFolderById, isFolderUnlocked, verifyFolderPassword } = useContext(FoldersContext);
+    const [unlockPassword, setUnlockPassword] = useState('');
+    const [unlockError, setUnlockError] = useState('');
+    const [isUnlocking, setIsUnlocking] = useState(false);
     const [fetchedFolder, setFetchedFolder] = useState(null);
     const [isFetchingDirect, setIsFetchingDirect] = useState(false);
     const [folderToMove, setFolderToMove] = useState(null);
@@ -177,6 +180,83 @@ const FolderView = ({ folderId, onBack, onSelectDeck, onStudyDeck }) => {
         if (learnedRatio < 0.7) return '#f39c12';
         return '#27ae60';
     };
+
+    const handleUnlockSubmit = async (e) => {
+        e.preventDefault();
+        setUnlockError('');
+        if (!unlockPassword.trim()) {
+            setUnlockError('يرجى إدخال كلمة المرور');
+            return;
+        }
+        setIsUnlocking(true);
+        try {
+            const ok = await verifyFolderPassword(folderId, unlockPassword.trim());
+            if (!ok) {
+                setUnlockError('❌ كلمة المرور غير صحيحة');
+            }
+        } catch (err) {
+            setUnlockError('❌ حدث خطأ أثناء التحقق');
+        } finally {
+            setIsUnlocking(false);
+        }
+    };
+
+    if (folder && folder.is_password_protected && isFolderUnlocked && !isFolderUnlocked(folder.id)) {
+        return (
+            <div className="folder-view" style={{ maxWidth: '460px', margin: '40px auto', padding: '0 16px' }}>
+                <div style={{ marginBottom: '20px' }}>
+                    <button className="btn btn-outline" onClick={onBack}>
+                        ← العودة للقائمة
+                    </button>
+                </div>
+                <div style={{
+                    padding: '32px 24px',
+                    background: '#fff',
+                    borderRadius: '16px',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
+                    textAlign: 'center',
+                    border: '1px solid #e9ecef'
+                }}>
+                    <div style={{ fontSize: '52px', marginBottom: '16px' }}>🔒</div>
+                    <h2 style={{ marginBottom: '8px', fontSize: '22px', color: '#2c3e50' }}>{folder.name}</h2>
+                    <p style={{ color: '#6c757d', marginBottom: '24px', fontSize: '14px', lineHeight: '1.5' }}>
+                        هذا المجلد محمي بكلمة مرور. يرجى إدخال كلمة المرور لعرض المجموعات والبطاقات.
+                    </p>
+                    <form onSubmit={handleUnlockSubmit}>
+                        <input
+                            type="password"
+                            value={unlockPassword}
+                            onChange={(e) => setUnlockPassword(e.target.value)}
+                            placeholder="كلمة المرور..."
+                            style={{
+                                width: '100%',
+                                padding: '12px 14px',
+                                borderRadius: '8px',
+                                border: '1px solid #ced4da',
+                                marginBottom: '14px',
+                                fontSize: '15px',
+                                boxSizing: 'border-box'
+                            }}
+                            autoFocus
+                        />
+                        {unlockError && (
+                            <div style={{ color: '#dc3545', marginBottom: '14px', fontSize: '14px', fontWeight: '500' }}>
+                                {unlockError}
+                            </div>
+                        )}
+                        <button
+                            type="submit"
+                            className="btn btn-primary"
+                            disabled={isUnlocking}
+                            style={{ width: '100%', padding: '12px', fontSize: '15px', borderRadius: '8px', cursor: 'pointer' }}
+                        >
+                            {isUnlocking ? 'جاري التحقق...' : '🔓 فتح المجلد'}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        );
+    }
 
     if ((foldersLoading || isFetchingDirect) && !folder) {
         return (

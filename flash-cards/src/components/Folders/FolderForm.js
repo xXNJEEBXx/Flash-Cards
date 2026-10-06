@@ -40,6 +40,9 @@ const flattenFolders = (foldersList, depth = 0) => {
 const FolderForm = ({ folder, parentFolderId, folders = [], onSubmit, onCancel }) => {
     const [name, setName] = useState(folder?.name || '');
     const [description, setDescription] = useState(folder?.description || '');
+    const [password, setPassword] = useState("");
+    const [removePassword, setRemovePassword] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const [selectedParentId, setSelectedParentId] = useState(() => {
         if (parentFolderId !== undefined && parentFolderId !== null) {
             return String(parentFolderId);
@@ -75,10 +78,18 @@ const FolderForm = ({ folder, parentFolderId, folders = [], onSubmit, onCancel }
     const handleSubmit = (e) => {
         e.preventDefault();
         if (validate()) {
+            let finalPassword = undefined;
+            if (removePassword) {
+                finalPassword = "";
+            } else if (password.trim()) {
+                finalPassword = password.trim();
+            }
+
             onSubmit({
                 name: name.trim(),
                 description: description.trim(),
-                parent_folder_id: selectedParentId ? parseInt(selectedParentId, 10) : null
+                parent_folder_id: selectedParentId ? parseInt(selectedParentId, 10) : null,
+                ...(finalPassword !== undefined ? { password: finalPassword } : {})
             });
         }
     };
@@ -145,6 +156,59 @@ const FolderForm = ({ folder, parentFolderId, folders = [], onSubmit, onCancel }
                             placeholder="وصف اختياري للمجلد..."
                             rows="3"
                         />
+                    </div>
+
+                    <div className="form-group">
+                        <label htmlFor="folder-password">
+                            🔒 كلمة المرور (Password Protection - اختياري)
+                        </label>
+                        {folder?.is_password_protected && (
+                            <div style={{ marginBottom: "8px", fontSize: "13px", color: "#6c757d" }}>
+                                <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={removePassword}
+                                        onChange={(e) => setRemovePassword(e.target.checked)}
+                                    />
+                                    إزالة الحماية بكلمة المرور من هذا المجلد
+                                </label>
+                            </div>
+                        )}
+                        {!removePassword && (
+                            <div style={{ position: "relative" }}>
+                                <input
+                                    id="folder-password"
+                                    type={showPassword ? "text" : "password"}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder={folder?.is_password_protected ? "اترك فارغاً للاحتفاظ بكلمة المرور الحالية" : "أدخل كلمة مرور لقفل المجلد..."}
+                                    style={{
+                                        width: "100%",
+                                        padding: "10px 40px 10px 12px",
+                                        borderRadius: "6px",
+                                        border: "1px solid #dee2e6",
+                                        fontSize: "14px"
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    style={{
+                                        position: "absolute",
+                                        left: "10px",
+                                        top: "50%",
+                                        transform: "translateY(-50%)",
+                                        background: "none",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        fontSize: "16px"
+                                    }}
+                                    title={showPassword ? "إخفاء" : "إظهار"}
+                                >
+                                    {showPassword ? "👁️" : "🔒"}
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     <div className="form-actions">

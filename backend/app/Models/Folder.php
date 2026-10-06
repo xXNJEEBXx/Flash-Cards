@@ -11,9 +11,32 @@ class Folder extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'description', 'parent_folder_id', 'order'];
+    protected $fillable = ['name', 'description', 'parent_folder_id', 'order', 'password'];
 
     protected $with = ['subfolders', 'decks'];
+
+    protected $hidden = ['password'];
+
+    protected $appends = ['is_password_protected'];
+
+    /**
+     * Check if folder is password protected
+     */
+    public function getIsPasswordProtectedAttribute(): bool
+    {
+        return !empty($this->password);
+    }
+
+    /**
+     * Verify folder password
+     */
+    public function verifyPassword(?string $inputPassword): bool
+    {
+        if (empty($this->password)) {
+            return true;
+        }
+        return $this->password === $inputPassword;
+    }
 
     /**
      * Get the parent folder

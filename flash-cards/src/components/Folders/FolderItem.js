@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
+import { FoldersContext } from '../../context/FoldersContext';
 import { confirmDeleteWithPassword } from '../../utils/passwordProtection';
 import './FolderItem.css';
 
@@ -18,12 +19,33 @@ const FolderItem = ({
     const [isExpanded, setIsExpanded] = useState(true);
     const [showMenu, setShowMenu] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
+    const { isFolderUnlocked, verifyFolderPassword } = useContext(FoldersContext) || {};
 
     const hasSubfolders = folder.subfolders && folder.subfolders.length > 0;
     const hasDecks = folder.decks && folder.decks.length > 0;
     const totalCards = folder.decks?.reduce((sum, deck) => sum + (deck.cards?.length || 0), 0) || 0;
     const learnedCards = folder.decks?.reduce((sum, deck) =>
         sum + (deck.cards?.filter(card => card.known).length || 0), 0) || 0;
+
+    const handleOpenFolder = async () => {
+        if (folder.is_password_protected && isFolderUnlocked && !isFolderUnlocked(folder.id)) {
+            const enteredPassword = prompt(`🔒 المجلد "${folder.name}" محمي بكلمة مرور.\n\nالرجاء إدخال كلمة المرور للمتابعة:`);
+            if (enteredPassword === null) return;
+            try {
+                const ok = await verifyFolderPassword(folder.id, enteredPassword);
+                if (!ok) {
+                    alert('❌ كلمة المرور غير صحيحة');
+                    return;
+                }
+            } catch (err) {
+                alert('❌ تعذر التحقق من كلمة المرور');
+                return;
+            }
+        }
+        if (onOpenFolder) {
+            onOpenFolder(folder.id);
+        }
+    };
 
     const toggleExpand = () => {
         setIsExpanded(!isExpanded);
@@ -116,8 +138,18 @@ const FolderItem = ({
                     {hasSubfolders || hasDecks ? (isExpanded ? '📂' : '📁') : '📁'}
                 </button>
 
-                <div className="folder-info" onClick={() => onOpenFolder && onOpenFolder(folder.id)}>
-                    <span className="folder-name">{folder.name}</span>
+                <div className="folder-info" onClick={handleOpenFolder}>
+                    <span className="folder-name">
+                        {folder.name}
+                        {folder.is_password_protected && (
+                            <span
+                                title={isFolderUnlocked && isFolderUnlocked(folder.id) ? "محمي بكلمة مرور (تم الفتح)" : "محمي بكلمة مرور (مقفل)"}
+                                style={{ marginRight: '6px', fontSize: '13px' }}
+                            >
+                                {isFolderUnlocked && isFolderUnlocked(folder.id) ? ' 🔓' : ' 🔒'}
+                            </span>
+                        )}
+                    </span>
                     {folder.description && (
                         <span className="folder-description">{folder.description}</span>
                     )}

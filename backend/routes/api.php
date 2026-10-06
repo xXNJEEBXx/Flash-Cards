@@ -178,3 +178,21 @@ Route::put('/folders/{folder}', [FolderController::class, 'update']);
 Route::delete('/folders/{folder}', [FolderController::class, 'destroy']);
 Route::post('/folders/{folder}/move-deck', [FolderController::class, 'moveDeck']);
 Route::post('/folders/remove-deck', [FolderController::class, 'removeDeck']);
+Route::post('/folders/{folder}/verify-password', [FolderController::class, 'verifyPassword']);
+
+// Migration runner route
+Route::get('/migrate', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        return response()->json([
+            'status' => 'ok',
+            'output' => \Illuminate\Support\Facades\Artisan::output()
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'status' => 'error',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+});
+
