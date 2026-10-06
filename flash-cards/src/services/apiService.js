@@ -382,7 +382,7 @@ export const foldersAPI = {
     // Verify folder password
     async verifyPassword(folderId, password) {
         try {
-            const response = await fetchWithRetry(${API_BASE_URL}/folders//verify-password, {
+            const response = await fetchWithRetry(`${API_BASE_URL}/folders/${folderId}/verify-password`, {
                 method: 'POST',
                 headers: getHeaders(),
                 body: JSON.stringify({ password })
